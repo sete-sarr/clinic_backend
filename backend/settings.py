@@ -84,19 +84,19 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 # exemple_prod.md §1: production (Render + Supabase) sets a single DATABASE_URL (Supabase's
 # pooling connection string); local dev keeps the 5 separate DB_* fields already in .env.example.
-if env("DATABASE_URL", default=""):
-    DATABASES = {"default": env.db_url("DATABASE_URL")}
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("DB_NAME"),
-            "USER": env("DB_USER"),
-            "PASSWORD": env("DB_PASSWORD"),
-            "HOST": env("DB_HOST"),
-            "PORT": env("DB_PORT"),
-        }
-    }
+# if env("DATABASE_URL", default=""):
+DATABASES = {"default": env.db_url("DATABASE_URL")}
+# else:
+#     DATABASES = {
+#         "default": {
+#             "ENGINE": "django.db.backends.postgresql",
+#             "NAME": env("DB_NAME"),
+#             "USER": env("DB_USER"),
+#             "PASSWORD": env("DB_PASSWORD"),
+#             "HOST": env("DB_HOST"),
+#             "PORT": env("DB_PORT"),
+#         }
+#     }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
