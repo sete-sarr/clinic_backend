@@ -9,11 +9,4 @@ media/
 .env.example
 
 
-# Node / Angular
-frontend/node_modules/
-frontend/dist/
-frontend/.angular/
 
-# Editors / OS
-.vscode/
-.DS_Store
