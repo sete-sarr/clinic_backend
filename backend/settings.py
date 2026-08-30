@@ -195,7 +195,7 @@ if "test" in sys.argv:
 
 # --- Email --------------------------------------------------------------------
 
-EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
+# EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@clinic-management.local")
 
 # communication/providers/email_provider.py: empty-string default so manage.py/tests never crash
