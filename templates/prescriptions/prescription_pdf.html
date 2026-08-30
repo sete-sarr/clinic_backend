@@ -1,0 +1,89 @@
+{% extends "pdf/base_document.html" %}
+
+{% block doc_title %}Ordonnance #{{ prescription.id }}{% endblock %}
+
+{% block doc_title_label %}ORDONNANCE{% endblock %}
+
+{% block doc_number %}<div class="doc-number">RX-{{ prescription.id }}</div>{% endblock %}
+
+{% block doc_meta %}
+<div class="doc-meta-row"><strong>Date :</strong> {{ prescription.created_at|date:"Y-m-d" }}</div>
+{% endblock %}
+
+{% block doc_status %}
+{% if prescription.status == "validated" %}
+  <span class="status-badge status-success">{{ prescription.get_status_display }}</span>
+{% elif prescription.status == "cancelled" %}
+  <span class="status-badge status-error">{{ prescription.get_status_display }}</span>
+{% else %}
+  <span class="status-badge status-neutral">{{ prescription.get_status_display }}</span>
+{% endif %}
+{% endblock %}
+
+{% block info_cards %}
+<div class="info-cards">
+  <div class="info-card">
+    <div class="info-card-title">Patient</div>
+    <div class="primary-line">{{ prescription.patient.first_name }} {{ prescription.patient.last_name }}</div>
+    <div class="secondary-line">{{ prescription.patient.patient_number }}</div>
+  </div>
+  <div class="info-card">
+    <div class="info-card-title">M&eacute;decin prescripteur</div>
+    <div class="primary-line">Dr. {{ prescription.doctor.user.get_full_name }}</div>
+    {% if prescription.doctor.department %}<div class="secondary-line">{{ prescription.doctor.department.name }}</div>{% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<table class="doc-table">
+  <thead>
+    <tr>
+      <th>M&eacute;dicament</th>
+      <th>Dosage</th>
+      <th>Fr&eacute;quence</th>
+      <th>Dur&eacute;e</th>
+      <th>Qt&eacute;</th>
+      <th>Instructions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in items %}
+    <tr>
+      <td>{{ item.medication_name }}</td>
+      <td>{{ item.dosage }}</td>
+      <td>{{ item.frequency }}</td>
+      <td>{{ item.duration }}</td>
+      <td>{{ item.quantity }}</td>
+      <td>{{ item.instructions|default:"&mdash;" }}</td>
+    </tr>
+    {% empty %}
+    <tr><td colspan="6" class="empty-row">Aucun m&eacute;dicament prescrit.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block notes %}
+{% if prescription.notes %}
+<div class="notes-card">
+  <div class="notes-title">Notes du m&eacute;decin</div>
+  {{ prescription.notes }}
+</div>
+{% else %}
+<div class="notes-card">
+  <div class="notes-title">Notes</div>
+  &mdash;
+</div>
+{% endif %}
+{% endblock %}
+
+{% block signature_role %}Dr. {{ prescription.doctor.user.get_full_name }}{% endblock %}
+
+{% block confidentiality %}
+<div class="confidential-banner">
+  Document m&eacute;dical confidentiel &mdash; g&eacute;n&eacute;r&eacute; pour {{ clinic.name }}. Toute diffusion non autoris&eacute;e est interdite.
+</div>
+{% endblock %}
+
+{% block footer_confidentiality %}Ordonnance confidentielle &mdash; {{ clinic.name }}{% endblock %}

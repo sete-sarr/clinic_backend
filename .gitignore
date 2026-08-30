@@ -1,0 +1,19 @@
+# Python
+venv/
+**/__pycache__/
+**/*.pyc
+db.sqlite3
+.env
+staticfiles/
+media/
+.env.example
+
+
+# Node / Angular
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+
+# Editors / OS
+.vscode/
+.DS_Store

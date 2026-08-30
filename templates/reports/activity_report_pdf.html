@@ -1,0 +1,82 @@
+{% extends "pdf/base_document.html" %}
+
+{% block doc_title %}Rapport d'activit&eacute; &mdash; {{ clinic.name }}{% endblock %}
+
+{% block doc_title_label %}RAPPORT D'ACTIVIT&Eacute;{% endblock %}
+
+{% block doc_meta %}
+<div class="doc-meta-row"><strong>P&eacute;riode :</strong> {{ date_from }} &mdash; {{ date_to }}</div>
+{% endblock %}
+
+{% block extra_style %}
+<style>
+  .kpi-row { display: flex; gap: 16px; margin-bottom: 20px; }
+  .kpi-card {
+    flex: 1;
+    background: var(--color-surface-tint);
+    border: 1px solid var(--color-border);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .kpi-card .kpi-value { font-size: 24px; font-weight: 700; color: var(--color-primary); }
+  .kpi-card .kpi-label { font-size: 9.5px; color: var(--color-text-secondary); margin-top: 2px; text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+{% endblock %}
+
+{% block info_cards %}
+<div class="kpi-row">
+  <div class="kpi-card">
+    <div class="kpi-value">{{ appointments_count }}</div>
+    <div class="kpi-label">Rendez-vous</div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-value">{{ consultations_count }}</div>
+    <div class="kpi-label">Consultations</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h2 class="section-title">Rendez-vous</h2>
+{% if appointments %}
+<table class="doc-table">
+  <thead><tr><th>Date</th><th>Heure</th><th>Patient</th><th>M&eacute;decin</th><th>Statut</th></tr></thead>
+  <tbody>
+    {% for appointment in appointments %}
+    <tr>
+      <td>{{ appointment.date }}</td>
+      <td>{{ appointment.time }}</td>
+      <td>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
+      <td>Dr. {{ appointment.doctor.user.get_full_name }}</td>
+      <td>{{ appointment.get_status_display }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-row">Aucun rendez-vous sur cette p&eacute;riode.</p>
+{% endif %}
+
+<h2 class="section-title">Consultations</h2>
+{% if consultations %}
+<table class="doc-table">
+  <thead><tr><th>Date</th><th>Patient</th><th>M&eacute;decin</th><th>Statut</th></tr></thead>
+  <tbody>
+    {% for consultation in consultations %}
+    <tr>
+      <td>{{ consultation.date }}</td>
+      <td>{{ consultation.patient.first_name }} {{ consultation.patient.last_name }}</td>
+      <td>Dr. {{ consultation.doctor.user.get_full_name }}</td>
+      <td>{{ consultation.get_status_display }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="empty-row">Aucune consultation sur cette p&eacute;riode.</p>
+{% endif %}
+{% endblock %}
+
+{% block signature_role %}Direction de la clinique{% endblock %}
+
+{% block footer_confidentiality %}Rapport d'activit&eacute; &mdash; {{ clinic.name }}{% endblock %}

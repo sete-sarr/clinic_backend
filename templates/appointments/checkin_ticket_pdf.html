@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>Ticket de passage</title>
+<style>
+  :root {
+    --color-primary: #2563EB;
+    --color-accent: #0F766E;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6B7280;
+    --color-border: #E5E7EB;
+    --color-surface-secondary: #F3F4F6;
+  }
+  @page { size: A5; margin: 1.2cm; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Inter', 'Segoe UI', sans-serif; color: var(--color-text-primary); font-size: 11px; line-height: 1.5; }
+
+  .clinic-identity { display: flex; align-items: center; gap: 10px; padding-bottom: 12px; margin-bottom: 16px; border-bottom: 3px solid var(--color-primary); }
+  .clinic-logo { width: 32px; height: 32px; object-fit: contain; }
+  .clinic-logo-fallback {
+    width: 32px; height: 32px; border-radius: 8px; background: var(--color-primary);
+    color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px;
+  }
+  .clinic-name { font-size: 14px; font-weight: 700; }
+  .clinic-sub { font-size: 9.5px; color: var(--color-text-secondary); }
+
+  .ticket {
+    border: 1px solid var(--color-border);
+    border-radius: 12px;
+    padding: 24px;
+    text-align: center;
+    background: var(--color-surface-secondary);
+  }
+  .ticket-label { color: var(--color-text-secondary); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .ticket-number { color: var(--color-accent); font-size: 36px; font-weight: 700; margin: 4px 0 20px; }
+  .field { text-align: left; padding: 9px 0; border-top: 1px solid var(--color-border); }
+  .field:first-of-type { border-top: none; }
+  .field-label { color: var(--color-text-secondary); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.02em; }
+  .field-value { font-size: 13px; font-weight: 600; margin-top: 1px; }
+  .patient-number { font-size: 16px; color: var(--color-primary); }
+
+  .footer-note { margin-top: 16px; text-align: center; font-size: 8.5px; color: var(--color-text-secondary); }
+</style>
+</head>
+<body>
+  <div class="clinic-identity">
+    {% if appointment.clinic.logo_print %}
+      <img class="clinic-logo" src="{{ appointment.clinic.logo_print.path }}" alt="{{ appointment.clinic.name }}" />
+    {% else %}
+      <div class="clinic-logo-fallback">{{ appointment.clinic.name|slice:":1" }}</div>
+    {% endif %}
+    <div>
+      <div class="clinic-name">{{ appointment.clinic.name }}</div>
+      <div class="clinic-sub">Ticket de passage</div>
+    </div>
+  </div>
+
+  <div class="ticket">
+    <div class="ticket-label">N&deg; de ticket</div>
+    <div class="ticket-number">{{ appointment.ticket_number }}</div>
+
+    <div class="field">
+      <div class="field-label">Patient</div>
+      <div class="field-value">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">N&deg; patient</div>
+      <div class="field-value patient-number">{{ appointment.patient.patient_number }}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">D&eacute;partement</div>
+      <div class="field-value">
+        {% if appointment.doctor.department %}{{ appointment.doctor.department.name }}{% else %}&mdash;{% endif %}
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">M&eacute;decin</div>
+      <div class="field-value">Dr. {{ appointment.doctor.user.get_full_name }}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Rendez-vous</div>
+      <div class="field-value">{{ appointment.date }} &middot; {{ appointment.time }}</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Arriv&eacute;e enregistr&eacute;e</div>
+      <div class="field-value">{{ appointment.checked_in_at }}</div>
+    </div>
+  </div>
+
+  <div class="footer-note">{{ appointment.clinic.name }} &mdash; document g&eacute;n&eacute;r&eacute; automatiquement</div>
+</body>
+</html>

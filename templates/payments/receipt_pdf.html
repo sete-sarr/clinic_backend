@@ -1,0 +1,50 @@
+{% extends "pdf/base_document.html" %}
+
+{% block doc_title %}Re&ccedil;u de paiement #{{ payment.id }}{% endblock %}
+
+{% block doc_title_label %}RE&Ccedil;U{% endblock %}
+
+{% block doc_number %}<div class="doc-number">REC-{{ payment.id }}</div>{% endblock %}
+
+{% block doc_meta %}
+<div class="doc-meta-row"><strong>Date :</strong> {{ payment.date }}</div>
+{% endblock %}
+
+{% block doc_status %}
+{% if payment.status == "validated" %}
+  <span class="status-badge status-success">{{ payment.get_status_display }}</span>
+{% elif payment.status == "refunded" %}
+  <span class="status-badge status-error">{{ payment.get_status_display }}</span>
+{% else %}
+  <span class="status-badge status-warning">{{ payment.get_status_display }}</span>
+{% endif %}
+{% endblock %}
+
+{% block info_cards %}
+<div class="info-cards">
+  <div class="info-card">
+    <div class="info-card-title">Patient</div>
+    <div class="primary-line">{{ invoice.patient.first_name }} {{ invoice.patient.last_name }}</div>
+    <div class="secondary-line">{{ invoice.patient.patient_number }}</div>
+  </div>
+  <div class="info-card">
+    <div class="info-card-title">Informations</div>
+    <div class="info-row"><span class="label">Facture</span><span class="value">{{ invoice.number }}</span></div>
+    <div class="info-row"><span class="label">Mode de paiement</span><span class="value">{{ payment.get_method_display }}</span></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block totals %}
+<div class="totals-block" style="width: 320px;">
+  <table>
+    <tr><td class="label">Total de la facture</td><td class="value">{{ invoice.total_amount }}</td></tr>
+    <tr><td class="label">Solde restant</td><td class="value">{{ invoice.balance_due }}</td></tr>
+    <tr class="grand-total"><td class="label">Montant re&ccedil;u</td><td class="value">{{ payment.amount }}</td></tr>
+  </table>
+</div>
+{% endblock %}
+
+{% block signature_role %}Service Caisse{% endblock %}
+
+{% block footer_confidentiality %}Re&ccedil;u de paiement &mdash; {{ clinic.name }}{% endblock %}

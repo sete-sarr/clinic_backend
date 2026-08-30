@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<title>{% block doc_title %}Document{% endblock %}</title>
+<style>
+  {# design-system/colors.md tokens — do not introduce ad hoc colors here. #}
+  :root {
+    --color-primary: #2563EB;
+    --color-primary-dark: #1E40AF;
+    --color-secondary: #10B981;
+    --color-accent: #0F766E;
+    --color-success: #16A34A;
+    --color-warning: #D97706;
+    --color-error: #DC2626;
+    --color-info: #0284C7;
+    --color-text-primary: #111827;
+    --color-text-secondary: #6B7280;
+    --color-border: #E5E7EB;
+    --color-surface-secondary: #F3F4F6;
+    --color-surface-tint: #EFF6FF;
+  }
+
+  @page {
+    size: A4;
+    margin: 1.6cm 1.8cm 2.2cm;
+    @bottom-left {
+      content: "{% block footer_confidentiality %}Document confidentiel{% endblock %}";
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      font-size: 8.5px;
+      color: #9CA3AF;
+    }
+    @bottom-right {
+      content: "Page " counter(page) " / " counter(pages);
+      font-family: 'Inter', 'Segoe UI', sans-serif;
+      font-size: 8.5px;
+      color: #9CA3AF;
+    }
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    color: var(--color-text-primary);
+    font-size: 10.5px;
+    line-height: 1.5;
+  }
+
+  /* ---------- Header ---------- */
+  .doc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: 16px;
+    margin-bottom: 20px;
+    border-bottom: 3px solid var(--color-primary);
+  }
+  .clinic-identity { display: flex; align-items: center; gap: 10px; }
+  .clinic-logo { width: 40px; height: 40px; object-fit: contain; }
+  .clinic-logo-fallback {
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--color-primary);
+    color: #fff; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 16px;
+  }
+  .clinic-name { font-size: 16px; font-weight: 700; color: var(--color-text-primary); }
+  .clinic-meta { font-size: 9px; color: var(--color-text-secondary); margin-top: 2px; }
+
+  .doc-title-block { text-align: right; }
+  .doc-title { font-size: 22px; font-weight: 700; color: var(--color-text-primary); letter-spacing: 0.02em; }
+  .doc-number { font-size: 11px; font-weight: 600; color: var(--color-primary); margin-top: 2px; }
+  .doc-meta-row { font-size: 9.5px; color: var(--color-text-secondary); margin-top: 6px; }
+  .doc-meta-row strong { color: var(--color-text-primary); font-weight: 600; }
+
+  .status-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 600;
+    margin-top: 6px;
+  }
+  .status-success { background: #DCFCE7; color: #14532D; }
+  .status-info { background: #E0F2FE; color: #0C4A6E; }
+  .status-warning { background: #FEF3C7; color: #78350F; }
+  .status-error { background: #FEE2E2; color: #7F1D1D; }
+  .status-neutral { background: var(--color-surface-secondary); color: var(--color-text-secondary); }
+
+  /* ---------- Info cards ---------- */
+  .info-cards { display: flex; gap: 16px; margin-bottom: 20px; }
+  .info-card {
+    flex: 1;
+    background: var(--color-surface-secondary);
+    border-radius: 10px;
+    padding: 14px 16px;
+  }
+  .info-card-title {
+    font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+    color: var(--color-text-secondary); margin-bottom: 8px;
+  }
+  .info-card .primary-line { font-size: 12.5px; font-weight: 700; color: var(--color-text-primary); }
+  .info-card .secondary-line { font-size: 9.5px; color: var(--color-text-secondary); margin-top: 2px; }
+  .info-card dl { margin: 0; }
+  .info-card .info-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5px; }
+  .info-card .info-row .label { color: var(--color-text-secondary); }
+  .info-card .info-row .value { color: var(--color-text-primary); font-weight: 600; }
+
+  /* ---------- Section titles ---------- */
+  h2.section-title {
+    font-size: 12px; font-weight: 700; color: var(--color-accent);
+    margin: 22px 0 8px;
+  }
+
+  /* ---------- Tables ---------- */
+  /* separate + spacing 0 (not collapse) so the header's border-radius actually renders */
+  table.doc-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 6px; }
+  table.doc-table thead { display: table-header-group; }
+  table.doc-table tr { page-break-inside: avoid; break-inside: avoid; }
+  table.doc-table th {
+    background: var(--color-primary);
+    color: #fff;
+    text-align: left;
+    font-weight: 600;
+    font-size: 9.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: 9px 10px;
+  }
+  table.doc-table th:first-child { border-radius: 6px 0 0 6px; }
+  table.doc-table th:last-child { border-radius: 0 6px 6px 0; text-align: right; }
+  table.doc-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--color-border);
+    font-size: 10px;
+  }
+  table.doc-table td:last-child { text-align: right; }
+  table.doc-table tbody tr:nth-child(even) { background: #FAFBFC; }
+  .empty-row { color: #9CA3AF; font-style: italic; padding: 10px 0; }
+
+  /* ---------- Totals ---------- */
+  .totals-block { margin-top: 16px; width: 270px; margin-left: auto; }
+  .totals-block table { width: 100%; border-collapse: separate; border-spacing: 0; }
+  .totals-block td { padding: 5px 10px; font-size: 10px; }
+  .totals-block .label { color: var(--color-text-secondary); }
+  .totals-block .value { text-align: right; color: var(--color-text-primary); font-weight: 600; }
+  .totals-block .grand-total td {
+    background: var(--color-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px;
+  }
+  .totals-block .grand-total .label { color: #fff; }
+  .totals-block .grand-total td:first-child { border-radius: 6px 0 0 6px; }
+  .totals-block .grand-total td:last-child { border-radius: 0 6px 6px 0; }
+
+  /* ---------- Notes / signature ---------- */
+  .bottom-block { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 32px; }
+  .notes-card {
+    flex: 1;
+    max-width: 60%;
+    background: var(--color-surface-secondary);
+    border-radius: 10px;
+    padding: 12px 16px;
+    font-size: 9.5px;
+    color: var(--color-text-secondary);
+  }
+  .notes-card .notes-title { font-weight: 700; color: var(--color-text-primary); margin-bottom: 4px; font-size: 9.5px; }
+  .signature-block { text-align: center; min-width: 180px; }
+  .signature-line { border-top: 1px solid var(--color-text-primary); margin-top: 30px; padding-top: 6px; }
+  .signature-role { font-weight: 700; font-size: 10px; }
+  .signature-clinic { font-size: 9px; color: var(--color-text-secondary); }
+
+  /* ---------- Confidentiality banner ---------- */
+  .confidential-banner {
+    margin-top: 18px;
+    padding: 8px 12px;
+    border-left: 3px solid var(--color-warning);
+    background: #FFFBEB;
+    font-size: 9px;
+    color: #78350F;
+  }
+
+  .muted { color: var(--color-text-secondary); }
+</style>
+{% block extra_style %}{% endblock %}
+</head>
+<body>
+
+  <div class="doc-header">
+    <div class="clinic-identity">
+      {% if clinic.logo_print %}
+        <img class="clinic-logo" src="{{ clinic.logo_print.path }}" alt="{{ clinic.name }}" />
+      {% else %}
+        <div class="clinic-logo-fallback">{{ clinic.name|slice:":1" }}</div>
+      {% endif %}
+      <div>
+        <div class="clinic-name">{{ clinic.name }}</div>
+        <div class="clinic-meta">
+          {% if clinic.address %}{{ clinic.address }}{% endif %}
+          {% if clinic.phone %}&middot; {{ clinic.phone }}{% endif %}
+          {% if clinic.email %}&middot; {{ clinic.email }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <div class="doc-title-block">
+      <div class="doc-title">{% block doc_title_label %}{% endblock %}</div>
+      {% block doc_number %}{% endblock %}
+      {% block doc_meta %}{% endblock %}
+      {% block doc_status %}{% endblock %}
+    </div>
+  </div>
+
+  {% block info_cards %}{% endblock %}
+
+  {% block content %}{% endblock %}
+
+  {% block totals %}{% endblock %}
+
+  <div class="bottom-block">
+    {% block notes %}
+    <div class="notes-card">
+      <div class="notes-title">Notes</div>
+      Merci pour votre confiance. Pour toute question, n'h&eacute;sitez pas &agrave; nous contacter.
+    </div>
+    {% endblock %}
+    {% block signature %}
+    <div class="signature-block">
+      <div class="signature-line">
+        <div class="signature-role">{% block signature_role %}Service administratif{% endblock %}</div>
+        <div class="signature-clinic">{{ clinic.name }}</div>
+      </div>
+    </div>
+    {% endblock %}
+  </div>
+
+  {% block confidentiality %}{% endblock %}
+
+</body>
+</html>
