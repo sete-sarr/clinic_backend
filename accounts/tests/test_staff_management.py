@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -89,6 +90,35 @@ class StaffPermissionTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.assertEqual(response.data["role"], "clinic_admin")
 
+    def test_same_username_in_a_different_clinic_is_allowed(self):
+        # Usernames are unique per clinic (User.Meta.constraints), not globally — an unrelated
+        # clinic already using "new.staff" (see other tests in this class) must never block this
+        # clinic from using the same username for its own staff member.
+        other_clinic = create_clinic("Other Clinic")
+        create_user(clinic=other_clinic, username="cross.clinic.name", role="secretary")
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("staff-list"), self._payload(username="cross.clinic.name", email="cross@example.com")
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+    def test_same_username_within_the_same_clinic_is_rejected(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("staff-list"), self._payload(username=self.secretary.username, email="another@example.com")
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_duplicate_email_across_clinics_is_rejected(self):
+        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics.
+        other_clinic = create_clinic("Other Clinic")
+        other_user = create_user(clinic=other_clinic, role="secretary")
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("staff-list"), self._payload(username="fresh.username", email=other_user.email)
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
     def test_create_staff_with_doctor_role_is_rejected(self):
         self.client.force_authenticate(self.admin)
         response = self.client.post(reverse("staff-list"), self._payload(username="not.a.doctor", role="doctor"))
@@ -104,6 +134,7 @@ class StaffPermissionTests(APITestCase):
 
 class StaffBusinessRuleTests(APITestCase):
     def setUp(self):
+        cache.clear()  # login is now ScopedRateThrottle'd (security audit, 2026-09-02).
         self.clinic = create_clinic("Clinic")
         self.admin = create_user(clinic=self.clinic, role="clinic_admin")
         self.other_admin = create_user(clinic=self.clinic, role="clinic_admin")
@@ -141,7 +172,7 @@ class StaffBusinessRuleTests(APITestCase):
         self.assertFalse(self.secretary.is_active)
 
         response = self.client.post(
-            reverse("token_obtain_pair"), {"username": self.secretary.username, "password": "pass1234!"}
+            reverse("token_obtain_pair"), {"email": self.secretary.email, "password": "pass1234!"}
         )
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
 
@@ -154,7 +185,7 @@ class StaffBusinessRuleTests(APITestCase):
         self.assertTrue(self.secretary.is_active)
 
         login_response = self.client.post(
-            reverse("token_obtain_pair"), {"username": self.secretary.username, "password": "pass1234!"}
+            reverse("token_obtain_pair"), {"email": self.secretary.email, "password": "pass1234!"}
         )
         self.assertEqual(login_response.status_code, status.HTTP_200_OK)
 

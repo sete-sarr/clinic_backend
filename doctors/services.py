@@ -10,7 +10,9 @@ from .models import Doctor
 @transaction.atomic
 def create_doctor(*, clinic, professional_number, specialty, user_data, department=None, phone=""):
     if department and department.clinic_id != clinic.id:
-        raise ValidationError("Department does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid department.")
     user = User.objects.create_user(
         username=user_data["username"],
         email=user_data.get("email", ""),

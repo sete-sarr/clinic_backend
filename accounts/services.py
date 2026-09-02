@@ -51,6 +51,17 @@ def activate_patient_account(*, clinic_id, patient_number, phone, date_of_birth,
     if patient is None:
         raise ValidationError("No matching patient record was found.")
 
+    # email is the unique login identifier platform-wide (User.USERNAME_FIELD) — Patient.email is
+    # optional, so this must be checked before verify_otp burns the one-time code on an activation
+    # that can never succeed.
+    if not patient.email:
+        raise ValidationError(
+            "No email address is on file for this patient. Please contact your clinic to add one "
+            "before activating your portal account."
+        )
+    if User.objects.filter(email=patient.email).exists():
+        raise ValidationError("A user with that email already exists.")
+
     verify_otp(principal=patient, code=code, purpose=OtpCode.Purpose.ACCOUNT_ACTIVATION)
 
     user = User.objects.create_user(

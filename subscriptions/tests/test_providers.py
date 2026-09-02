@@ -22,6 +22,10 @@ class GetPaymentProviderTests(TestCase):
 @override_settings(
     STRIPE_PRICE_STARTER_MONTHLY="price_starter_monthly",
     STRIPE_PRICE_STARTER_ANNUAL="price_starter_annual",
+    STRIPE_PRICE_ENTERPRISE_ANNUAL="price_enterprise_annual",
+    # Deliberately left unset: test_create_checkout_session_missing_price_id_returns_failure
+    # needs one real tier/cycle pair with no Price ID configured to exercise the failure path.
+    STRIPE_PRICE_ENTERPRISE_MONTHLY="",
 )
 class StripePaymentProviderTests(TestCase):
     def setUp(self):
@@ -48,9 +52,19 @@ class StripePaymentProviderTests(TestCase):
         self.assertFalse(result.success)
         self.assertIn("stripe down", result.error_message)
 
-    def test_create_checkout_session_missing_price_id_returns_failure(self):
+    @patch("subscriptions.providers.stripe_provider.stripe.checkout.Session.create")
+    def test_create_checkout_session_enterprise_annual_success(self, mock_create):
+        mock_create.return_value = MagicMock(url="https://checkout.stripe.com/session/enterprise")
         result = self.provider.create_checkout_session(
             clinic=self.clinic, plan_tier=Clinic.PlanTier.ENTERPRISE, billing_cycle=Clinic.BillingCycle.ANNUAL,
+            success_url="https://example.com/success", cancel_url="https://example.com/cancel",
+        )
+        self.assertTrue(result.success)
+        self.assertEqual(result.checkout_url, "https://checkout.stripe.com/session/enterprise")
+
+    def test_create_checkout_session_missing_price_id_returns_failure(self):
+        result = self.provider.create_checkout_session(
+            clinic=self.clinic, plan_tier=Clinic.PlanTier.ENTERPRISE, billing_cycle=Clinic.BillingCycle.MONTHLY,
             success_url="https://example.com/success", cancel_url="https://example.com/cancel",
         )
         self.assertFalse(result.success)

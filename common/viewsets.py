@@ -2,7 +2,7 @@ from django.utils import timezone
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
-from .permissions import IsSameClinic
+from .permissions import IsSameClinic, SubscriptionActivePermission
 
 
 class TenantScopedMixin:
@@ -14,7 +14,7 @@ class TenantScopedMixin:
     request user's clinic, no exceptions.
     """
 
-    permission_classes = [IsAuthenticated, IsSameClinic]
+    permission_classes = [IsAuthenticated, IsSameClinic, SubscriptionActivePermission]
 
     def get_queryset(self):
         qs = super().get_queryset()

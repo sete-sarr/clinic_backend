@@ -3,6 +3,7 @@ from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
 from billing.models import Invoice
@@ -24,8 +25,9 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
     queryset = Invoice.objects.select_related("patient", "doctor__user", "clinic").prefetch_related(
         "lines", "payments"
     )
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["status", "patient"]
+    search_fields = ["number", "patient__first_name", "patient__last_name", "patient__patient_number"]
     export_fields = [
         "number",
         "issue_date",

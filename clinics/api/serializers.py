@@ -4,6 +4,10 @@ from rest_framework import serializers
 from clinics.models import Clinic
 
 MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
+# design-system/: logos are limited to PNG/JPG/JPEG. ImageField already rejects anything that
+# isn't a genuine, Pillow-decodable image (security audit, 2026-09-02) — this narrows that further
+# to the specific formats the design system allows, rather than any valid raster format.
+ALLOWED_LOGO_FORMATS = {"PNG", "JPEG"}
 
 
 def validate_logo_size(value):
@@ -11,11 +15,25 @@ def validate_logo_size(value):
         raise ValidationError("L'image ne doit pas dépasser 2 Mo.")
 
 
+def validate_logo_format(value):
+    image_format = getattr(getattr(value, "image", None), "format", None)
+    if image_format not in ALLOWED_LOGO_FORMATS:
+        raise ValidationError("Seuls les formats PNG et JPEG sont acceptés.")
+
+
 class ClinicSerializer(serializers.ModelSerializer):
-    logo_light = serializers.ImageField(required=False, allow_null=True, validators=[validate_logo_size])
-    logo_dark = serializers.ImageField(required=False, allow_null=True, validators=[validate_logo_size])
-    logo_print = serializers.ImageField(required=False, allow_null=True, validators=[validate_logo_size])
-    favicon = serializers.ImageField(required=False, allow_null=True, validators=[validate_logo_size])
+    logo_light = serializers.ImageField(
+        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
+    )
+    logo_dark = serializers.ImageField(
+        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
+    )
+    logo_print = serializers.ImageField(
+        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
+    )
+    favicon = serializers.ImageField(
+        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
+    )
 
     class Meta:
         model = Clinic

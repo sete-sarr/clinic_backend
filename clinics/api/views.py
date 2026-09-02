@@ -3,6 +3,8 @@ from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from clinics.models import Clinic
+from common.audit import record_audit
+from common.models import AuditLog
 from common.permissions import IsClinicAdmin
 
 from .serializers import ClinicPublicSerializer, ClinicSerializer
@@ -35,6 +37,10 @@ class ClinicViewSet(
         if self.action in ("update", "partial_update"):
             return [IsAuthenticated(), IsClinicAdmin()]
         return super().get_permissions()
+
+    def perform_update(self, serializer):
+        clinic = serializer.save()
+        record_audit(user=self.request.user, action=AuditLog.Action.UPDATE, obj=clinic)
 
 
 class ClinicPublicListView(generics.ListAPIView):

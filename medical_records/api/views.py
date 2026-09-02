@@ -1,9 +1,11 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
+from rest_framework.filters import SearchFilter
+from rest_framework.permissions import IsAuthenticated
 
 from common.audit import record_audit
 from common.models import AuditLog
-from common.permissions import IsSameClinic, in_role
+from common.permissions import IsSameClinic, SubscriptionActivePermission, in_role
 from medical_records.models import MedicalRecord
 from medical_records.permissions import CanAccessMedicalRecord
 
@@ -19,10 +21,14 @@ class MedicalRecordViewSet(
     """No create (auto-provisioned with the patient) and no delete (permissions-matrix.md: delete forbidden)."""
 
     serializer_class = MedicalRecordSerializer
-    permission_classes = [IsSameClinic, CanAccessMedicalRecord]
+    # IsAuthenticated is explicit here (security audit, 2026-09-02) even though
+    # CanAccessMedicalRecord already rejects anonymous users on its own — matching the style used
+    # by every other tenant-scoped ViewSet, for consistency.
+    permission_classes = [IsAuthenticated, IsSameClinic, CanAccessMedicalRecord, SubscriptionActivePermission]
     queryset = MedicalRecord.objects.select_related("patient", "clinic").all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["patient"]
+    search_fields = ["patient__first_name", "patient__last_name", "patient__patient_number"]
 
     def get_queryset(self):
         qs = super().get_queryset()

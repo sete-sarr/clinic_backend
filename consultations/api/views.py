@@ -1,5 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
 
 from common.audit import record_audit
 from common.models import AuditLog
@@ -15,8 +16,9 @@ class ConsultationViewSet(TenantScopedModelViewSet):
     serializer_class = ConsultationSerializer
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageConsultations]
     queryset = Consultation.objects.select_related("patient", "doctor__user", "clinic").all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["status", "patient", "doctor"]
+    search_fields = ["patient__first_name", "patient__last_name", "patient__patient_number"]
 
     def get_queryset(self):
         qs = super().get_queryset()

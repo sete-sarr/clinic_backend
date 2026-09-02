@@ -22,7 +22,7 @@ from accounts.services import (
 )
 from common.audit import record_audit
 from common.models import AuditLog
-from common.permissions import IsClinicAdmin, IsSameClinic
+from common.permissions import IsClinicAdmin, IsSameClinic, SubscriptionActivePermission
 from common.viewsets import TenantScopedMixin
 
 from .serializers import (
@@ -39,7 +39,12 @@ from .serializers import (
 
 
 class TokenObtainPairView(BaseTokenObtainPairView):
+    """Per-IP throttled (security audit, 2026-09-02) — login was previously unrestricted, making
+    password brute-forcing against a known email trivial."""
+
     serializer_class = TokenObtainPairSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "login"
 
 
 class MeView(APIView):
@@ -162,7 +167,7 @@ class StaffViewSet(
     unambiguous — see docs/known-issues.md #3 for the ambiguity this avoids repeating.
     """
 
-    permission_classes = [IsAuthenticated, IsSameClinic, IsClinicAdmin]
+    permission_classes = [IsAuthenticated, IsSameClinic, IsClinicAdmin, SubscriptionActivePermission]
     queryset = User.objects.exclude(groups__name="patient").prefetch_related("groups").order_by("last_name", "first_name", "id")
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]

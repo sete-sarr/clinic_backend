@@ -4,6 +4,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
 from common.audit import record_audit
@@ -32,8 +33,14 @@ class PaymentViewSet(
     serializer_class = PaymentSerializer
     permission_classes = TenantScopedMixin.permission_classes + [CanManagePayments]
     queryset = Payment.objects.select_related("invoice", "invoice__patient", "clinic").all()
-    filter_backends = [DjangoFilterBackend]
+    filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["status", "method", "invoice"]
+    search_fields = [
+        "invoice__number",
+        "invoice__patient__first_name",
+        "invoice__patient__last_name",
+        "invoice__patient__patient_number",
+    ]
     export_fields = ["date", "invoice_number", "patient_display", "method", "amount", "status"]
 
     def get_queryset(self):

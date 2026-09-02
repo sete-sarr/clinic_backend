@@ -39,6 +39,52 @@ class DoctorTenantIsolationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.assertEqual(response.data["user"]["username"], "dr.jones")
 
+    def test_same_username_in_a_different_clinic_is_allowed(self):
+        # Usernames are unique per clinic (User.Meta.constraints), not globally — clinic A already
+        # has a "doctor_user_a" (see setUp), an unrelated clinic B must be able to reuse it.
+        self.client.force_authenticate(self.admin_b)
+        payload = {
+            "username": self.clinic_a.users.exclude(pk=self.admin_a.pk).first().username,
+            "email": "unrelated.doctor@example.com",
+            "first_name": "Unrelated",
+            "last_name": "Doctor",
+            "password": "S3curePass!23",
+            "professional_number": "DOC-010",
+            "specialty": "General",
+        }
+        response = self.client.post(reverse("doctor-list"), payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+    def test_same_username_within_the_same_clinic_is_rejected(self):
+        self.client.force_authenticate(self.admin_a)
+        payload = {
+            "username": self.admin_a.username,
+            "email": "another.doctor@example.com",
+            "first_name": "Another",
+            "last_name": "Doctor",
+            "password": "S3curePass!23",
+            "professional_number": "DOC-011",
+            "specialty": "General",
+        }
+        response = self.client.post(reverse("doctor-list"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_duplicate_email_across_clinics_is_rejected(self):
+        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics,
+        # unlike username.
+        self.client.force_authenticate(self.admin_b)
+        payload = {
+            "username": "dr.unique.username",
+            "email": self.admin_a.email,
+            "first_name": "Dup",
+            "last_name": "Email",
+            "password": "S3curePass!23",
+            "professional_number": "DOC-012",
+            "specialty": "General",
+        }
+        response = self.client.post(reverse("doctor-list"), payload)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
 
 class DoctorCrossClinicFKTests(APITestCase):
     """Regression coverage for the cross-tenant FK injection audit finding: a clinic_admin must not

@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin"]
 
@@ -36,3 +36,28 @@ class IsSameClinic(BasePermission):
             return True
         obj_clinic_id = getattr(obj, "clinic_id", None)
         return bool(user.clinic_id) and obj_clinic_id == user.clinic_id
+
+
+class SubscriptionActivePermission(BasePermission):
+    """Feature gate (business/subscription-billing-policy.md, docs/known-issues.md #9): a
+    Suspended or Cancelled clinic loses the ability to create/modify records, but never loses
+    read access to its existing data. This is additive to, and never a substitute for,
+    IsSameClinic — it must never be used as the sole permission on a tenant-scoped view."""
+
+    message = (
+        "This clinic's subscription is suspended. New or updated records cannot be saved "
+        "until the subscription is reactivated."
+    )
+
+    _BLOCKED_STATUSES = {"suspended", "cancelled"}
+
+    def has_permission(self, request, view):
+        if request.method in SAFE_METHODS:
+            return True
+        user = request.user
+        if not user or not user.is_authenticated or user.is_superuser:
+            return True
+        clinic = getattr(user, "clinic", None)
+        if not clinic:
+            return True
+        return clinic.subscription_status not in self._BLOCKED_STATUSES

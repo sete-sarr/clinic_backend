@@ -4,6 +4,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as Ba
 
 from accounts.models import User
 from accounts.services import STAFF_ROLES_ASSIGNABLE
+from clinics.models import Clinic
 from common.audit import record_audit
 from common.models import AuditLog
 
@@ -54,9 +55,21 @@ class ClinicRegistrationSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
-    def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("This username is already taken.")
+    # No validate_username here: this always creates a brand-new clinic, whose username
+    # namespace (unique per clinic, see User.Meta.constraints) is guaranteed empty.
+
+    def validate_clinic_name(self, value):
+        # Case-insensitive, whitespace-trimmed uniqueness (Clinic.Meta.constraints) — the public
+        # clinic picker on the patient portal shows name only (ClinicPublicSerializer), so a
+        # duplicate name would be indistinguishable to a patient trying to pick their own clinic.
+        value = value.strip()
+        if Clinic.objects.filter(name__iexact=value).exists():
+            raise serializers.ValidationError("A clinic with that name already exists.")
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
         return value
 
 
@@ -84,15 +97,24 @@ class StaffListSerializer(serializers.ModelSerializer):
 
 class StaffCreateSerializer(serializers.Serializer):
     username = serializers.CharField(max_length=150)
-    email = serializers.EmailField(required=False, allow_blank=True, default="")
+    email = serializers.EmailField()
     first_name = serializers.CharField(max_length=150)
     last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True, validators=[validate_password])
     role = serializers.ChoiceField(choices=STAFF_ROLES_ASSIGNABLE)
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
+        # Scoped per clinic (User.Meta.constraints) — the same username may already be taken by
+        # an unrelated clinic, that's fine, only a collision within this clinic matters.
+        clinic = self.context["request"].user.clinic
+        if User.objects.filter(username=value, clinic=clinic).exists():
             raise serializers.ValidationError("This username is already taken.")
+        return value
+
+    def validate_email(self, value):
+        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics.
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("A user with that email already exists.")
         return value
 
 
@@ -116,6 +138,9 @@ class PatientActivationVerifySerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
     def validate_username(self, value):
-        if User.objects.filter(username=value).exists():
+        # Scoped per clinic (User.Meta.constraints). self.initial_data (raw payload) is used
+        # rather than attrs, since field-level validators run before cross-field attrs exist.
+        clinic_id = self.initial_data.get("clinic")
+        if User.objects.filter(username=value, clinic_id=clinic_id).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value

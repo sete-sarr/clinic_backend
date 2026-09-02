@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from billing.models import Invoice
 from common.testing import create_clinic, create_user
 from doctors.models import Doctor
 from patients.models import Patient
@@ -142,3 +143,42 @@ class InvoiceCrossClinicFKTests(APITestCase):
             reverse("invoice-detail", args=[created.data["id"]]), {"patient": self.patient_b.id}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class InvoiceSearchTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.accountant = create_user(clinic=self.clinic, role="accountant")
+        self.patient_match = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00040", first_name="Aminata",
+            last_name="Diallo", phone="0611111111", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.patient_other = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00041", first_name="Boubacar",
+            last_name="Kane", phone="0622222222", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.invoice_match = Invoice.objects.create(
+            clinic=self.clinic, patient=self.patient_match, number="INV-2026-00040",
+            issue_date=date.today(), subtotal="100.00", vat_rate="0.18", vat_amount="18.00",
+            total_amount="118.00", status=Invoice.Status.ISSUED,
+        )
+        self.invoice_other = Invoice.objects.create(
+            clinic=self.clinic, patient=self.patient_other, number="INV-2026-00041",
+            issue_date=date.today(), subtotal="100.00", vat_rate="0.18", vat_amount="18.00",
+            total_amount="118.00", status=Invoice.Status.ISSUED,
+        )
+        self.client.force_authenticate(self.accountant)
+
+    def test_search_by_patient_last_name_filters_results(self):
+        response = self.client.get(reverse("invoice-list"), {"search": "Diallo"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.invoice_match.id, ids)
+        self.assertNotIn(self.invoice_other.id, ids)
+
+    def test_search_by_invoice_number_filters_results(self):
+        response = self.client.get(reverse("invoice-list"), {"search": "00040"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.invoice_match.id, ids)
+        self.assertNotIn(self.invoice_other.id, ids)

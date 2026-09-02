@@ -4,6 +4,7 @@ from django.http import HttpResponse
 from django.utils import timezone
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.permissions import IsClinicAdmin
@@ -26,9 +27,12 @@ class ClinicActivityReportView(APIView):
         date_from = date.fromisoformat(date_from_raw) if date_from_raw else today.replace(day=1)
         date_to = date.fromisoformat(date_to_raw) if date_to_raw else today
 
-        pdf_bytes = render_clinic_activity_report_pdf(
-            clinic=clinic, user=request.user, date_from=date_from, date_to=date_to
-        )
+        try:
+            pdf_bytes = render_clinic_activity_report_pdf(
+                clinic=clinic, user=request.user, date_from=date_from, date_to=date_to
+            )
+        except PermissionError:
+            return Response({"code": 403, "message": "Not allowed to access this report.", "field": None}, status=403)
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="activity-report-{date_from}-{date_to}.pdf"'
         return response

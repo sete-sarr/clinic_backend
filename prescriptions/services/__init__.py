@@ -11,11 +11,13 @@ def create_prescription(*, clinic, consultation, patient, doctor=None, items, **
     if doctor is None:
         raise ValidationError("Doctor is required.")
     if patient.clinic_id != clinic.id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if doctor.clinic_id != clinic.id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
     if consultation.clinic_id != clinic.id:
-        raise ValidationError("Consultation does not belong to this clinic.")
+        raise ValidationError("Invalid consultation.")
     if not items:
         raise ValidationError("A prescription must contain at least one medication line.")
     if hasattr(consultation, "prescription"):
@@ -36,9 +38,11 @@ def update_prescription(*, prescription, items=None, **fields):
         raise ValidationError("A validated or cancelled prescription can no longer be edited.")
 
     if "patient" in fields and fields["patient"].clinic_id != prescription.clinic_id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != prescription.clinic_id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
 
     for key, value in fields.items():
         setattr(prescription, key, value)

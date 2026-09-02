@@ -21,11 +21,13 @@ def create_consultation(*, clinic, patient, appointment=None, is_follow_up=False
     if doctor is None:
         raise ValidationError("Doctor is required.")
     if patient.clinic_id != clinic.id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if doctor.clinic_id != clinic.id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
     if appointment and appointment.clinic_id != clinic.id:
-        raise ValidationError("Appointment does not belong to this clinic.")
+        raise ValidationError("Invalid appointment.")
     _check_single_consultation_per_appointment(appointment=appointment, is_follow_up=is_follow_up)
     return Consultation.objects.create(
         clinic=clinic, patient=patient, appointment=appointment, is_follow_up=is_follow_up, doctor=doctor, **fields
@@ -38,11 +40,13 @@ def update_consultation(*, consultation, **fields):
         raise ValidationError("A validated consultation is read-only and can no longer be edited.")
 
     if "patient" in fields and fields["patient"].clinic_id != consultation.clinic_id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != consultation.clinic_id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
     if "appointment" in fields and fields["appointment"] and fields["appointment"].clinic_id != consultation.clinic_id:
-        raise ValidationError("Appointment does not belong to this clinic.")
+        raise ValidationError("Invalid appointment.")
 
     if fields.get("status") == Consultation.Status.COMPLETED or (
         consultation.status == Consultation.Status.COMPLETED and "status" not in fields

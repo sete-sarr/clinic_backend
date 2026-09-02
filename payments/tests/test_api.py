@@ -7,6 +7,7 @@ from rest_framework.test import APITestCase
 from billing.models import Invoice, InvoiceLine
 from common.testing import create_clinic, create_user
 from patients.models import Patient
+from payments.models import Payment
 
 
 class PaymentBusinessRuleTests(APITestCase):
@@ -155,3 +156,50 @@ class PaymentCrossClinicFKTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.invoice_b.refresh_from_db()
         self.assertEqual(self.invoice_b.status, Invoice.Status.ISSUED)
+
+
+class PaymentSearchTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.accountant = create_user(clinic=self.clinic, role="accountant")
+        self.patient_match = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00030", first_name="Aminata",
+            last_name="Diallo", phone="0611111111", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.patient_other = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00031", first_name="Boubacar",
+            last_name="Kane", phone="0622222222", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.invoice_match = Invoice.objects.create(
+            clinic=self.clinic, patient=self.patient_match, number="INV-2026-00030",
+            issue_date=date.today(), subtotal="100.00", vat_rate="0.18", vat_amount="18.00",
+            total_amount="118.00", status=Invoice.Status.ISSUED,
+        )
+        self.invoice_other = Invoice.objects.create(
+            clinic=self.clinic, patient=self.patient_other, number="INV-2026-00031",
+            issue_date=date.today(), subtotal="100.00", vat_rate="0.18", vat_amount="18.00",
+            total_amount="118.00", status=Invoice.Status.ISSUED,
+        )
+        self.payment_match = Payment.objects.create(
+            clinic=self.clinic, invoice=self.invoice_match, amount="118.00", method=Payment.Method.CASH,
+            status=Payment.Status.VALIDATED, date=date.today(),
+        )
+        self.payment_other = Payment.objects.create(
+            clinic=self.clinic, invoice=self.invoice_other, amount="118.00", method=Payment.Method.CASH,
+            status=Payment.Status.VALIDATED, date=date.today(),
+        )
+        self.client.force_authenticate(self.accountant)
+
+    def test_search_by_patient_last_name_filters_results(self):
+        response = self.client.get(reverse("payment-list"), {"search": "Diallo"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.payment_match.id, ids)
+        self.assertNotIn(self.payment_other.id, ids)
+
+    def test_search_by_invoice_number_filters_results(self):
+        response = self.client.get(reverse("payment-list"), {"search": "00030"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.payment_match.id, ids)
+        self.assertNotIn(self.payment_other.id, ids)

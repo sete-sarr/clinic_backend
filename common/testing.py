@@ -19,6 +19,7 @@ def create_clinic(name=None):
 
 def create_user(*, clinic, role=None, username=None, **extra):
     username = username or _next_username("user")
+    extra.setdefault("email", f"{username}@example.com")
     user = User.objects.create_user(username=username, password="pass1234!", clinic=clinic, **extra)
     if role:
         group, _ = Group.objects.get_or_create(name=role)

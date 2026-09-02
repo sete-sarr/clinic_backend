@@ -4,7 +4,9 @@ from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 
+from common.audit import record_audit
 from common.exports import CsvExportMixin
+from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
 from patients.models import Patient
@@ -40,6 +42,20 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(id=patient_profile.id) if patient_profile else qs.none()
         return qs
+
+    def perform_create(self, serializer):
+        patient = serializer.save(clinic=self.request.user.clinic)
+        record_audit(user=self.request.user, action=AuditLog.Action.CREATE, obj=patient)
+
+    def perform_update(self, serializer):
+        patient = serializer.save()
+        record_audit(user=self.request.user, action=AuditLog.Action.UPDATE, obj=patient)
+
+    def perform_destroy(self, instance):
+        super().perform_destroy(instance)
+        record_audit(
+            user=self.request.user, action=AuditLog.Action.ARCHIVE, obj=instance, metadata={"reason": "deactivated"}
+        )
 
     @action(detail=True, methods=["get"], url_path="statement-pdf")
     def statement_pdf(self, request, pk=None):

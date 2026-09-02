@@ -12,6 +12,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(BASE_DIR / ".env")
+# Local-only overrides (gitignored, never present in production) — lets a developer point at a
+# local Postgres instance for pre-commit testing without touching the real .env (which may hold
+# production credentials). Only the keys actually present in .env.local are overridden; anything
+# not repeated there still comes from .env above.
+_local_env_file = BASE_DIR / ".env.local"
+if _local_env_file.exists():
+    environ.Env.read_env(_local_env_file, overwrite=True)
 
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
@@ -92,19 +99,19 @@ WSGI_APPLICATION = "backend.wsgi.application"
 
 # exemple_prod.md §1: production (Render + Supabase) sets a single DATABASE_URL (Supabase's
 # pooling connection string); local dev keeps the 5 separate DB_* fields already in .env.example.
-# if env("DATABASE_URL", default=""):
-DATABASES = {"default": env.db_url("DATABASE_URL")}
-# else:
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.postgresql",
-#             "NAME": env("DB_NAME"),
-#             "USER": env("DB_USER"),
-#             "PASSWORD": env("DB_PASSWORD"),
-#             "HOST": env("DB_HOST"),
-#             "PORT": env("DB_PORT"),
-#         }
-#     }
+if env("DATABASE_URL", default=""):
+    DATABASES = {"default": env.db_url("DATABASE_URL")}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": env("DB_HOST"),
+            "PORT": env("DB_PORT"),
+        }
+    }
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -121,6 +128,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
+    # "default" was missing entirely, which meant any FileField save (e.g. clinic logo upload)
+    # raised InvalidStorageError in production, not just in tests (found while adding logo
+    # upload tests during the security audit, 2026-09-02).
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
 MEDIA_URL = "media/"
@@ -152,6 +163,9 @@ REST_FRAMEWORK = {
         # Per-IP ceiling on public clinic self-registration — prevents automated bulk creation of
         # trial tenants (each one starts a real Stripe-adjacent trial lifecycle).
         "clinic_registration": "5/hour",
+        # Per-IP ceiling on login — without this, password brute-forcing against a known email is
+        # unrestricted (security audit finding, 2026-09-02).
+        "login": "10/min",
     },
 }
 

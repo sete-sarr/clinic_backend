@@ -37,9 +37,11 @@ def _compute_totals(*, lines, vat_rate):
 @transaction.atomic
 def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_RATE, issue_date=None, **fields):
     if patient.clinic_id != clinic.id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if doctor and doctor.clinic_id != clinic.id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
     if not lines:
         raise ValidationError("An invoice must contain at least one line.")
 
@@ -67,9 +69,11 @@ def update_invoice(*, invoice, lines=None, **fields):
         raise ValidationError("A paid or cancelled invoice can no longer be edited.")
 
     if "patient" in fields and fields["patient"].clinic_id != invoice.clinic_id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != invoice.clinic_id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
 
     vat_rate = fields.get("vat_rate", invoice.vat_rate)
 

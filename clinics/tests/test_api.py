@@ -1,9 +1,22 @@
+import io
+
 from django.urls import reverse
+from PIL import Image
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from clinics.models import Clinic
+from common.models import AuditLog
 from common.testing import create_clinic, create_user
+
+
+def _generate_image_upload(*, image_format, filename):
+    buffer = io.BytesIO()
+    Image.new("RGB", (10, 10), color="blue").save(buffer, format=image_format)
+    buffer.seek(0)
+    from django.core.files.uploadedfile import SimpleUploadedFile
+
+    return SimpleUploadedFile(filename, buffer.read(), content_type=f"image/{image_format.lower()}")
 
 
 class ClinicPublicListTests(APITestCase):
@@ -55,3 +68,42 @@ class ClinicSubscriptionFieldsReadOnlyTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.clinic.refresh_from_db()
         self.assertEqual(self.clinic.subscription_status, Clinic.SubscriptionStatus.TRIAL)
+
+    def test_update_records_audit_log(self):
+        self.client.force_authenticate(self.clinic_admin)
+        response = self.client.patch(reverse("clinic-detail", args=[self.clinic.id]), {"address": "1 Rue Test"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(
+            AuditLog.objects.filter(
+                action=AuditLog.Action.UPDATE, model_name="Clinic", object_id=str(self.clinic.id)
+            ).exists()
+        )
+
+
+class ClinicLogoUploadTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.clinic_admin = create_user(clinic=self.clinic, role="clinic_admin")
+        self.client.force_authenticate(self.clinic_admin)
+
+    def test_png_logo_is_accepted(self):
+        upload = _generate_image_upload(image_format="PNG", filename="logo.png")
+        response = self.client.patch(
+            reverse("clinic-detail", args=[self.clinic.id]), {"logo_light": upload}, format="multipart"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+
+    def test_jpeg_logo_is_accepted(self):
+        upload = _generate_image_upload(image_format="JPEG", filename="logo.jpg")
+        response = self.client.patch(
+            reverse("clinic-detail", args=[self.clinic.id]), {"logo_light": upload}, format="multipart"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+
+    def test_bmp_logo_is_rejected(self):
+        # security audit, 2026-09-02: only PNG/JPEG are accepted per design-system/.
+        upload = _generate_image_upload(image_format="BMP", filename="logo.bmp")
+        response = self.client.patch(
+            reverse("clinic-detail", args=[self.clinic.id]), {"logo_light": upload}, format="multipart"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

@@ -146,3 +146,47 @@ class PrescriptionCrossClinicFKTests(APITestCase):
         }
         response = self.client.post(reverse("prescription-list"), payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class PrescriptionSearchTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.doctor = _create_doctor(self.clinic)
+        self.patient_match = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00020", first_name="Aminata",
+            last_name="Diallo", phone="0611111111", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.patient_other = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00021", first_name="Boubacar",
+            last_name="Kane", phone="0622222222", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        consultation_match = Consultation.objects.create(
+            clinic=self.clinic, patient=self.patient_match, doctor=self.doctor, date=timezone.now()
+        )
+        consultation_other = Consultation.objects.create(
+            clinic=self.clinic, patient=self.patient_other, doctor=self.doctor, date=timezone.now()
+        )
+        item = {"medication_name": "Amoxicillin", "dosage": "500mg", "frequency": "3x/day", "duration": "7d", "quantity": 21}
+        self.prescription_match = Prescription.objects.create(
+            clinic=self.clinic, consultation=consultation_match, patient=self.patient_match, doctor=self.doctor
+        )
+        self.prescription_match.items.create(**item)
+        self.prescription_other = Prescription.objects.create(
+            clinic=self.clinic, consultation=consultation_other, patient=self.patient_other, doctor=self.doctor
+        )
+        self.prescription_other.items.create(**item)
+        self.client.force_authenticate(self.doctor.user)
+
+    def test_search_by_patient_last_name_filters_results(self):
+        response = self.client.get(reverse("prescription-list"), {"search": "Diallo"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.prescription_match.id, ids)
+        self.assertNotIn(self.prescription_other.id, ids)
+
+    def test_search_by_patient_number_filters_results(self):
+        response = self.client.get(reverse("prescription-list"), {"search": "00020"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.prescription_match.id, ids)
+        self.assertNotIn(self.prescription_other.id, ids)

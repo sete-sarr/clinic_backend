@@ -47,6 +47,14 @@ class ConsultationOwnerIsolationTests(APITestCase):
         ids = [item["id"] for item in response.data["results"]]
         self.assertNotIn(self.consultation.id, ids)
 
+    def test_doctor_b_gets_404_not_403_on_doctor_a_consultation_detail(self):
+        # docs/known-issues.md #1: the consultation is outside this doctor's queryset entirely, so
+        # it 404s before object-level permission is even checked — not a 403 (previously untested
+        # for consultations specifically; security audit, 2026-09-02).
+        self.client.force_authenticate(self.doctor_b.user)
+        response = self.client.get(reverse("consultation-detail", args=[self.consultation.id]))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
     def test_validated_consultation_is_read_only(self):
         self.consultation.status = Consultation.Status.VALIDATED
         self.consultation.save()
@@ -141,3 +149,38 @@ class ConsultationCrossClinicFKTests(APITestCase):
             reverse("consultation-detail", args=[consultation.id]), {"patient": self.patient_b.id}
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class ConsultationSearchTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.doctor = _create_doctor(self.clinic)
+        self.patient_match = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00010", first_name="Aminata",
+            last_name="Diallo", phone="0611111111", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.patient_other = Patient.objects.create(
+            clinic=self.clinic, patient_number="PAT-2026-00011", first_name="Boubacar",
+            last_name="Kane", phone="0622222222", date_of_birth=date(1990, 1, 1),
+            gender=Patient.Gender.OTHER,
+        )
+        self.consultation_match = Consultation.objects.create(
+            clinic=self.clinic, patient=self.patient_match, doctor=self.doctor, date=timezone.now()
+        )
+        self.consultation_other = Consultation.objects.create(
+            clinic=self.clinic, patient=self.patient_other, doctor=self.doctor, date=timezone.now()
+        )
+        self.client.force_authenticate(self.doctor.user)
+
+    def test_search_by_patient_last_name_filters_results(self):
+        response = self.client.get(reverse("consultation-list"), {"search": "Diallo"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.consultation_match.id, ids)
+        self.assertNotIn(self.consultation_other.id, ids)
+
+    def test_search_by_patient_number_filters_results(self):
+        response = self.client.get(reverse("consultation-list"), {"search": "00010"})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.consultation_match.id, ids)
+        self.assertNotIn(self.consultation_other.id, ids)

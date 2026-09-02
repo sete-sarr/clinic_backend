@@ -33,9 +33,11 @@ def validate_no_overlap(*, clinic, doctor, patient, date, time, exclude_pk=None)
 @transaction.atomic
 def create_appointment(*, clinic, doctor, patient, date, time, **fields):
     if patient.clinic_id != clinic.id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if doctor.clinic_id != clinic.id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
     # business/validation-rules.md VALIDATION DÉPARTEMENT: "Les rendez-vous requièrent un
     # département actif" / "Les départements inactifs ne peuvent pas recevoir de nouveaux
     # rendez-vous". A doctor with no department assigned is left unrestricted (department is
@@ -65,9 +67,11 @@ def update_appointment(*, appointment, **fields):
     patient = fields.get("patient", appointment.patient)
 
     if "patient" in fields and patient.clinic_id != appointment.clinic_id:
-        raise ValidationError("Patient does not belong to this clinic.")
+        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
+        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        raise ValidationError("Invalid patient.")
     if "doctor" in fields and doctor.clinic_id != appointment.clinic_id:
-        raise ValidationError("Doctor does not belong to this clinic.")
+        raise ValidationError("Invalid doctor.")
 
     if "date" in fields or "time" in fields:
         validate_not_past(date=date, time=time)

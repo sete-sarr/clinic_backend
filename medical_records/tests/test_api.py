@@ -76,3 +76,17 @@ class MedicalRecordAccessTests(APITestCase):
             reverse("medical-record-detail", args=[self.record.id]), {"observations": "Self-edited"}
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_search_by_patient_first_name_filters_results(self):
+        self.client.force_authenticate(self.doctor.user)
+        response = self.client.get(reverse("medical-record-list"), {"search": self.patient.first_name})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.record.id, ids)
+        self.assertNotIn(self.other_record.id, ids)
+
+    def test_search_by_patient_number_filters_results(self):
+        self.client.force_authenticate(self.doctor.user)
+        response = self.client.get(reverse("medical-record-list"), {"search": self.patient.patient_number})
+        ids = [item["id"] for item in response.data["results"]]
+        self.assertIn(self.record.id, ids)
+        self.assertNotIn(self.other_record.id, ids)

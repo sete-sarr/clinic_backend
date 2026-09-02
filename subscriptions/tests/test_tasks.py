@@ -57,7 +57,7 @@ class SendSubscriptionExpiringNotificationsTests(TestCase):
 
     def test_skips_clinic_admin_with_no_email(self):
         clinic = _active_clinic_expiring_in(30)
-        create_user(clinic=clinic, role="clinic_admin")  # no email set
+        create_user(clinic=clinic, role="clinic_admin", email="")  # no email set
 
         send_subscription_expiring_notifications()  # must not raise
 

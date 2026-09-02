@@ -1,4 +1,5 @@
 from django.db import models
+from django.db.models.functions import Lower
 
 from common.models import TimeStampedModel
 
@@ -69,6 +70,9 @@ class Clinic(TimeStampedModel):
 
     class Meta:
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(Lower("name"), name="unique_clinic_name_ci"),
+        ]
 
     def __str__(self):
         return self.name
