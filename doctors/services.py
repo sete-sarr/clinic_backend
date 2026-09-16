@@ -10,8 +10,8 @@ from .models import Doctor
 @transaction.atomic
 def create_doctor(*, clinic, professional_number, specialty, user_data, department=None, phone=""):
     if department and department.clinic_id != clinic.id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID soumis
+        # existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid department.")
     user = User.objects.create_user(
         username=user_data["username"],

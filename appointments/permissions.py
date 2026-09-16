@@ -10,8 +10,8 @@ class CanManageAppointments(BasePermission):
             return False
         if request.method in SAFE_METHODS:
             return in_role(user, "doctor", "secretary", "accountant", "clinic_admin", "patient")
-        # A patient may only create their own booking or cancel it — never the generic
-        # PUT/PATCH/DELETE path (business/permissions-matrix.md lists Patient only under Create).
+        # Un patient ne peut que créer sa propre réservation ou l'annuler — jamais via le chemin
+        # générique PUT/PATCH/DELETE (business/permissions-matrix.md ne liste Patient que sous Create).
         if request.method == "POST" and getattr(view, "action", None) in ("create", "cancel"):
             return in_role(user, "doctor", "secretary", "clinic_admin", "patient")
         return in_role(user, "doctor", "secretary", "clinic_admin")
@@ -21,7 +21,7 @@ class CanManageAppointments(BasePermission):
         if user.is_superuser or in_role(user, "clinic_admin", "secretary"):
             return True
         if in_role(user, "doctor"):
-            # business-rules.md: a doctor can only create/edit their own appointments.
+            # business-rules.md : un médecin ne peut créer/modifier que ses propres rendez-vous.
             return getattr(obj.doctor, "user_id", None) == user.id
         if in_role(user, "patient"):
             if request.method in SAFE_METHODS or getattr(view, "action", None) == "cancel":

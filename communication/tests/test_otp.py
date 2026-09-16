@@ -69,7 +69,7 @@ class OtpServiceTests(TestCase):
                 verify_otp(principal=self.patient, code="000000", purpose=OtpCode.Purpose.ACCOUNT_ACTIVATION)
         otp = OtpCode.objects.get(patient=self.patient)
         self.assertIsNotNone(otp.consumed_at)
-        # Even the (hypothetically) correct code no longer works once consumed.
+        # Même le code (hypothétiquement) correct ne fonctionne plus une fois consommé.
         with self.assertRaises(ValidationError):
             verify_otp(principal=self.patient, code="000000", purpose=OtpCode.Purpose.ACCOUNT_ACTIVATION)
 

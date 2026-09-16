@@ -21,9 +21,9 @@ class MedicalRecordViewSet(
     """No create (auto-provisioned with the patient) and no delete (permissions-matrix.md: delete forbidden)."""
 
     serializer_class = MedicalRecordSerializer
-    # IsAuthenticated is explicit here (security audit, 2026-09-02) even though
-    # CanAccessMedicalRecord already rejects anonymous users on its own — matching the style used
-    # by every other tenant-scoped ViewSet, for consistency.
+    # IsAuthenticated est explicite ici (audit de sécurité, 2026-09-02) même si
+    # CanAccessMedicalRecord rejette déjà les utilisateurs anonymes de son côté — pour rester
+    # cohérent avec le style utilisé par tous les autres ViewSet à portée tenant.
     permission_classes = [IsAuthenticated, IsSameClinic, CanAccessMedicalRecord, SubscriptionActivePermission]
     queryset = MedicalRecord.objects.select_related("patient", "clinic").all()
     filter_backends = [DjangoFilterBackend, SearchFilter]
@@ -38,10 +38,10 @@ class MedicalRecordViewSet(
         if not getattr(user, "clinic_id", None):
             return qs.none()
         qs = qs.filter(clinic_id=user.clinic_id)
-        # CanAccessMedicalRecord grants patients SAFE_METHODS access; without this branch the
-        # list endpoint would return every patient's medical record in the clinic — object-level
-        # permission checks only run on retrieve/update, never on the list queryset (security fix,
-        # docs/known-issues.md).
+        # CanAccessMedicalRecord accorde aux patients l'accès via SAFE_METHODS ; sans cette branche,
+        # l'endpoint de liste renverrait le dossier médical de tous les patients de la clinique — les
+        # vérifications de permission au niveau objet ne s'exécutent que sur retrieve/update, jamais
+        # sur le queryset de liste (correctif de sécurité, docs/known-issues.md).
         if in_role(user, "patient") and not in_role(user, "doctor"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()

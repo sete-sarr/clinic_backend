@@ -10,9 +10,10 @@ logger = logging.getLogger(__name__)
 
 class StubSmsProvider(SmsProvider):
     """
-    Stand-in for a real SMS provider — used wherever no provider is configured (docs/known-issues.md).
-    Logs instead of sending and always "succeeds", so the rest of the communication layer (retry,
-    audit, OTP flow) can be built and tested against a real interface without live credentials.
+    Substitut à un véritable fournisseur SMS — utilisé partout où aucun fournisseur n'est configuré
+    (docs/known-issues.md). Journalise au lieu d'envoyer et "réussit" toujours, afin que le reste de
+    la couche de communication (nouvelle tentative, audit, flux OTP) puisse être construit et testé
+    contre une interface réelle sans identifiants réels.
     """
 
     name = "stub_sms"
@@ -23,8 +24,8 @@ class StubSmsProvider(SmsProvider):
 
 
 class HttpSmsProvider(SmsProvider):
-    """Sends via httpsms.com — relays through the Android device registered as HTTPSMS_FROM_NUMBER
-    on the httpsms.com account. See https://httpsms.com/docs/api for the API contract."""
+    """Envoie via httpsms.com — relaie via l'appareil Android enregistré comme HTTPSMS_FROM_NUMBER
+    sur le compte httpsms.com. Voir https://httpsms.com/docs/api pour le contrat d'API."""
 
     name = "httpsms"
     API_URL = "https://api.httpsms.com/v1/messages/send"
@@ -50,9 +51,10 @@ class HttpSmsProvider(SmsProvider):
 
 
 def get_sms_provider() -> SmsProvider:
-    """communication/tasks.py resolves the SMS provider through here rather than importing a
-    concrete class directly, so missing credentials degrade to the stub instead of crashing
-    delivery (same "architecture ready, credentials not" posture as Stripe in settings.py)."""
+    """communication/tasks.py résout le fournisseur SMS en passant par ici plutôt qu'en important
+    directement une classe concrète, de sorte que des identifiants manquants dégradent vers le
+    stub au lieu de faire planter l'envoi (même posture "architecture prête, identifiants non"
+    que Stripe dans settings.py)."""
     if settings.HTTPSMS_API_KEY and settings.HTTPSMS_FROM_NUMBER:
         return HttpSmsProvider()
     logger.warning("HTTPSMS_API_KEY/HTTPSMS_FROM_NUMBER not configured — falling back to StubSmsProvider.")

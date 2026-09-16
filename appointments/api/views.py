@@ -21,9 +21,10 @@ from .serializers import AppointmentSerializer
 
 
 class AppointmentFilterSet(django_filters.FilterSet):
-    # Lets a doctor/secretary find a patient's appointment by the patient_number printed on their
-    # check-in ticket (business need: no such filter existed before this feature — patient_number
-    # search previously only existed on the Patients list/picker, not here).
+    # Permet à un médecin/secrétaire de retrouver le rendez-vous d'un patient via le patient_number
+    # imprimé sur son ticket d'enregistrement (besoin métier : ce filtre n'existait pas avant
+    # cette fonctionnalité — la recherche par patient_number n'existait auparavant que sur la
+    # liste/le sélecteur de patients, pas ici).
     patient_number = django_filters.CharFilter(field_name="patient__patient_number", lookup_expr="icontains")
     checked_in = django_filters.BooleanFilter(method="filter_checked_in")
 
@@ -80,7 +81,7 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
 
     @action(detail=True, methods=["post"])
     def cancel(self, request, pk=None):
-        appointment = self.get_object()  # applies get_queryset scoping + has_object_permission
+        appointment = self.get_object()  # applique le scoping de get_queryset + has_object_permission
         try:
             appointment = cancel_appointment_by_patient(appointment=appointment)
         except DjangoValidationError as exc:

@@ -19,9 +19,10 @@ class Appointment(TimeStampedModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
     reason = models.CharField(max_length=255, blank=True)
     day_before_reminder_sent_at = models.DateTimeField(null=True, blank=True)
-    # Reception check-in — deliberately a timestamp, not a new Status member (business/
-    # workflow-policy.md's aspirational "Checked In"/"Waiting" states were never implemented as a
-    # real state machine, see docs/known-issues.md's reconciliation note; not reworked here).
+    # Enregistrement à l'accueil — volontairement un timestamp, pas un nouveau membre de Status
+    # (les états aspirationnels "Checked In"/"Waiting" de business/workflow-policy.md n'ont jamais
+    # été implémentés comme une véritable machine à états, voir la note de réconciliation de
+    # docs/known-issues.md ; non retravaillé ici).
     checked_in_at = models.DateTimeField(null=True, blank=True)
     ticket_number = models.CharField(max_length=30, blank=True)
 

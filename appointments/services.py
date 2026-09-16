@@ -33,15 +33,15 @@ def validate_no_overlap(*, clinic, doctor, patient, date, time, exclude_pk=None)
 @transaction.atomic
 def create_appointment(*, clinic, doctor, patient, date, time, **fields):
     if patient.clinic_id != clinic.id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
+        # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if doctor.clinic_id != clinic.id:
         raise ValidationError("Invalid doctor.")
-    # business/validation-rules.md VALIDATION DÉPARTEMENT: "Les rendez-vous requièrent un
+    # business/validation-rules.md VALIDATION DÉPARTEMENT : "Les rendez-vous requièrent un
     # département actif" / "Les départements inactifs ne peuvent pas recevoir de nouveaux
-    # rendez-vous". A doctor with no department assigned is left unrestricted (department is
-    # optional on Doctor today).
+    # rendez-vous". Un médecin sans département assigné reste sans restriction (le département
+    # est aujourd'hui optionnel sur Doctor).
     department = doctor.department
     if department is not None and department.status != department.Status.ACTIVE:
         raise ValidationError("This doctor's department is not active and cannot accept new appointments.")
@@ -67,8 +67,8 @@ def update_appointment(*, appointment, **fields):
     patient = fields.get("patient", appointment.patient)
 
     if "patient" in fields and patient.clinic_id != appointment.clinic_id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
+        # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if "doctor" in fields and doctor.clinic_id != appointment.clinic_id:
         raise ValidationError("Invalid doctor.")
@@ -116,8 +116,9 @@ def validate_cancellable_by_patient(*, appointment):
 
 @transaction.atomic
 def cancel_appointment_by_patient(*, appointment):
-    """Dedicated, narrowly-scoped transition for the patient self-cancel action — deliberately not
-    routed through update_appointment, which stays unrestricted-by-transition for staff callers."""
+    """Transition dédiée et volontairement restreinte pour l'action d'auto-annulation du patient —
+    délibérément non routée via update_appointment, qui reste sans restriction de transition pour
+    les appelants staff."""
     validate_cancellable_by_patient(appointment=appointment)
     appointment.status = Appointment.Status.CANCELLED
     appointment.save(update_fields=["status", "updated_at"])
@@ -130,10 +131,10 @@ def cancel_appointment_by_patient(*, appointment):
 
 @transaction.atomic
 def check_in_appointment(*, appointment):
-    """Reception check-in: patient has arrived for a same-day appointment. Generates a
-    per-clinic/per-year ticket_number via the same SequenceCounter mechanism already used for
-    Patient.patient_number (patients/services/__init__.py::generate_patient_number) — not a new
-    counter concept."""
+    """Enregistrement à l'accueil : le patient est arrivé pour un rendez-vous du jour même. Génère
+    un ticket_number par clinique/par année via le même mécanisme SequenceCounter déjà utilisé
+    pour Patient.patient_number (patients/services/__init__.py::generate_patient_number) — pas un
+    nouveau concept de compteur."""
     if appointment.checked_in_at is not None:
         raise ValidationError("This appointment has already been checked in.")
     if appointment.status not in ACTIVE_STATUSES:

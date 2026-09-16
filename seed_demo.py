@@ -1,18 +1,20 @@
-"""One-off demo data seed for screenshot purposes. Uses the project's own service layer
-(register_clinic, create_doctor, create_appointment, create_invoice, create_consultation) so every
-record respects real business rules (numbering, VAT calc, status machine) rather than being built
-by hand. Run via: manage.py shell < seed_demo.py"""
+"""Script ponctuel de génération de données de démonstration, à des fins de captures d'écran.
+Utilise la couche de services du projet (register_clinic, create_doctor, create_appointment,
+create_invoice, create_consultation) afin que chaque enregistrement respecte les vraies règles
+métier (numérotation, calcul de TVA, machine à états) plutôt que d'être construit à la main.
+Exécution via : manage.py shell < seed_demo.py"""
 import os
 import django
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "backend.settings")
 django.setup()
 
-# No local Redis broker and no real email/SMS provider configured in this dev environment — the
-# app's own notification dispatch (business/communication-policy.md: async, centralized) is real
-# and out of scope for this screenshot-data seed script. Patch every module's already-imported
-# reference to a no-op just for this run, rather than wiring a fake broker/provider that would
-# only paper over the same gap.
+# Aucun broker Redis local et aucun vrai fournisseur e-mail/SMS configuré dans cet environnement de
+# développement — le dispatch de notifications de l'application (business/communication-policy.md :
+# asynchrone, centralisé) est réel et hors périmètre pour ce script de génération de données de
+# démonstration. On remplace la référence déjà importée de chaque module par un no-op le temps de
+# cette exécution, plutôt que de câbler un faux broker/fournisseur qui ne ferait que masquer le
+# même manque.
 import appointments.notifications
 
 appointments.notifications.send_notification = lambda **kwargs: None
@@ -42,9 +44,10 @@ from payments.services import create_payment
 
 CLINIC_NAME = "Clinique Belle Santé"
 
-# Business models use on_delete=PROTECT everywhere (no physical deletion, by design). Unwind any
-# previous partial run of this exact script, child-tables-first, so unique constraints
-# (username, patient_number, invoice number...) don't collide with this fresh run.
+# Les modèles métier utilisent on_delete=PROTECT partout (pas de suppression physique, par
+# conception). On annule toute exécution partielle précédente de ce script exact, en commençant
+# par les tables enfants, pour que les contraintes d'unicité (username, patient_number, numéro de
+# facture...) n'entrent pas en collision avec cette nouvelle exécution.
 for stale_clinic in Clinic.objects.filter(name=CLINIC_NAME):
     Payment.objects.filter(clinic=stale_clinic).delete()
     Invoice.objects.filter(clinic=stale_clinic).delete()
@@ -254,7 +257,7 @@ inv3 = create_invoice(
     issue_date=today,
     lines=[{"description": "Consultation pédiatrie", "quantity": 1, "unit_price": Decimal("250.00")}],
 )
-# left as draft
+# laissée en brouillon
 
 print(f"  {inv1.number} (paid), {inv2.number} (issued), draft invoice for {patients[4]}")
 

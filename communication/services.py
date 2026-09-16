@@ -10,9 +10,10 @@ from .models import NotificationLog, OtpCode
 
 
 def send_notification(*, clinic, recipient_user, channel, notification_type, recipient_address, subject, body):
-    """The only entry point other apps should call to send anything (docs/communication-architecture.md:
-    "no module may directly communicate with Email, SMS or Push providers"). Persists a
-    NotificationLog first (audit trail) and hands the actual delivery to a Celery task."""
+    """Le seul point d'entrée que les autres apps doivent appeler pour envoyer quoi que ce soit
+    (docs/communication-architecture.md : "aucun module ne peut communiquer directement avec les
+    fournisseurs Email, SMS ou Push"). Persiste d'abord un NotificationLog (piste d'audit) puis
+    confie l'envoi effectif à une tâche Celery."""
     log = NotificationLog.objects.create(
         clinic=clinic,
         recipient_user=recipient_user,
@@ -38,10 +39,11 @@ def _principal_filter(*, principal, purpose):
 
 
 def generate_and_send_otp(*, principal, purpose):
-    """`principal` is a `User` or `Patient` instance (duck-typed on `.email`/`.phone`) — activation
-    sends an OTP to a Patient with no linked User yet. business/notification-rules.md "OTP GENERATED":
-    sent on both SMS and Email, 5-minute expiry. business/communication-policy.md: "OTP generation
-    limited" — enforced here via a per-principal cooldown."""
+    """`principal` est une instance de `User` ou de `Patient` (duck-typing sur `.email`/`.phone`) —
+    l'activation envoie un OTP à un Patient qui n'a pas encore de User lié.
+    business/notification-rules.md "OTP GÉNÉRÉ" : envoyé à la fois par SMS et par Email,
+    expiration de 5 minutes. business/communication-policy.md : "génération d'OTP limitée" —
+    appliqué ici via un délai de rafraîchissement (cooldown) par principal."""
     filter_kwargs = _principal_filter(principal=principal, purpose=purpose)
 
     cooldown_cutoff = timezone.now() - timedelta(seconds=OtpCode.COOLDOWN_SECONDS)
@@ -100,8 +102,9 @@ def verify_otp(*, principal, code, purpose):
     if not check_password(code, otp.code_hash):
         otp.attempts += 1
         if otp.attempts >= OtpCode.MAX_ATTEMPTS:
-            # Consume on the final failed attempt — no window for a race against the same row;
-            # the requester must request a fresh code (business/communication-policy.md rate limiting).
+            # Consommer à la dernière tentative échouée — aucune fenêtre pour une course sur la
+            # même ligne ; le demandeur doit redemander un nouveau code (limitation de débit
+            # business/communication-policy.md).
             otp.consumed_at = timezone.now()
         otp.save(update_fields=["attempts", "consumed_at"])
         raise ValidationError("Incorrect code.")

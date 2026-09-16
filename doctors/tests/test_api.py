@@ -40,8 +40,9 @@ class DoctorTenantIsolationTests(APITestCase):
         self.assertEqual(response.data["user"]["username"], "dr.jones")
 
     def test_same_username_in_a_different_clinic_is_allowed(self):
-        # Usernames are unique per clinic (User.Meta.constraints), not globally — clinic A already
-        # has a "doctor_user_a" (see setUp), an unrelated clinic B must be able to reuse it.
+        # Les noms d'utilisateur sont uniques par clinique (User.Meta.constraints), pas
+        # globalement — la clinique A a déjà un "doctor_user_a" (voir setUp), une clinique B sans
+        # rapport doit pouvoir le réutiliser.
         self.client.force_authenticate(self.admin_b)
         payload = {
             "username": self.clinic_a.users.exclude(pk=self.admin_a.pk).first().username,
@@ -70,8 +71,8 @@ class DoctorTenantIsolationTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_duplicate_email_across_clinics_is_rejected(self):
-        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics,
-        # unlike username.
+        # l'email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique à travers
+        # toutes les cliniques, contrairement au username.
         self.client.force_authenticate(self.admin_b)
         payload = {
             "username": "dr.unique.username",
@@ -87,8 +88,9 @@ class DoctorTenantIsolationTests(APITestCase):
 
 
 class DoctorCrossClinicFKTests(APITestCase):
-    """Regression coverage for the cross-tenant FK injection audit finding: a clinic_admin must not
-    be able to attach their doctor to another clinic's department, on create or on update."""
+    """Couverture de non-régression pour le constat d'audit d'injection de FK inter-tenant : un
+    clinic_admin ne doit pas pouvoir attacher son médecin au département d'une autre clinique, ni
+    à la création ni à la modification."""
 
     def setUp(self):
         self.clinic_a = create_clinic("Clinic A")

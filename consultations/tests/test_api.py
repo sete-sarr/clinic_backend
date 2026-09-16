@@ -48,9 +48,10 @@ class ConsultationOwnerIsolationTests(APITestCase):
         self.assertNotIn(self.consultation.id, ids)
 
     def test_doctor_b_gets_404_not_403_on_doctor_a_consultation_detail(self):
-        # docs/known-issues.md #1: the consultation is outside this doctor's queryset entirely, so
-        # it 404s before object-level permission is even checked — not a 403 (previously untested
-        # for consultations specifically; security audit, 2026-09-02).
+        # docs/known-issues.md #1 : la consultation est entièrement en dehors du queryset de ce
+        # médecin, donc elle renvoie 404 avant même que la permission au niveau objet soit
+        # vérifiée — pas un 403 (auparavant non testé spécifiquement pour les consultations ;
+        # audit de sécurité, 2026-09-02).
         self.client.force_authenticate(self.doctor_b.user)
         response = self.client.get(reverse("consultation-detail", args=[self.consultation.id]))
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
@@ -105,9 +106,10 @@ class ConsultationAuditTests(APITestCase):
 
 
 class ConsultationCrossClinicFKTests(APITestCase):
-    """Regression coverage for the cross-tenant FK injection audit finding (confirmed by live
-    exploit): a doctor must not be able to create a consultation for another clinic's patient, and
-    a clinic_admin must not be able to assign another clinic's doctor to a consultation."""
+    """Couverture de non-régression pour le constat d'audit d'injection de FK inter-tenant
+    (confirmé par un exploit réel) : un médecin ne doit pas pouvoir créer une consultation pour
+    le patient d'une autre clinique, et un clinic_admin ne doit pas pouvoir assigner à une
+    consultation le médecin d'une autre clinique."""
 
     def setUp(self):
         self.clinic_a = create_clinic("Clinic A")

@@ -57,9 +57,9 @@ class SendSubscriptionExpiringNotificationsTests(TestCase):
 
     def test_skips_clinic_admin_with_no_email(self):
         clinic = _active_clinic_expiring_in(30)
-        create_user(clinic=clinic, role="clinic_admin", email="")  # no email set
+        create_user(clinic=clinic, role="clinic_admin", email="")  # aucun e-mail renseigné
 
-        send_subscription_expiring_notifications()  # must not raise
+        send_subscription_expiring_notifications()  # ne doit pas lever d'exception
 
         self.assertEqual(
             NotificationLog.objects.filter(
@@ -68,4 +68,4 @@ class SendSubscriptionExpiringNotificationsTests(TestCase):
             0,
         )
         clinic.refresh_from_db()
-        self.assertIsNotNone(clinic.expiring_notified_30d_at)  # still marked notified — attempt was made
+        self.assertIsNotNone(clinic.expiring_notified_30d_at)  # toujours marqué comme notifié — une tentative a eu lieu

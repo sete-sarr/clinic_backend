@@ -11,9 +11,10 @@ logger = logging.getLogger(__name__)
 
 
 class StripePaymentProvider(PaymentProvider):
-    """Real Stripe integration — code-complete now, real STRIPE_API_KEY/STRIPE_WEBHOOK_SECRET
-    added later (same posture as communication's StubSmsProvider -> real-provider swap per
-    docs/roadmap.md). All Stripe SDK usage is confined to this file — never imported elsewhere."""
+    """Véritable intégration Stripe — code complet dès maintenant, STRIPE_API_KEY/STRIPE_WEBHOOK_SECRET
+    réels ajoutés plus tard (même logique que le remplacement StubSmsProvider -> fournisseur réel de
+    communication, selon docs/roadmap.md). Toute utilisation du SDK Stripe est confinée à ce fichier
+    — jamais importée ailleurs."""
 
     name = "stripe"
 

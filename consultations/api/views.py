@@ -38,8 +38,9 @@ class ConsultationViewSet(TenantScopedModelViewSet):
             doctor_profile = getattr(user, "doctor_profile", None)
             if doctor_profile is None:
                 raise PermissionDenied("This account has no doctor profile in this clinic.")
-            # A doctor always creates their own consultations — never trust a client-submitted
-            # doctor field here, just override it (business/access-policy.md: least privilege).
+            # Un médecin crée toujours ses propres consultations — ne jamais faire confiance à un
+            # champ doctor soumis par le client ici, on l'écrase simplement (business/access-policy.md :
+            # moindre privilège).
             save_kwargs["doctor"] = doctor_profile
         consultation = serializer.save(**save_kwargs)
         record_audit(user=user, action=AuditLog.Action.CREATE, obj=consultation)

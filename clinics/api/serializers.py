@@ -4,9 +4,10 @@ from rest_framework import serializers
 from clinics.models import Clinic
 
 MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
-# design-system/: logos are limited to PNG/JPG/JPEG. ImageField already rejects anything that
-# isn't a genuine, Pillow-decodable image (security audit, 2026-09-02) — this narrows that further
-# to the specific formats the design system allows, rather than any valid raster format.
+# design-system/ : les logos sont limités à PNG/JPG/JPEG. ImageField rejette déjà tout ce qui
+# n'est pas une véritable image décodable par Pillow (audit de sécurité, 2026-09-02) — ceci
+# restreint davantage aux formats spécifiques autorisés par le design system, plutôt qu'à tout
+# format raster valide.
 ALLOWED_LOGO_FORMATS = {"PNG", "JPEG"}
 
 
@@ -42,14 +43,15 @@ class ClinicSerializer(serializers.ModelSerializer):
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
             "locale", "logo_light", "logo_dark", "logo_print", "favicon",
         ]
-        # Subscription fields are read-only here: mutation only happens via the Stripe webhook or
-        # the Django-admin-gated subscriptions.services.change_subscription_status/change_plan
-        # calls — never through a direct PATCH on this endpoint. stripe_customer_id/
-        # stripe_subscription_id are deliberately excluded from `fields` entirely (no frontend
-        # need, avoid leaking Stripe object IDs even read-only).
-        # locale/logo_*/favicon are deliberately NOT read-only — clinic_admin edits them via this
-        # same endpoint (ClinicViewSet.get_permissions() already gates update/partial_update to
-        # IsClinicAdmin, see backend/clinics/api/views.py).
+        # Les champs d'abonnement sont en lecture seule ici : leur mutation ne se fait que via le
+        # webhook Stripe ou les appels subscriptions.services.change_subscription_status/change_plan
+        # protégés par le Django admin — jamais via un PATCH direct sur cet endpoint.
+        # stripe_customer_id/stripe_subscription_id sont volontairement exclus de `fields` en
+        # totalité (aucun besoin côté frontend, éviter de divulguer les ID d'objets Stripe même en
+        # lecture seule).
+        # locale/logo_*/favicon ne sont volontairement PAS en lecture seule — le clinic_admin les
+        # modifie via ce même endpoint (ClinicViewSet.get_permissions() restreint déjà
+        # update/partial_update à IsClinicAdmin, voir backend/clinics/api/views.py).
         read_only_fields = [
             "id", "created_at", "updated_at",
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
@@ -57,8 +59,9 @@ class ClinicSerializer(serializers.ModelSerializer):
 
 
 class ClinicPublicSerializer(serializers.ModelSerializer):
-    """Pre-auth clinic picker for patient account activation — id/name only, never the
-    address/phone/email exposed by ClinicSerializer (nothing pre-auth should leak those)."""
+    """Sélecteur de clinique pré-authentification pour l'activation du compte patient — id/name
+    uniquement, jamais l'address/phone/email exposés par ClinicSerializer (rien de ce qui est
+    pré-authentification ne doit les divulguer)."""
 
     class Meta:
         model = Clinic

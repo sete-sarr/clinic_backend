@@ -21,8 +21,8 @@ def create_consultation(*, clinic, patient, appointment=None, is_follow_up=False
     if doctor is None:
         raise ValidationError("Doctor is required.")
     if patient.clinic_id != clinic.id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID soumis
+        # existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if doctor.clinic_id != clinic.id:
         raise ValidationError("Invalid doctor.")
@@ -40,8 +40,8 @@ def update_consultation(*, consultation, **fields):
         raise ValidationError("A validated consultation is read-only and can no longer be edited.")
 
     if "patient" in fields and fields["patient"].clinic_id != consultation.clinic_id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID soumis
+        # existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != consultation.clinic_id:
         raise ValidationError("Invalid doctor.")

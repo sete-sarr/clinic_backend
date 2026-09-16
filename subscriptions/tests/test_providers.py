@@ -23,8 +23,8 @@ class GetPaymentProviderTests(TestCase):
     STRIPE_PRICE_STARTER_MONTHLY="price_starter_monthly",
     STRIPE_PRICE_STARTER_ANNUAL="price_starter_annual",
     STRIPE_PRICE_ENTERPRISE_ANNUAL="price_enterprise_annual",
-    # Deliberately left unset: test_create_checkout_session_missing_price_id_returns_failure
-    # needs one real tier/cycle pair with no Price ID configured to exercise the failure path.
+    # Volontairement laissé non défini : test_create_checkout_session_missing_price_id_returns_failure
+    # a besoin d'une paire tier/cycle réelle sans Price ID configuré pour exercer le chemin d'échec.
     STRIPE_PRICE_ENTERPRISE_MONTHLY="",
 )
 class StripePaymentProviderTests(TestCase):

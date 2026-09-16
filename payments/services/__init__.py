@@ -11,8 +11,8 @@ from ..models import Payment
 @transaction.atomic
 def create_payment(*, clinic, invoice, amount, created_by, **fields):
     if invoice.clinic_id != clinic.id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Message volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si
+        # l'ID soumis existe dans une autre clinique, afin d'éviter un oracle d'existence cross-tenant.
         raise ValidationError("Invalid invoice.")
     if amount is None or amount <= Decimal("0.00"):
         raise ValidationError("Payment amount must be positive.")
@@ -37,7 +37,8 @@ def create_payment(*, clinic, invoice, amount, created_by, **fields):
 
 @transaction.atomic
 def refund_payment(*, payment):
-    """business/workflow-policy.md: refunds require Administrator approval (enforced in the permission layer)."""
+    """business/workflow-policy.md : les remboursements nécessitent l'approbation de l'administrateur
+    (appliqué au niveau de la couche des permissions)."""
     if payment.status != Payment.Status.VALIDATED:
         raise ValidationError("Only a validated payment can be refunded.")
     payment.status = Payment.Status.REFUNDED

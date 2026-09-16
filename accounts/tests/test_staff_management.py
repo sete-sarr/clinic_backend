@@ -91,9 +91,10 @@ class StaffPermissionTests(APITestCase):
         self.assertEqual(response.data["role"], "clinic_admin")
 
     def test_same_username_in_a_different_clinic_is_allowed(self):
-        # Usernames are unique per clinic (User.Meta.constraints), not globally — an unrelated
-        # clinic already using "new.staff" (see other tests in this class) must never block this
-        # clinic from using the same username for its own staff member.
+        # Les usernames sont uniques par clinique (User.Meta.constraints), pas globalement — une
+        # clinique sans rapport utilisant déjà "new.staff" (voir les autres tests de cette classe)
+        # ne doit jamais empêcher cette clinique d'utiliser le même username pour son propre
+        # membre du personnel.
         other_clinic = create_clinic("Other Clinic")
         create_user(clinic=other_clinic, username="cross.clinic.name", role="secretary")
         self.client.force_authenticate(self.admin)
@@ -110,7 +111,7 @@ class StaffPermissionTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_duplicate_email_across_clinics_is_rejected(self):
-        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics.
+        # email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique sur toutes les cliniques.
         other_clinic = create_clinic("Other Clinic")
         other_user = create_user(clinic=other_clinic, role="secretary")
         self.client.force_authenticate(self.admin)
@@ -134,7 +135,7 @@ class StaffPermissionTests(APITestCase):
 
 class StaffBusinessRuleTests(APITestCase):
     def setUp(self):
-        cache.clear()  # login is now ScopedRateThrottle'd (security audit, 2026-09-02).
+        cache.clear()  # la connexion est désormais soumise à ScopedRateThrottle (audit de sécurité, 2026-09-02).
         self.clinic = create_clinic("Clinic")
         self.admin = create_user(clinic=self.clinic, role="clinic_admin")
         self.other_admin = create_user(clinic=self.clinic, role="clinic_admin")
@@ -147,7 +148,7 @@ class StaffBusinessRuleTests(APITestCase):
 
     def test_deactivating_non_last_admin_succeeds(self):
         self.client.force_authenticate(self.admin)
-        # Two active admins exist (self.admin, self.other_admin) — deactivating one is fine.
+        # Deux admins actifs existent (self.admin, self.other_admin) — en désactiver un ne pose pas de problème.
         response = self.client.post(reverse("staff-deactivate", args=[self.other_admin.id]))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -156,11 +157,11 @@ class StaffBusinessRuleTests(APITestCase):
 
         from accounts.services import deactivate_staff_member
 
-        # A third account exists so the actor deactivating self.admin isn't blocked by the
-        # self-deactivation rule instead — but the third account is NOT a clinic_admin, so it
-        # doesn't count toward "remaining active admins".
+        # Un troisième compte existe pour que l'acteur désactivant self.admin ne soit pas bloqué
+        # par la règle d'auto-désactivation à sa place — mais ce troisième compte n'est PAS un
+        # clinic_admin, il ne compte donc pas parmi les "admins actifs restants".
         secretary_actor = create_user(clinic=self.clinic, role="secretary")
-        # Deactivate other_admin first so self.admin becomes the clinic's only active clinic_admin.
+        # Désactiver d'abord other_admin pour que self.admin devienne l'unique clinic_admin actif de la clinique.
         deactivate_staff_member(user=self.other_admin, actor=self.admin)
         with self.assertRaises(ValidationError):
             deactivate_staff_member(user=self.admin, actor=secretary_actor)

@@ -19,7 +19,7 @@ class DepartmentViewSet(TenantScopedModelViewSet):
     queryset = Department.objects.select_related("clinic").all()
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active", "status", "department_type"]
-    http_method_names = ["get", "post", "patch", "head", "options"]  # no PUT/DELETE — see archive()
+    http_method_names = ["get", "post", "patch", "head", "options"]  # pas de PUT/DELETE — voir archive()
 
     def perform_create(self, serializer):
         department = serializer.save(clinic=self.request.user.clinic)
@@ -31,9 +31,9 @@ class DepartmentViewSet(TenantScopedModelViewSet):
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
-        # business/validation-rules.md: physical deletion is forbidden and archiving is blocked
-        # while active doctors are assigned — replaces the generic DELETE verb (see
-        # http_method_names) so that guard can never be bypassed.
+        # business/validation-rules.md : la suppression physique est interdite et l'archivage est
+        # bloqué tant que des médecins actifs sont assignés — remplace le verbe DELETE générique
+        # (voir http_method_names) pour que ce garde-fou ne puisse jamais être contourné.
         department = self.get_object()
         try:
             archive_department(department=department, actor=request.user)

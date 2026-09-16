@@ -7,12 +7,13 @@ from doctors.models import Doctor
 
 
 class ConsultationSerializer(serializers.ModelSerializer):
-    # Read-only conveniences for list/detail UIs — reuse the queryset's existing
-    # select_related("patient", "doctor__user") (see ConsultationViewSet), so these add no extra queries.
+    # Commodités en lecture seule pour les UI de liste/détail — réutilisent le select_related
+    # ("patient", "doctor__user") déjà présent sur le queryset (voir ConsultationViewSet), donc
+    # elles n'ajoutent aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
     doctor_display = serializers.SerializerMethodField()
-    # Optional on input: ConsultationViewSet.perform_create always overrides this with the
-    # requesting doctor's own profile, and clinic_admin picks one explicitly from the UI.
+    # Optionnel en entrée : ConsultationViewSet.perform_create écrase toujours ce champ avec le
+    # profil du médecin demandeur, et clinic_admin en choisit un explicitement depuis l'UI.
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False)
 
     class Meta:

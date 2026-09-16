@@ -9,10 +9,10 @@ from common.testing import create_clinic, create_user
 
 
 class LoginLogoutAuditTests(APITestCase):
-    """business/access-policy.md "AUDIT POLICY": Authentication and Logout are logged events."""
+    """business/access-policy.md "AUDIT POLICY" : la connexion et la déconnexion sont des événements journalisés."""
 
     def setUp(self):
-        cache.clear()  # login is now ScopedRateThrottle'd (security audit, 2026-09-02).
+        cache.clear()  # la connexion est désormais soumise à ScopedRateThrottle (audit de sécurité, 2026-09-02).
         self.clinic = create_clinic()
         self.user = create_user(clinic=self.clinic, role="secretary", username="secretary1")
 
@@ -32,7 +32,7 @@ class LoginLogoutAuditTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
         self.assertTrue(AuditLog.objects.filter(user=self.user, action=AuditLog.Action.LOGOUT).exists())
 
-        # The blacklisted refresh token can no longer be used to obtain a new access token.
+        # Le refresh token blacklisté ne peut plus être utilisé pour obtenir un nouveau access token.
         refresh_response = self.client.post(reverse("token_refresh"), {"refresh": str(refresh)})
         self.assertEqual(refresh_response.status_code, status.HTTP_401_UNAUTHORIZED)
 

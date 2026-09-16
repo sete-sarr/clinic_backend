@@ -1,13 +1,15 @@
 """
-Live-network smoke test against the real Stripe test-mode API (no mocking of stripe.* calls).
-Skipped automatically when STRIPE_API_KEY isn't configured, so it never breaks CI/other machines
-that don't have a test key in their .env -- this is a deliberate, narrow exception to "always mock
-external services" for the purpose of verifying the real integration actually works end-to-end,
-not just that our code calls the SDK correctly. Not run as part of the default `manage.py test`
-sweep concerns here: it still is (no separate tag), but is self-skipping and network-bound, so keep
-it in its own file for easy exclusion (`test --exclude-tag` not used repo-wide, so exclusion today
-is by test path: `manage.py test subscriptions --exclude=test_stripe_live_smoke` isn't a thing in
-stock Django either -- run explicitly by dotted path when needed).
+Test de fumée en réseau réel contre la véritable API Stripe en mode test (aucun mock des appels
+stripe.*). Ignoré automatiquement quand STRIPE_API_KEY n'est pas configurée, afin de ne jamais
+casser la CI ou les autres machines qui n'ont pas de clé de test dans leur .env -- ceci est une
+exception délibérée et restreinte à la règle "toujours mocker les services externes", dans le but
+de vérifier que l'intégration réelle fonctionne effectivement de bout en bout, pas seulement que
+notre code appelle correctement le SDK. Concernant son exécution dans le run par défaut de
+`manage.py test` : elle en fait bien partie (pas de tag séparé), mais s'auto-ignore et dépend du
+réseau, donc on la garde dans son propre fichier pour pouvoir l'exclure facilement (`test
+--exclude-tag` n'est pas utilisé dans tout le dépôt, donc l'exclusion se fait aujourd'hui par
+chemin de test : `manage.py test subscriptions --exclude=test_stripe_live_smoke` n'existe pas non
+plus dans Django standard -- à exécuter explicitement par chemin pointé si besoin).
 """
 import unittest
 
@@ -23,11 +25,11 @@ _HAS_REAL_STRIPE_KEY = bool(settings.STRIPE_API_KEY) and settings.STRIPE_API_KEY
 
 @unittest.skipUnless(_HAS_REAL_STRIPE_KEY, "No real STRIPE_API_KEY configured in this environment.")
 class StripeLiveSmokeTests(TestCase):
-    """Exercises the actual Stripe test-mode API over the network. Creates a throwaway
-    Product/Price via the SDK directly (not through our catalog, which reads Price IDs from env
-    vars we don't want to require here), then drives it through our real
-    StripePaymentProvider.create_checkout_session -- the exact code path CheckoutSessionView calls
-    in production, with nothing mocked below the provider boundary."""
+    """Exerce la véritable API Stripe en mode test, sur le réseau. Crée un Product/Price jetable
+    directement via le SDK (pas via notre catalogue, qui lit les Price ID depuis des variables
+    d'environnement qu'on ne veut pas exiger ici), puis le fait passer par notre véritable
+    StripePaymentProvider.create_checkout_session -- exactement le chemin de code que
+    CheckoutSessionView appelle en production, sans aucun mock sous la frontière du fournisseur."""
 
     @classmethod
     def setUpClass(cls):
@@ -82,8 +84,9 @@ class StripeLiveSmokeTests(TestCase):
         self.assertTrue(result.success, f"Real Stripe checkout session creation failed: {result.error_message}")
         self.assertTrue(result.checkout_url.startswith("https://checkout.stripe.com/"))
 
-        # Verify the session Stripe actually created carries the right identifiers for our webhook
-        # handler to later resolve the clinic (subscriptions/services.py::_resolve_clinic).
+        # Vérifie que la session réellement créée par Stripe porte les bons identifiants pour que
+        # notre gestionnaire de webhook puisse ensuite résoudre la clinique
+        # (subscriptions/services.py::_resolve_clinic).
         self.assertEqual(len(created_sessions), 1)
         session = created_sessions[0]
         self.assertEqual(session.client_reference_id, str(self.clinic.pk))
@@ -91,7 +94,8 @@ class StripeLiveSmokeTests(TestCase):
         self.assertEqual(session.mode, "subscription")
 
     def test_real_billing_portal_requires_customer_first(self):
-        # No stripe_customer_id yet -> provider must fail cleanly without ever calling Stripe.
+        # Pas encore de stripe_customer_id -> le fournisseur doit échouer proprement sans jamais
+        # appeler Stripe.
         result = self.provider.create_billing_portal_session(clinic=self.clinic, return_url="https://example.com")
         self.assertFalse(result.success)
 
@@ -103,9 +107,10 @@ class StripeLiveSmokeTests(TestCase):
             result = self.provider.create_billing_portal_session(
                 clinic=self.clinic, return_url="https://example.com"
             )
-            # A brand-new Stripe test account usually has no default Billing Portal configuration,
-            # so this legitimately fails with a clean provider-level error message in that case --
-            # both outcomes are valid; what matters is it never raises past the provider boundary.
+            # Un compte de test Stripe tout juste créé n'a généralement pas de configuration par
+            # défaut du Billing Portal, donc l'échec est légitime avec un message d'erreur propre
+            # au niveau du fournisseur dans ce cas -- les deux issues sont valides ; ce qui compte,
+            # c'est que rien ne remonte au-delà de la frontière du fournisseur.
             if not result.success:
                 self.assertTrue(result.error_message)
             else:

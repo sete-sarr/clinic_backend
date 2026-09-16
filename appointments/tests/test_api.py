@@ -219,7 +219,7 @@ class AppointmentPatientCreateTests(APITestCase):
         response = self.client.post(reverse("appointment-list"), payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         appointment = Appointment.objects.get(id=response.data["id"])
-        self.assertEqual(appointment.patient, self.patient)  # server-resolved, client value ignored
+        self.assertEqual(appointment.patient, self.patient)  # résolu côté serveur, la valeur du client est ignorée
 
     def test_patient_without_profile_cannot_create(self):
         orphan_user = create_user(clinic=self.clinic, role="patient")
@@ -275,8 +275,8 @@ class AppointmentPatientCancelTests(APITestCase):
         self.assertEqual(appointment.status, Appointment.Status.PENDING)
 
     def test_patient_cannot_cancel_someone_elses_appointment(self):
-        # docs/known-issues.md #1: the appointment is outside this patient's queryset entirely,
-        # so it 404s before object-level permission is even checked — not a 403.
+        # docs/known-issues.md #1 : le rendez-vous est totalement hors du queryset de ce patient,
+        # d'où un 404 avant même que la permission au niveau objet ne soit vérifiée — pas un 403.
         appointment = self._appointment_at(self.other_patient, timezone.now() + timedelta(hours=48))
         self.client.force_authenticate(self.patient.user)
         response = self.client.post(reverse("appointment-cancel", args=[appointment.id]))
@@ -403,9 +403,9 @@ class AppointmentTicketPdfTests(APITestCase):
         self.assertEqual(response["Content-Type"], "application/pdf")
 
     def test_unrelated_doctor_gets_404(self):
-        # docs/known-issues.md #1 (resolved): get_queryset() scopes a doctor to their own
-        # appointments before get_object() runs, so an unrelated doctor's appointment is outside
-        # the queryset entirely -> 404, not 403 (standardized pattern, not a bug).
+        # docs/known-issues.md #1 (résolu) : get_queryset() restreint un médecin à ses propres
+        # rendez-vous avant que get_object() ne s'exécute, donc le rendez-vous d'un médecin sans
+        # rapport est totalement hors du queryset -> 404, pas 403 (schéma standardisé, pas un bug).
         self.client.force_authenticate(self.secretary)
         self.client.post(reverse("appointment-check-in", args=[self.appointment.id]))
         other_doctor = _create_doctor(self.clinic, username="other_doc")
@@ -461,8 +461,9 @@ class AppointmentFilterSetTests(APITestCase):
 
 
 class AppointmentCrossClinicFKTests(APITestCase):
-    """Regression coverage for the cross-tenant FK injection audit finding: a staff user must not
-    be able to create/update an appointment referencing another clinic's patient or doctor."""
+    """Couverture de non-régression pour le constat d'audit sur l'injection de FK inter-tenant :
+    un utilisateur staff ne doit pas pouvoir créer/modifier un rendez-vous référençant le patient
+    ou le médecin d'une autre clinique."""
 
     def setUp(self):
         self.clinic_a = create_clinic("Clinic A")

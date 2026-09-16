@@ -6,8 +6,9 @@ from payments.services import create_payment
 
 
 class PaymentSerializer(serializers.ModelSerializer):
-    # Read-only conveniences for list/detail UIs — reuse the queryset's existing
-    # select_related("invoice", "invoice__patient") (see PaymentViewSet), so these add no extra queries.
+    # Champs pratiques en lecture seule pour les UI liste/détail — réutilisent le
+    # select_related("invoice", "invoice__patient") déjà présent dans le queryset (voir PaymentViewSet),
+    # donc n'ajoutent aucune requête supplémentaire.
     invoice_number = serializers.SerializerMethodField()
     patient_display = serializers.SerializerMethodField()
 

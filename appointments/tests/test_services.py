@@ -58,7 +58,7 @@ class ValidateCancellableByPatientTests(TestCase):
         appointment = _appointment_at(
             self.clinic, self.doctor, self.patient, timezone.now() + timedelta(hours=25)
         )
-        validate_cancellable_by_patient(appointment=appointment)  # does not raise
+        validate_cancellable_by_patient(appointment=appointment)  # ne lève pas d'exception
 
     def test_exactly_at_24h_boundary_is_not_cancellable(self):
         appointment = _appointment_at(
@@ -113,13 +113,15 @@ class CancelAppointmentByPatientTests(TestCase):
 
 
 class AppointmentNotificationDispatchTests(TestCase):
-    """Direct calls to the notification-building functions, following the same shape as
-    communication/tests/test_otp.py's OtpServiceTests — no on_commit/Celery involved, since
-    send_notification() persists NotificationLog synchronously and only *delivery* is deferred."""
+    """Appels directs aux fonctions de construction des notifications, sur le même modèle que
+    OtpServiceTests dans communication/tests/test_otp.py — pas de on_commit/Celery impliqué,
+    puisque send_notification() persiste NotificationLog de façon synchrone et seule la
+    *livraison* est différée."""
 
-    # patient gets email + SMS (Patient.phone is always set); doctor/secretary only get email
-    # (User has no phone field) — so both need an explicit email to be counted here.
-    EXPECTED_NOTIFICATION_COUNT = 4  # patient email + patient sms + doctor email + secretary email
+    # le patient reçoit email + SMS (Patient.phone est toujours renseigné) ; médecin/secrétaire ne
+    # reçoivent que l'email (User n'a pas de champ phone) — les deux doivent donc avoir un email
+    # explicite pour être comptabilisés ici.
+    EXPECTED_NOTIFICATION_COUNT = 4  # email patient + sms patient + email médecin + email secrétaire
 
     def setUp(self):
         self.clinic = create_clinic()
@@ -141,11 +143,11 @@ class AppointmentNotificationDispatchTests(TestCase):
         self.assertEqual(logs.count(), self.EXPECTED_NOTIFICATION_COUNT)
 
     def test_send_appointment_reminder_notifications_excludes_secretary(self):
-        # business/notification-rules.md RAPPEL DE RENDEZ-VOUS: Patient, Médecin only — unlike
-        # created/cancelled, no Receptionist row.
+        # business/notification-rules.md RAPPEL DE RENDEZ-VOUS : Patient, Médecin uniquement —
+        # contrairement à created/cancelled, pas de ligne Receptionist.
         send_appointment_reminder_notifications(appointment_id=self.appointment.id)
         logs = NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.APPOINTMENT_REMINDER)
-        self.assertEqual(logs.count(), 3)  # patient email + patient sms + doctor email
+        self.assertEqual(logs.count(), 3)  # email patient + sms patient + email médecin
         self.assertFalse(logs.filter(recipient_address="secretary@example.com").exists())
 
     def test_unknown_appointment_id_is_a_silent_no_op(self):
@@ -208,9 +210,10 @@ class SendDayBeforeRemindersTests(TestCase):
 
 
 class NotificationWiringTests(TestCase):
-    """Verifies create_appointment/update_appointment/cancel_appointment_by_patient correctly
-    schedule the notification dispatch via transaction.on_commit — mocks the dispatch functions
-    (and the existing reminder Celery task) so nothing tries to reach a real Celery broker."""
+    """Vérifie que create_appointment/update_appointment/cancel_appointment_by_patient
+    planifient correctement l'envoi des notifications via transaction.on_commit — mocke les
+    fonctions d'envoi (et la tâche Celery de rappel existante) pour qu'aucun appel ne tente
+    d'atteindre un vrai broker Celery."""
 
     def setUp(self):
         self.clinic = create_clinic()

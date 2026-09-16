@@ -1,5 +1,5 @@
 """
-URL configuration for backend project.
+Configuration des URLs pour le projet backend.
 """
 from django.conf import settings
 from django.conf.urls.static import static
@@ -35,7 +35,7 @@ urlpatterns = [
     path("api/v1/subscriptions/", include("subscriptions.api.urls")),
 ]
 
-# Dev-only media serving (uploaded clinic logos/favicons). Production media serving is an infra
-# concern (nginx/S3/CDN) outside this app's scope.
+# Diffusion des médias réservée au dev (logos/favicons de clinique téléversés). En production, la
+# diffusion des médias relève de l'infrastructure (nginx/S3/CDN), hors du périmètre de cette app.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

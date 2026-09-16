@@ -67,7 +67,7 @@ class LogoutView(APIView):
             try:
                 RefreshToken(refresh_token).blacklist()
             except TokenError:
-                pass  # already invalid/expired/blacklisted — logout still proceeds
+                pass  # déjà invalide/expiré/blacklisté — la déconnexion se poursuit quand même
         record_audit(user=request.user, action=AuditLog.Action.LOGOUT, obj=request.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

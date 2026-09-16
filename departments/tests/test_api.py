@@ -39,8 +39,9 @@ class DepartmentTests(APITestCase):
         self.assertEqual(response.data["status"], "active")
 
     def test_delete_verb_is_not_allowed(self):
-        # Physical deletion is forbidden system-wide (business/workflow-policy.md); departments use
-        # the dedicated archive/restore actions instead, so DELETE is not exposed at all.
+        # La suppression physique est interdite dans tout le système (business/workflow-policy.md) ;
+        # les départements utilisent à la place les actions dédiées archive/restore, donc DELETE
+        # n'est pas exposé du tout.
         self.client.force_authenticate(self.admin_a)
         response = self.client.delete(reverse("department-detail", args=[self.department_a.id]))
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)

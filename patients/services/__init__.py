@@ -10,7 +10,7 @@ from ..models import Patient
 
 
 def _check_duplicate(*, clinic, first_name, last_name, date_of_birth, phone):
-    """business/validation-rules.md: duplicate-detection required on patient create."""
+    """business/validation-rules.md : détection des doublons requise à la création d'un patient."""
     duplicate = Patient.objects.filter(
         clinic=clinic,
         first_name__iexact=first_name,
@@ -42,8 +42,8 @@ def create_patient(*, clinic, **fields):
         clinic=clinic, patient_number=generate_patient_number(clinic=clinic), **fields
     )
 
-    # Auto-create the medical record shell (business/permissions-matrix.md: medical
-    # record exists from the patient's first contact with the clinic).
+    # Crée automatiquement le dossier médical vide (business/permissions-matrix.md : le dossier
+    # médical existe dès le premier contact du patient avec la clinique).
     from medical_records.models import MedicalRecord
 
     MedicalRecord.objects.get_or_create(patient=patient, defaults={"clinic": clinic})

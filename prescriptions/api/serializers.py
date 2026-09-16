@@ -15,12 +15,14 @@ class PrescriptionItemSerializer(serializers.ModelSerializer):
 
 class PrescriptionSerializer(serializers.ModelSerializer):
     items = PrescriptionItemSerializer(many=True)
-    # Read-only conveniences for list/detail UIs — reuse the queryset's existing
-    # select_related("patient", "doctor__user") (see PrescriptionViewSet), so these add no extra queries.
+    # Champs pratiques en lecture seule pour les UI liste/détail — réutilisent le
+    # select_related("patient", "doctor__user") déjà présent dans le queryset (voir PrescriptionViewSet),
+    # donc n'ajoutent aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
     doctor_display = serializers.SerializerMethodField()
-    # Optional on input: PrescriptionViewSet.perform_create always overrides this with the
-    # requesting doctor's own profile, and clinic_admin picks one explicitly from the UI.
+    # Optionnel en entrée : PrescriptionViewSet.perform_create remplace toujours cette valeur par
+    # le profil du médecin à l'origine de la requête, et le clinic_admin en choisit un explicitement
+    # depuis l'UI.
     doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.all(), required=False)
 
     class Meta:
