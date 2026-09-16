@@ -4,6 +4,7 @@ venv/
 **/*.pyc
 db.sqlite3
 .env
+.env.local
 staticfiles/
 media/
 .env.example
