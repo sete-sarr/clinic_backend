@@ -193,7 +193,8 @@ SIMPLE_JWT = {
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
-    "https://clinic-frontend2-f0hoa3w4w-sete-sarr-s-projects.vercel.app",
+   "https://clinic-frontend-yrxm.vercel.app",
+
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -224,7 +225,8 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = env.list(
     "CSRF_TRUSTED_ORIGINS",
     default=[
-        "https://clinic-frontend2-f0hoa3w4w-sete-sarr-s-projects.vercel.app",
+           "https://clinic-frontend-yrxm.vercel.app",
+
     ],
 )
 
