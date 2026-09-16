@@ -17,7 +17,7 @@ def generate_invoice_number(*, clinic, year=None):
     return f"INV-{year}-{sequence:05d}"
 
 
-def _compute_totals(*, lines, vat_rate):
+def _compute_totals(*, lines, vat_rate, clinic):
     subtotal = Decimal("0.00")
     computed_lines = []
     for line in lines:
@@ -25,6 +25,11 @@ def _compute_totals(*, lines, vat_rate):
         unit_price = line["unit_price"]
         if quantity is None or unit_price is None:
             raise ValidationError("Every invoice line requires a quantity and a unit price.")
+        medication = line.get("medication")
+        if medication and medication.clinic_id != clinic.id:
+            # Même logique volontairement générique que pour patient/doctor ci-dessus : pas
+            # d'oracle d'existence inter-tenant (isolation multi-tenant, docs/security.md).
+            raise ValidationError("Invalid medication.")
         line_total = (Decimal(quantity) * Decimal(unit_price)).quantize(Decimal("0.01"))
         subtotal += line_total
         computed_lines.append({**line, "line_total": line_total})
@@ -45,7 +50,7 @@ def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_
     if not lines:
         raise ValidationError("An invoice must contain at least one line.")
 
-    computed_lines, subtotal, vat_amount, total_amount = _compute_totals(lines=lines, vat_rate=vat_rate)
+    computed_lines, subtotal, vat_amount, total_amount = _compute_totals(lines=lines, vat_rate=vat_rate, clinic=clinic)
 
     invoice = Invoice.objects.create(
         clinic=clinic,
@@ -64,7 +69,7 @@ def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_
 
 
 @transaction.atomic
-def update_invoice(*, invoice, lines=None, **fields):
+def update_invoice(*, invoice, lines=None, actor=None, **fields):
     if invoice.status in LOCKED_STATUSES:
         raise ValidationError("A paid or cancelled invoice can no longer be edited.")
 
@@ -83,7 +88,9 @@ def update_invoice(*, invoice, lines=None, **fields):
     if lines is not None:
         if not lines:
             raise ValidationError("An invoice must contain at least one line.")
-        computed_lines, subtotal, vat_amount, total_amount = _compute_totals(lines=lines, vat_rate=vat_rate)
+        computed_lines, subtotal, vat_amount, total_amount = _compute_totals(
+            lines=lines, vat_rate=vat_rate, clinic=invoice.clinic
+        )
         invoice.lines.all().delete()
         InvoiceLine.objects.bulk_create([InvoiceLine(invoice=invoice, **line) for line in computed_lines])
         invoice.subtotal = subtotal
@@ -91,24 +98,42 @@ def update_invoice(*, invoice, lines=None, **fields):
         invoice.total_amount = total_amount
 
     invoice.save()
+
+    if lines is not None:
+        # Les lignes ont pu changer alors que la facture était déjà Émise/En attente de paiement
+        # (Modifier reste autorisé "jusqu'au paiement" — permissions-matrix.md) : le stock déjà
+        # dispensé doit être réconcilié avec les nouvelles quantités de médicament, pas seulement
+        # décrémenté à l'émission initiale (pharmacy/services.py::sync_invoice_stock).
+        from pharmacy.services import sync_invoice_stock
+
+        sync_invoice_stock(invoice=invoice, actor=actor)
+
     return invoice
 
 
 @transaction.atomic
-def issue_invoice(*, invoice):
+def issue_invoice(*, invoice, actor=None):
     if invoice.status != Invoice.Status.DRAFT:
         raise ValidationError("Only a draft invoice can be issued.")
     invoice.status = Invoice.Status.ISSUED
     invoice.save(update_fields=["status"])
+
+    from pharmacy.services import sync_invoice_stock
+
+    sync_invoice_stock(invoice=invoice, actor=actor)
     return invoice
 
 
 @transaction.atomic
-def cancel_invoice(*, invoice):
+def cancel_invoice(*, invoice, actor=None):
     if invoice.status == Invoice.Status.PAID:
         raise ValidationError("A paid invoice cannot be cancelled.")
     invoice.status = Invoice.Status.CANCELLED
     invoice.save(update_fields=["status"])
+
+    from pharmacy.services import sync_invoice_stock
+
+    sync_invoice_stock(invoice=invoice, actor=actor)
     return invoice
 
 

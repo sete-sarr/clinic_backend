@@ -1,6 +1,6 @@
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin"]
+STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin", "pharmacist"]
 
 
 def in_role(user, *role_names):
@@ -23,6 +23,7 @@ IsDoctor = _role_permission("doctor")
 IsSecretary = _role_permission("secretary")
 IsAccountant = _role_permission("accountant")
 IsClinicAdmin = _role_permission("clinic_admin")
+IsPharmacist = _role_permission("pharmacist")
 IsPatient = _role_permission("patient")
 IsStaff = _role_permission(*STAFF_ROLES)
 
