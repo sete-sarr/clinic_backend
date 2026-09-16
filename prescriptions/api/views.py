@@ -42,8 +42,9 @@ class PrescriptionViewSet(TenantScopedModelViewSet):
             doctor_profile = getattr(user, "doctor_profile", None)
             if doctor_profile is None:
                 raise PermissionDenied("This account has no doctor profile in this clinic.")
-            # A doctor always prescribes under their own name — never trust a client-submitted
-            # doctor field here, just override it (business/access-policy.md: least privilege).
+            # Un médecin prescrit toujours sous son propre nom — ne jamais faire confiance au champ
+            # doctor soumis par le client, on le remplace simplement (business/access-policy.md :
+            # moindre privilège).
             save_kwargs["doctor"] = doctor_profile
         prescription = serializer.save(**save_kwargs)
         record_audit(user=user, action=AuditLog.Action.CREATE, obj=prescription)

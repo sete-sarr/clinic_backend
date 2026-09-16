@@ -6,8 +6,8 @@ from common.models import AuditLog
 
 from .models import SubscriptionEvent
 
-# Settled lifecycle (business/subscription-billing-policy.md): Trial -> Active -> Past Due ->
-# Suspended -> Cancelled, with Trial/PastDue/Suspended each able to short-circuit to Cancelled.
+# Cycle de vie stabilisé (business/subscription-billing-policy.md) : Trial -> Active -> Past Due ->
+# Suspended -> Cancelled, chacun des états Trial/PastDue/Suspended pouvant court-circuiter vers Cancelled.
 _ALLOWED_TRANSITIONS = {
     Clinic.SubscriptionStatus.TRIAL: {Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.CANCELLED},
     Clinic.SubscriptionStatus.ACTIVE: {Clinic.SubscriptionStatus.PAST_DUE, Clinic.SubscriptionStatus.CANCELLED},
@@ -18,8 +18,8 @@ _ALLOWED_TRANSITIONS = {
 
 
 def start_trial(*, clinic: Clinic, trial_days: int = 14) -> Clinic:
-    """Hook point for wherever clinic provisioning happens (tenant provisioning itself doesn't
-    exist yet in this codebase — out of scope here)."""
+    """Point d'accroche pour l'endroit où le provisioning de clinique aura lieu (le provisioning de
+    tenant lui-même n'existe pas encore dans cette base de code — hors périmètre ici)."""
     from datetime import timedelta
 
     from django.utils import timezone
@@ -39,11 +39,12 @@ def change_subscription_status(
     *, clinic: Clinic, status: str, changed_by, source: str, metadata: dict | None = None,
     stripe_event_id: str = "",
 ) -> Clinic:
-    """The ONLY function that may write Clinic.subscription_status. Validates the transition,
-    persists it, writes a SubscriptionEvent row, and calls record_audit with clinic_id explicitly
-    in metadata (docs/known-issues.md: record_audit resolves AuditLog.clinic via obj.clinic or
-    user.clinic, both None/wrong for a superuser- or webhook-driven Clinic audit — this is a
-    documented mitigation, not a fix to the shared helper)."""
+    """La SEULE fonction autorisée à écrire Clinic.subscription_status. Valide la transition, la
+    persiste, écrit une ligne SubscriptionEvent, et appelle record_audit en plaçant clinic_id
+    explicitement dans les métadonnées (docs/known-issues.md : record_audit résout AuditLog.clinic
+    via obj.clinic ou user.clinic, tous deux None/incorrects pour un audit de Clinic déclenché par
+    un superutilisateur ou un webhook — ceci est une mitigation documentée, pas une correction du
+    helper partagé)."""
     from_status = clinic.subscription_status
     if status != from_status and status not in _ALLOWED_TRANSITIONS.get(from_status, set()):
         raise ValueError(f"Illegal subscription transition: {from_status} -> {status}")
@@ -68,7 +69,8 @@ def change_subscription_status(
 
 
 def change_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, changed_by, metadata: dict | None = None) -> Clinic:
-    """Plan/cycle changes independent of status changes (e.g. upgrade while Active)."""
+    """Changements de plan/cycle indépendants des changements de statut (ex. mise à niveau alors
+    que le statut est Active)."""
     from_plan, from_cycle = clinic.plan_tier, clinic.billing_cycle
     clinic.plan_tier = plan_tier
     clinic.billing_cycle = billing_cycle
@@ -85,8 +87,8 @@ def change_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, changed_b
 
 
 def start_checkout(*, clinic: Clinic, plan_tier: str, billing_cycle: str, success_url: str, cancel_url: str):
-    """Thin pass-through to the resolved PaymentProvider — the only place api/views.py may call
-    into for creating a Checkout Session."""
+    """Simple relais vers le PaymentProvider résolu — le seul point que api/views.py peut appeler
+    pour créer une Checkout Session."""
     from .providers import get_payment_provider
 
     return get_payment_provider().create_checkout_session(
@@ -144,8 +146,9 @@ def _on_subscription_updated(*, event_id, payload):
         from datetime import datetime, timezone as dt_timezone
 
         clinic.current_period_end = datetime.fromtimestamp(period_end, tz=dt_timezone.utc)
-        # Renewal — reset the 4-point expiry-notification idempotency guard so next cycle's
-        # reminders fire again instead of staying permanently "already notified".
+        # Renouvellement — réinitialise le verrou d'idempotence à 4 paliers des notifications
+        # d'expiration afin que les rappels du prochain cycle se déclenchent à nouveau, au lieu de
+        # rester indéfiniment marqués "déjà notifié".
         clinic.expiring_notified_30d_at = None
         clinic.expiring_notified_15d_at = None
         clinic.expiring_notified_7d_at = None
@@ -197,12 +200,13 @@ _EVENT_HANDLERS = {
 
 
 def handle_stripe_event(*, event_type: str, event_id: str, payload: dict) -> None:
-    """Dispatches a verified Stripe event to the right transition. Called only from
-    api/views.py::StripeWebhookView after construct_webhook_event() has verified the signature —
-    never called with unverified data. A no-op (not an error) for unrecognized event types or an
-    unresolvable clinic — webhooks must never 500 on an event we don't care about."""
+    """Distribue un événement Stripe vérifié vers la bonne transition. Appelée uniquement depuis
+    api/views.py::StripeWebhookView après que construct_webhook_event() a vérifié la signature —
+    jamais appelée avec des données non vérifiées. Ne fait rien (ce n'est pas une erreur) pour un
+    type d'événement non reconnu ou une clinique non résolvable — un webhook ne doit jamais renvoyer
+    un 500 pour un événement qui ne nous concerne pas."""
     if event_id and SubscriptionEvent.objects.filter(stripe_event_id=event_id).exists():
-        return  # already processed — Stripe may redeliver the same event
+        return  # déjà traité — Stripe peut redélivrer le même événement
 
     handler = _EVENT_HANDLERS.get(event_type)
     if handler:
@@ -226,5 +230,6 @@ def _notify_license_expired(*, clinic: Clinic) -> None:
                     f"accessible."
                 ),
             )
-        # docs/known-issues.md: User has no phone field — SMS channel unreachable for
-        # clinic_admin recipients today, same pre-existing gap as appointment notifications.
+        # docs/known-issues.md : User n'a pas de champ phone — le canal SMS est aujourd'hui
+        # inaccessible pour les destinataires clinic_admin, même manque préexistant que pour les
+        # notifications de rendez-vous.

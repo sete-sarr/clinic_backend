@@ -13,7 +13,7 @@ from patients.models import Patient
 
 class PatientActivationTests(APITestCase):
     def setUp(self):
-        cache.clear()  # ScopedRateThrottle uses the default (process-shared) cache.
+        cache.clear()  # ScopedRateThrottle utilise le cache par défaut (partagé entre process).
         self.clinic = create_clinic()
         self.patient = Patient.objects.create(
             clinic=self.clinic,
@@ -86,12 +86,12 @@ class PatientActivationTests(APITestCase):
         first_verify = {**self.identity, "code": code, "username": "test.patient", "password": "S3cure!Passw0rd"}
         self.client.post(reverse("patient-activation-verify"), first_verify)
 
-        # A second request against the same (now-linked) patient must not match anymore.
+        # Une deuxième demande sur le même patient (désormais lié) ne doit plus trouver de correspondance.
         response = self.client.post(reverse("patient-activation-request"), self.identity)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(
             NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.OTP).count(), 2
-        )  # only the first request's two notifications (email+sms), none from the second
+        )  # uniquement les deux notifications de la première demande (email+sms), aucune de la seconde
 
     def test_throttle_trips_after_five_requests_per_hour(self):
         for _ in range(5):

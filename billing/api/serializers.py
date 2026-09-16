@@ -16,8 +16,9 @@ class InvoiceSerializer(serializers.ModelSerializer):
     lines = InvoiceLineSerializer(many=True)
     balance_due = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
     amount_paid = serializers.DecimalField(max_digits=12, decimal_places=2, read_only=True)
-    # Read-only conveniences for list/detail UIs — reuse the queryset's existing
-    # select_related("patient", "doctor__user") (see InvoiceViewSet), so these add no extra queries.
+    # Facilités en lecture seule pour les UI de liste/détail — réutilisent le select_related
+    # ("patient", "doctor__user") déjà présent sur le queryset (voir InvoiceViewSet), donc
+    # n'ajoutent aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
     doctor_display = serializers.SerializerMethodField()
 

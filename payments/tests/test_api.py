@@ -99,7 +99,7 @@ class PaymentReportsExportTests(APITestCase):
         Doctor.objects.create(user=doctor_user, clinic=self.clinic, professional_number="DOC-1", specialty="General")
         self.client.force_authenticate(doctor_user)
         response = self.client.get(reverse("payment-pdf", args=[self.payment_id]))
-        self.assertEqual(response.status_code, status.HTTP_200_OK)  # doctors may access per can_access_payment
+        self.assertEqual(response.status_code, status.HTTP_200_OK)  # les médecins ont accès selon can_access_payment
 
     def test_csv_export_returns_csv_with_header(self):
         response = self.client.get(reverse("payment-export-csv"))
@@ -116,8 +116,9 @@ class PaymentReportsExportTests(APITestCase):
 
 
 class PaymentCrossClinicFKTests(APITestCase):
-    """Regression coverage for the cross-tenant FK injection audit finding: an accountant must not
-    be able to pay off (and thereby flip the status of) another clinic's invoice."""
+    """Couverture de non-régression pour le constat d'audit sur l'injection de FK cross-tenant : un
+    comptable ne doit pas pouvoir régler (et ainsi faire basculer le statut de) la facture d'une
+    autre clinique."""
 
     def setUp(self):
         self.clinic_a = create_clinic("Clinic A")

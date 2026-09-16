@@ -6,10 +6,11 @@ from common.models import TimeStampedModel
 
 class NotificationLog(TimeStampedModel):
     """
-    Every outbound email/SMS goes through here — audit trail and the Celery task's unit of
-    work (docs/communication-architecture.md: full audit trail, no module talks to a
-    provider directly). `deliver_notification` retries against this row's id, not raw
-    params, so retries are idempotent.
+    Chaque e-mail/SMS sortant passe par ici — piste d'audit et unité de travail de la tâche
+    Celery (docs/communication-architecture.md : piste d'audit complète, aucun module ne
+    parle directement à un fournisseur). `deliver_notification` relance en se basant sur
+    l'id de cette ligne, pas sur les paramètres bruts, donc les nouvelles tentatives sont
+    idempotentes.
     """
 
     class Channel(models.TextChoices):
@@ -62,9 +63,10 @@ class NotificationLog(TimeStampedModel):
 
 class OtpCode(TimeStampedModel):
     """
-    Belongs to a `User` OR a `Patient` (never both) — activation-request has to send an OTP
-    to a Patient that has no linked User yet. See communication/services.py for the
-    generate_and_send_otp/verify_otp entry points; the code is never stored in plaintext.
+    Appartient à un `User` OU à un `Patient` (jamais les deux) — la demande d'activation doit
+    pouvoir envoyer un OTP à un Patient qui n'a pas encore de User lié. Voir
+    communication/services.py pour les points d'entrée generate_and_send_otp/verify_otp ; le
+    code n'est jamais stocké en clair.
     """
 
     class Purpose(models.TextChoices):
@@ -72,7 +74,7 @@ class OtpCode(TimeStampedModel):
 
     MAX_ATTEMPTS = 5
     COOLDOWN_SECONDS = 60
-    EXPIRY_MINUTES = 5  # business/notification-rules.md "OTP GENERATED: Expiration: 5 minutes"
+    EXPIRY_MINUTES = 5  # business/notification-rules.md "OTP GÉNÉRÉ : Expiration : 5 minutes"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name="otp_codes"

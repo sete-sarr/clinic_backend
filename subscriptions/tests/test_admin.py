@@ -21,7 +21,7 @@ class ClinicAdminSaveModelTests(TestCase):
         self.model_admin = ClinicAdmin(Clinic, admin_site=None)
 
     def test_status_field_change_calls_service_and_creates_audit_log(self):
-        self.clinic.subscription_status = Clinic.SubscriptionStatus.ACTIVE  # simulates the admin form edit
+        self.clinic.subscription_status = Clinic.SubscriptionStatus.ACTIVE  # simule la modification via le formulaire admin
         self.model_admin.save_model(self.request, self.clinic, _FakeForm(["subscription_status"]), change=True)
 
         self.clinic.refresh_from_db()
@@ -42,6 +42,6 @@ class ClinicAdminSaveModelTests(TestCase):
     def test_illegal_transition_raises_validation_error(self):
         from django.core.exceptions import ValidationError
 
-        self.clinic.subscription_status = Clinic.SubscriptionStatus.SUSPENDED  # Trial -> Suspended is illegal
+        self.clinic.subscription_status = Clinic.SubscriptionStatus.SUSPENDED  # Trial -> Suspended est interdite
         with self.assertRaises(ValidationError):
             self.model_admin.save_model(self.request, self.clinic, _FakeForm(["subscription_status"]), change=True)

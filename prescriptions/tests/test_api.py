@@ -53,9 +53,10 @@ class PrescriptionTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_doctor_cannot_prescribe_under_another_doctors_name(self):
-        # PrescriptionViewSet.perform_create always forces `doctor` to the requesting doctor's own
-        # profile, ignoring whatever was submitted -- so doctor_b ends up owning the prescription
-        # even though doctor_a.id was sent, rather than being rejected with 403.
+        # PrescriptionViewSet.perform_create force toujours `doctor` au profil du médecin à
+        # l'origine de la requête, en ignorant ce qui a été soumis -- donc doctor_b se retrouve
+        # propriétaire de la prescription même si doctor_a.id a été envoyé, plutôt que d'être
+        # rejeté avec un 403.
         self.client.force_authenticate(self.doctor_b.user)
         payload = {
             "consultation": self.consultation.id,
@@ -80,12 +81,13 @@ class PrescriptionTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_pdf_not_found_for_unrelated_doctor(self):
-        # docs/known-issues.md #1 (resolved 2026-08-13): PrescriptionViewSet.get_queryset() scopes
-        # a doctor to their own prescriptions before get_object() ever runs, so an unrelated
-        # doctor's prescription is outside doctor_b's queryset entirely -> 404, not 403. This is
-        # the intended, OWASP ASVS 4.0.3-aligned behavior (hide a resource's existence from a user
-        # with no rights to it, rather than confirming it via 403) -- standardized across
-        # appointments/consultations/prescriptions, not a bug.
+        # docs/known-issues.md #1 (résolu le 2026-08-13) : PrescriptionViewSet.get_queryset()
+        # restreint un médecin à ses propres prescriptions avant même que get_object() ne s'exécute,
+        # donc la prescription d'un médecin non lié est entièrement hors du queryset de doctor_b
+        # -> 404, pas 403. C'est le comportement voulu, aligné sur OWASP ASVS 4.0.3 (cacher
+        # l'existence d'une ressource à un utilisateur qui n'a aucun droit dessus, plutôt que de la
+        # confirmer via un 403) -- standardisé sur appointments/consultations/prescriptions, ce
+        # n'est pas un bug.
         prescription = Prescription.objects.create(
             clinic=self.clinic, consultation=self.consultation, patient=self.patient, doctor=self.doctor_a
         )
@@ -94,10 +96,11 @@ class PrescriptionTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
     def test_pdf_forbidden_for_staff_without_print_rights(self):
-        # A secretary fails CanManagePrescriptions.has_permission() outright for the pdf action
-        # (GET/SAFE_METHODS only allows doctor/clinic_admin/patient) -- 403 here confirms that gate
-        # is still exercised and correct, distinct from the unrelated-doctor 404 case above (which
-        # is scoped out at get_queryset()/get_object(), one layer deeper).
+        # Un(e) secrétaire échoue d'emblée à CanManagePrescriptions.has_permission() pour l'action
+        # pdf (GET/SAFE_METHODS n'autorise que doctor/clinic_admin/patient) -- le 403 ici confirme
+        # que cette barrière est toujours exercée et correcte, ce qui est distinct du cas 404 du
+        # médecin non lié ci-dessus (qui est filtré au niveau de get_queryset()/get_object(), une
+        # couche plus bas).
         prescription = Prescription.objects.create(
             clinic=self.clinic, consultation=self.consultation, patient=self.patient, doctor=self.doctor_a
         )
@@ -108,8 +111,9 @@ class PrescriptionTests(APITestCase):
 
 
 class PrescriptionCrossClinicFKTests(APITestCase):
-    """Regression coverage for the cross-tenant FK injection audit finding (confirmed by live
-    exploit): a doctor must not be able to prescribe to another clinic's patient."""
+    """Couverture de non-régression pour le constat d'audit sur l'injection de FK cross-tenant
+    (confirmé par un exploit réel) : un médecin ne doit pas pouvoir prescrire à un patient d'une
+    autre clinique."""
 
     def setUp(self):
         self.clinic_a = create_clinic("Clinic A")

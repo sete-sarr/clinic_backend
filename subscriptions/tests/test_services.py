@@ -14,7 +14,7 @@ from subscriptions.services import (
 
 class ChangeSubscriptionStatusTests(TestCase):
     def setUp(self):
-        self.clinic = create_clinic()  # defaults to TRIAL/STARTER/MONTHLY
+        self.clinic = create_clinic()  # par défaut TRIAL/STARTER/MONTHLY
 
     def test_allowed_transition_updates_clinic_and_creates_event(self):
         change_subscription_status(
@@ -57,9 +57,10 @@ class ChangeSubscriptionStatusTests(TestCase):
         self.assertEqual(log.metadata["note"], "manual test")
 
     def test_pins_known_audit_log_clinic_is_none_gap(self):
-        """Documents docs/known-issues.md: record_audit's clinic = getattr(obj, "clinic", None) or
-        getattr(user, "clinic", None) resolves to None for a Clinic object audited by a superuser
-        (whose own .clinic is None) — mitigated via metadata.clinic_id above, not fixed here."""
+        """Documente docs/known-issues.md : le clinic = getattr(obj, "clinic", None) or
+        getattr(user, "clinic", None) de record_audit se résout à None pour un objet Clinic audité
+        par un superutilisateur (dont le .clinic est lui-même None) — atténué via metadata.clinic_id
+        ci-dessus, pas corrigé ici."""
         admin_user = create_user(clinic=None, role=None, username="platform_admin2", is_superuser=True)
         change_subscription_status(
             clinic=self.clinic, status=Clinic.SubscriptionStatus.ACTIVE, changed_by=admin_user,
@@ -168,7 +169,7 @@ class HandleStripeEventTests(TestCase):
         handle_stripe_event(
             event_type="checkout.session.completed", event_id="evt_5",
             payload={"metadata": {}, "customer": "cus_unknown"},
-        )  # must not raise
+        )  # ne doit pas lever d'exception
 
     def test_unknown_event_type_is_a_noop(self):
-        handle_stripe_event(event_type="some.unrelated.event", event_id="evt_6", payload={})  # must not raise
+        handle_stripe_event(event_type="some.unrelated.event", event_id="evt_6", payload={})  # ne doit pas lever d'exception

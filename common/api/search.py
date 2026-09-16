@@ -14,11 +14,13 @@ RESULTS_PER_TYPE = 5
 
 class GlobalSearchView(APIView):
     """
-    Cross-entity search for the top-bar search box (design-system/components.md has no spec for
-    this — placement/behavior decided ad hoc, see frontend shell). Every branch is tenant-scoped
-    and role-gated per business/access-policy.md: a role only searches the entities it is allowed
-    to see (e.g. secretary never gets consultations/medical-record results — not implemented here
-    since neither is searched at all yet; accountant never gets appointment results).
+    Recherche inter-entités pour la barre de recherche du top-bar (design-system/components.md ne
+    définit pas de spécification pour ceci — placement/comportement décidés de façon ad hoc, voir
+    le shell frontend). Chaque branche est scopée par tenant et filtrée par rôle selon
+    business/access-policy.md : un rôle ne recherche que les entités qu'il est autorisé à voir
+    (ex. secretary n'obtient jamais de résultats consultations/dossier médical — non implémenté ici
+    car aucun des deux n'est encore recherché ; accountant n'obtient jamais de résultats de
+    rendez-vous).
     """
 
     permission_classes = [IsAuthenticated]
@@ -52,7 +54,7 @@ class GlobalSearchView(APIView):
 
     @staticmethod
     def _can_search_appointments(user):
-        # business/access-policy.md: CAISSIER (accountant) has no "Rendez-vous" entry.
+        # business/access-policy.md : CAISSIER (accountant) n'a pas d'entrée "Rendez-vous".
         return in_role(user, "doctor", "secretary", "clinic_admin")
 
     def _search_patients(self, query, user, clinic_id):
@@ -64,8 +66,9 @@ class GlobalSearchView(APIView):
             | Q(patient_number__icontains=query)
             | Q(phone__icontains=query)
         )
-        # No patient detail route exists yet (frontend/src/app/app.routes.ts) — patients are only
-        # edited via a dialog opened from the list, so results link back to the filtered list.
+        # Aucune route de détail patient n'existe encore (frontend/src/app/app.routes.ts) — les
+        # patients ne sont modifiés que via une boîte de dialogue ouverte depuis la liste, donc les
+        # résultats renvoient vers la liste filtrée.
         return [
             {
                 "id": patient.id,
@@ -86,8 +89,9 @@ class GlobalSearchView(APIView):
             | Q(specialty__icontains=query)
             | Q(professional_number__icontains=query)
         )
-        # doctor-list has no text-search filter (frontend/features/doctors/doctor-list) and no
-        # detail route — link to the plain list, the requester locates the row visually.
+        # doctor-list n'a pas de filtre de recherche texte (frontend/features/doctors/doctor-list)
+        # ni de route de détail — lien vers la liste simple, le demandeur localise la ligne
+        # visuellement.
         return [
             {
                 "id": doctor.id,
@@ -111,8 +115,8 @@ class GlobalSearchView(APIView):
             | Q(patient__patient_number__icontains=query)
             | Q(ticket_number__icontains=query)
         )
-        # appointment-list filters by patient_number, not free text, and has no detail route — link
-        # back to the filtered list (frontend/features/appointments/appointment-list).
+        # appointment-list filtre par patient_number, pas par texte libre, et n'a pas de route de
+        # détail — lien vers la liste filtrée (frontend/features/appointments/appointment-list).
         return [
             {
                 "id": appointment.id,

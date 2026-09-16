@@ -7,13 +7,15 @@ from patients.models import Patient
 
 
 class AppointmentSerializer(serializers.ModelSerializer):
-    # Read-only conveniences for list/detail UIs — reuse the queryset's existing
-    # select_related("patient", "doctor__user") (see AppointmentViewSet), so these add no extra queries.
+    # Facilités en lecture seule pour les UI de liste/détail — réutilisent le select_related
+    # ("patient", "doctor__user") déjà présent sur le queryset (voir AppointmentViewSet), donc
+    # n'ajoutent aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
     doctor_display = serializers.SerializerMethodField()
-    # Not required at the field level: a patient-role caller omits it and the view resolves it
-    # server-side from request.user.patient_profile (AppointmentViewSet.perform_create). Staff/doctor
-    # callers must still supply it — that's enforced in perform_create, not here.
+    # Non requis au niveau du champ : un appelant avec le rôle patient l'omet et la vue le résout
+    # côté serveur à partir de request.user.patient_profile (AppointmentViewSet.perform_create).
+    # Les appelants staff/médecin doivent quand même le fournir — c'est vérifié dans
+    # perform_create, pas ici.
     patient = serializers.PrimaryKeyRelatedField(queryset=Patient.objects.all(), required=False)
 
     class Meta:

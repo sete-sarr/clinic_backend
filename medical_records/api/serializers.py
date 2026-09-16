@@ -4,8 +4,8 @@ from medical_records.models import MedicalRecord
 
 
 class MedicalRecordSerializer(serializers.ModelSerializer):
-    # Read-only convenience for list/detail UIs — reuses the queryset's existing
-    # select_related("patient") (see MedicalRecordViewSet), so this adds no extra queries.
+    # Champ pratique en lecture seule pour les UI liste/détail — réutilise le select_related("patient")
+    # déjà présent dans le queryset (voir MedicalRecordViewSet), donc n'ajoute aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
 
     class Meta:

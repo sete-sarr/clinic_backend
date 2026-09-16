@@ -101,7 +101,7 @@ class ClinicLogoUploadTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
 
     def test_bmp_logo_is_rejected(self):
-        # security audit, 2026-09-02: only PNG/JPEG are accepted per design-system/.
+        # audit de sécurité, 2026-09-02 : seuls PNG/JPEG sont acceptés selon design-system/.
         upload = _generate_image_upload(image_format="BMP", filename="logo.bmp")
         response = self.client.patch(
             reverse("clinic-detail", args=[self.clinic.id]), {"logo_light": upload}, format="multipart"

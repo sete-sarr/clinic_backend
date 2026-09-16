@@ -21,14 +21,15 @@ class UserSerializer(serializers.ModelSerializer):
         return list(obj.groups.values_list("name", flat=True))
 
     def get_doctor_id(self, obj):
-        # Lets the frontend auto-fill/lock the doctor field on consultation and prescription
-        # forms instead of asking a doctor to pick their own name from a list.
+        # Permet au frontend de pré-remplir/verrouiller le champ médecin sur les formulaires de
+        # consultation et d'ordonnance, au lieu de demander au médecin de choisir son propre nom
+        # dans une liste.
         doctor_profile = getattr(obj, "doctor_profile", None)
         return doctor_profile.id if doctor_profile else None
 
 
 class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
-    """Embeds clinic_id and roles in the JWT so the frontend never has to guess them."""
+    """Intègre clinic_id et roles dans le JWT afin que le frontend n'ait jamais à les deviner."""
 
     @classmethod
     def get_token(cls, user):
@@ -39,7 +40,7 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
-        # business/access-policy.md "AUDIT POLICY": Authentication is a logged event.
+        # business/access-policy.md "AUDIT POLICY" : l'authentification est un événement journalisé.
         record_audit(user=self.user, action=AuditLog.Action.LOGIN, obj=self.user)
         data["user"] = UserSerializer(self.user).data
         return data
@@ -55,13 +56,14 @@ class ClinicRegistrationSerializer(serializers.Serializer):
     last_name = serializers.CharField(max_length=150)
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
-    # No validate_username here: this always creates a brand-new clinic, whose username
-    # namespace (unique per clinic, see User.Meta.constraints) is guaranteed empty.
+    # Pas de validate_username ici : ceci crée toujours une toute nouvelle clinique, dont l'espace
+    # de noms d'utilisateur (unique par clinique, voir User.Meta.constraints) est garanti vide.
 
     def validate_clinic_name(self, value):
-        # Case-insensitive, whitespace-trimmed uniqueness (Clinic.Meta.constraints) — the public
-        # clinic picker on the patient portal shows name only (ClinicPublicSerializer), so a
-        # duplicate name would be indistinguishable to a patient trying to pick their own clinic.
+        # Unicité insensible à la casse et aux espaces superflus (Clinic.Meta.constraints) — le
+        # sélecteur public de clinique sur le portail patient n'affiche que le nom
+        # (ClinicPublicSerializer), un nom en doublon serait donc indiscernable pour un patient
+        # essayant de choisir sa propre clinique.
         value = value.strip()
         if Clinic.objects.filter(name__iexact=value).exists():
             raise serializers.ValidationError("A clinic with that name already exists.")
@@ -81,9 +83,10 @@ class PatientActivationRequestSerializer(serializers.Serializer):
 
 
 class StaffListSerializer(serializers.ModelSerializer):
-    """Read shape for the staff management screen. Unlike UserSerializer.roles (plural, used by
-    /me/), role is a single value — a staff member managed through this screen has exactly one of
-    STAFF_ROLES_ASSIGNABLE (or "doctor", surfaced read-only for completeness of the directory)."""
+    """Représentation en lecture pour l'écran de gestion du personnel. Contrairement à
+    UserSerializer.roles (pluriel, utilisé par /me/), role est une valeur unique — un membre du
+    personnel géré via cet écran possède exactement un rôle parmi STAFF_ROLES_ASSIGNABLE (ou
+    "doctor", exposé en lecture seule pour la complétude de l'annuaire)."""
 
     role = serializers.SerializerMethodField()
 
@@ -104,15 +107,16 @@ class StaffCreateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=STAFF_ROLES_ASSIGNABLE)
 
     def validate_username(self, value):
-        # Scoped per clinic (User.Meta.constraints) — the same username may already be taken by
-        # an unrelated clinic, that's fine, only a collision within this clinic matters.
+        # Scope par clinique (User.Meta.constraints) — le même username peut déjà être pris par
+        # une clinique sans rapport, ce n'est pas un problème, seule une collision au sein de
+        # cette clinique compte.
         clinic = self.context["request"].user.clinic
         if User.objects.filter(username=value, clinic=clinic).exists():
             raise serializers.ValidationError("This username is already taken.")
         return value
 
     def validate_email(self, value):
-        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics.
+        # email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique sur toutes les cliniques.
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("A user with that email already exists.")
         return value
@@ -138,8 +142,9 @@ class PatientActivationVerifySerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
 
     def validate_username(self, value):
-        # Scoped per clinic (User.Meta.constraints). self.initial_data (raw payload) is used
-        # rather than attrs, since field-level validators run before cross-field attrs exist.
+        # Scope par clinique (User.Meta.constraints). self.initial_data (payload brut) est utilisé
+        # plutôt qu'attrs, car les validateurs de champ s'exécutent avant que les attrs
+        # inter-champs n'existent.
         clinic_id = self.initial_data.get("clinic")
         if User.objects.filter(username=value, clinic_id=clinic_id).exists():
             raise serializers.ValidationError("This username is already taken.")

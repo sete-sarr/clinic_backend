@@ -7,10 +7,11 @@ from .models import AuditLog
 
 
 class CsvExportMixin:
-    """Adds a GET .../export/ action that dumps the viewset's OWN filtered queryset to CSV —
-    reuses the exact same get_queryset()/permission scoping as the list endpoint, per
-    business/reporting-export-policy.md ("any list a role can already view via the API, scoped
-    identically"). Never build a separate, differently-scoped query for an export."""
+    """Ajoute une action GET .../export/ qui exporte en CSV le queryset filtré PROPRE au viewset —
+    réutilise exactement le même get_queryset()/scoping de permissions que l'endpoint de liste,
+    selon business/reporting-export-policy.md ("toute liste qu'un rôle peut déjà consulter via
+    l'API, scopée à l'identique"). Ne jamais construire une requête séparée, scopée différemment,
+    pour un export."""
 
     export_fields: list[str] = []
 
@@ -27,8 +28,9 @@ class CsvExportMixin:
         for row in serializer.data:
             writer.writerow(row)
 
-        # A bulk export has no single object, so it's recorded directly rather than through
-        # common.audit.record_audit() (which assumes one obj to derive model_name/object_id from).
+        # Un export en masse n'a pas d'objet unique, donc il est enregistré directement plutôt que
+        # via common.audit.record_audit() (qui suppose un seul obj pour en déduire
+        # model_name/object_id).
         AuditLog.objects.create(
             user=request.user if request.user.is_authenticated else None,
             clinic=getattr(request.user, "clinic", None),

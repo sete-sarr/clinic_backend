@@ -10,8 +10,9 @@ logger = logging.getLogger(__name__)
 
 
 class DjangoEmailProvider(EmailProvider):
-    """Wraps Django's own send_mail — honors EMAIL_BACKEND (console backend by default, real
-    SMTP is a settings change only, no code change needed here)."""
+    """Encapsule le send_mail natif de Django — respecte EMAIL_BACKEND (backend console par
+    défaut, passer en SMTP réel n'est qu'un changement de settings, aucun changement de code
+    n'est nécessaire ici)."""
 
     name = "django_email"
 
@@ -24,7 +25,7 @@ class DjangoEmailProvider(EmailProvider):
 
 
 class ResendEmailProvider(EmailProvider):
-    """Sends via resend.com's HTTP API. See https://resend.com/docs/api-reference/emails/send-email."""
+    """Envoie via l'API HTTP de resend.com. Voir https://resend.com/docs/api-reference/emails/send-email."""
 
     name = "resend"
     API_URL = "https://api.resend.com/emails"
@@ -58,9 +59,10 @@ class ResendEmailProvider(EmailProvider):
 
 
 def get_email_provider() -> EmailProvider:
-    """communication/tasks.py resolves the email provider through here rather than importing a
-    concrete class directly, so a missing Resend key degrades to DjangoEmailProvider (console
-    backend by default) instead of crashing delivery — same posture as get_sms_provider()."""
+    """communication/tasks.py résout le fournisseur d'e-mail en passant par ici plutôt qu'en
+    important directement une classe concrète, de sorte qu'une clé Resend manquante dégrade
+    vers DjangoEmailProvider (backend console par défaut) au lieu de faire planter l'envoi —
+    même posture que get_sms_provider()."""
     if settings.RESEND_API_KEY and settings.RESEND_FROM_EMAIL:
         return ResendEmailProvider()
     logger.warning("RESEND_API_KEY/RESEND_FROM_EMAIL not configured — falling back to DjangoEmailProvider.")

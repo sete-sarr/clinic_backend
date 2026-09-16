@@ -5,7 +5,7 @@ from clinics.models import Clinic
 from communication.models import NotificationLog
 from communication.services import send_notification
 
-# business/notification-rules.md "SUBSCRIPTION EXPIRING": 30/15/7/1 days before current_period_end.
+# business/notification-rules.md "SUBSCRIPTION EXPIRING" : 30/15/7/1 jours avant current_period_end.
 _THRESHOLDS = [
     (30, "expiring_notified_30d_at"),
     (15, "expiring_notified_15d_at"),
@@ -16,10 +16,11 @@ _THRESHOLDS = [
 
 @shared_task
 def send_subscription_expiring_notifications():
-    """Runs daily. Idempotency: a *_notified_at timestamp per threshold per clinic — same shape as
-    appointments/tasks.py::send_day_before_reminders's day_before_reminder_sent_at guard, extended
-    to 4 independent thresholds. A same-day rerun never double-sends because the check excludes
-    clinics whose timestamp for that threshold is already set."""
+    """S'exécute quotidiennement. Idempotence : un horodatage *_notified_at par palier et par
+    clinique — même principe que le verrou day_before_reminder_sent_at de
+    appointments/tasks.py::send_day_before_reminders, étendu à 4 paliers indépendants. Une
+    réexécution le même jour n'envoie jamais deux fois car la vérification exclut les cliniques dont
+    l'horodatage pour ce palier est déjà renseigné."""
     today = timezone.localdate()
     active_clinics = Clinic.objects.filter(
         subscription_status__in=[Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.PAST_DUE],
@@ -35,9 +36,9 @@ def send_subscription_expiring_notifications():
 
 
 def _notify_expiring(*, clinic, days_left):
-    # "Receptionist"-style role->users resolution — same pattern already documented in
-    # docs/known-issues.md for appointments/notifications.py: role name -> all matching users in
-    # the clinic, may be zero or many.
+    # Résolution rôle->utilisateurs façon "Receptionist" — même schéma déjà documenté dans
+    # docs/known-issues.md pour appointments/notifications.py : nom de rôle -> tous les
+    # utilisateurs correspondants dans la clinique, ce qui peut donner zéro ou plusieurs résultats.
     admins = clinic.users.filter(groups__name="clinic_admin")
     subject = f"Your subscription expires in {days_left} day{'s' if days_left != 1 else ''}"
     body = (
@@ -51,5 +52,6 @@ def _notify_expiring(*, clinic, days_left):
                 notification_type=NotificationLog.NotificationType.SUBSCRIPTION_EXPIRING,
                 recipient_address=admin_user.email, subject=subject, body=body,
             )
-        # docs/known-issues.md: User has no phone field — SMS channel unreachable for
-        # clinic_admin recipients today. Not fixed here, not silently worked around.
+        # docs/known-issues.md : User n'a pas de champ phone — le canal SMS est aujourd'hui
+        # inaccessible pour les destinataires clinic_admin. Non corrigé ici, non contourné
+        # silencieusement.

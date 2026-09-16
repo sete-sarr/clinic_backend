@@ -10,7 +10,7 @@ from common.models import AuditLog
 
 class ClinicRegistrationTests(APITestCase):
     def setUp(self):
-        cache.clear()  # ScopedRateThrottle uses the default (process-shared) cache.
+        cache.clear()  # ScopedRateThrottle utilise le cache par défaut (partagé entre process).
         self.payload = {
             "clinic_name": "Riverside Clinic",
             "clinic_email": "contact@riverside.example.com",
@@ -61,24 +61,24 @@ class ClinicRegistrationTests(APITestCase):
         )
 
     def test_same_username_across_different_clinics_is_allowed(self):
-        # Usernames are unique per clinic (User.Meta.constraints), not globally — an unrelated
-        # clinic already using "riverside_admin" must never block a brand-new clinic from using
-        # the same username for its own first admin.
+        # Les usernames sont uniques par clinique (User.Meta.constraints), pas globalement — une
+        # clinique sans rapport utilisant déjà "riverside_admin" ne doit jamais empêcher une toute
+        # nouvelle clinique d'utiliser le même username pour son propre premier admin.
         self.client.post(reverse("clinic-registration"), self.payload)
         second_payload = {**self.payload, "clinic_name": "Other Clinic", "email": "other@example.com"}
         response = self.client.post(reverse("clinic-registration"), second_payload)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
 
     def test_duplicate_email_is_rejected(self):
-        # email is the global login identifier (User.USERNAME_FIELD) — unique across all clinics.
+        # email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique sur toutes les cliniques.
         self.client.post(reverse("clinic-registration"), self.payload)
         second_payload = {**self.payload, "clinic_name": "Other Clinic", "username": "other_admin"}
         response = self.client.post(reverse("clinic-registration"), second_payload)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_duplicate_clinic_name_is_rejected(self):
-        # The public clinic picker on the patient portal (ClinicPublicSerializer) shows name only —
-        # two same-named clinics would be indistinguishable to a patient there.
+        # Le sélecteur public de clinique sur le portail patient (ClinicPublicSerializer) n'affiche
+        # que le nom — deux cliniques portant le même nom seraient indiscernables pour un patient.
         self.client.post(reverse("clinic-registration"), self.payload)
         second_payload = {
             **self.payload, "username": "other_admin", "email": "other@example.com",

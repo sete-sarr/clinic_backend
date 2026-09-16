@@ -7,8 +7,8 @@ from .providers.sms_provider import get_sms_provider
 
 
 def _resolve_provider(channel):
-    # Resolved per-send, not at import time, so *_API_KEY changes take effect without a worker
-    # restart and so tests can override settings freely.
+    # Résolu à chaque envoi, pas à l'import, afin que les changements de *_API_KEY prennent effet
+    # sans redémarrage du worker et que les tests puissent surcharger les settings librement.
     if channel == NotificationLog.Channel.EMAIL:
         return get_email_provider()
     if channel == NotificationLog.Channel.SMS:
@@ -39,5 +39,5 @@ def deliver_notification(self, notification_log_id):
     log.error_message = result.error_message
     log.retry_count += 1
     log.save(update_fields=["status", "provider_name", "error_message", "retry_count"])
-    # Exponential backoff (docs/communication-architecture.md: retry with exponential backoff).
+    # Backoff exponentiel (docs/communication-architecture.md : nouvelle tentative avec backoff exponentiel).
     raise self.retry(countdown=2**self.request.retries * 30)

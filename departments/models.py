@@ -4,10 +4,10 @@ from common.models import SoftDeleteModel, TimeStampedModel
 
 
 class Department(TimeStampedModel, SoftDeleteModel):
-    # business/validation-rules.md VALIDATION DÉPARTEMENT: Actif -> Inactif -> Archivé. `is_active`
-    # (from SoftDeleteModel) stays the single "is this Archivé" switch queries/permissions key off
-    # of (mirrors every other soft-deletable model); `status` carries the extra Actif/Inactif
-    # distinction that only applies while is_active=True.
+    # business/validation-rules.md VALIDATION DÉPARTEMENT : Actif -> Inactif -> Archivé. `is_active`
+    # (hérité de SoftDeleteModel) reste l'unique interrupteur "est-ce Archivé" sur lequel se basent
+    # les requêtes/permissions (comme pour tout autre modèle à suppression logique) ; `status` porte
+    # la distinction supplémentaire Actif/Inactif qui ne s'applique que lorsque is_active=True.
     class Status(models.TextChoices):
         ACTIVE = "active", "Actif"
         INACTIVE = "inactive", "Inactif"

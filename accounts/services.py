@@ -14,10 +14,11 @@ from .models import User
 
 
 def _resolve_patient(*, clinic_id, patient_number, phone, date_of_birth):
-    """Two-factor identity check: clinic pins the row to one tenant (patient_number is only
-    unique per-clinic, not globally — see docs/known-issues.md discussion), phone + date_of_birth
-    confirm the requester knows this specific patient. Never used to search broadly — the OTP is
-    always sent to the address already on file, never one the caller supplies."""
+    """Vérification d'identité à deux facteurs : clinic ancre l'enregistrement à un seul tenant
+    (patient_number n'est unique que par clinique, pas globalement — voir la discussion dans
+    docs/known-issues.md), phone + date_of_birth confirment que le demandeur connaît ce patient
+    précis. Jamais utilisé pour une recherche large — l'OTP est toujours envoyé à l'adresse déjà
+    enregistrée, jamais à une adresse fournie par l'appelant."""
     return Patient.objects.filter(
         clinic_id=clinic_id,
         patient_number=patient_number,
@@ -29,8 +30,9 @@ def _resolve_patient(*, clinic_id, patient_number, phone, date_of_birth):
 
 
 def request_patient_activation(*, clinic_id, patient_number, phone, date_of_birth):
-    """Always succeeds from the caller's point of view regardless of whether a match was found —
-    enumeration protection (never reveal whether a patient_number/phone/DOB combination exists)."""
+    """Réussit toujours du point de vue de l'appelant, qu'une correspondance ait été trouvée ou
+    non — protection contre l'énumération (ne jamais révéler si une combinaison
+    patient_number/phone/date de naissance existe)."""
     patient = _resolve_patient(
         clinic_id=clinic_id, patient_number=patient_number, phone=phone, date_of_birth=date_of_birth
     )
@@ -39,7 +41,7 @@ def request_patient_activation(*, clinic_id, patient_number, phone, date_of_birt
     try:
         generate_and_send_otp(principal=patient, purpose=OtpCode.Purpose.ACCOUNT_ACTIVATION)
     except ValidationError:
-        # Cooldown already active for this patient — still a no-op from the caller's perspective.
+        # Cooldown déjà actif pour ce patient — reste sans effet du point de vue de l'appelant.
         pass
 
 
@@ -51,9 +53,10 @@ def activate_patient_account(*, clinic_id, patient_number, phone, date_of_birth,
     if patient is None:
         raise ValidationError("No matching patient record was found.")
 
-    # email is the unique login identifier platform-wide (User.USERNAME_FIELD) — Patient.email is
-    # optional, so this must be checked before verify_otp burns the one-time code on an activation
-    # that can never succeed.
+    # email est l'identifiant de connexion unique à l'échelle de la plateforme
+    # (User.USERNAME_FIELD) — Patient.email étant optionnel, cette vérification doit avoir lieu
+    # avant que verify_otp ne consomme le code à usage unique pour une activation qui ne pourra
+    # jamais aboutir.
     if not patient.email:
         raise ValidationError(
             "No email address is on file for this patient. Please contact your clinic to add one "
@@ -83,10 +86,11 @@ def activate_patient_account(*, clinic_id, patient_number, phone, date_of_birth,
 def register_clinic(
     *, clinic_name, clinic_email, clinic_phone, username, password, email, first_name, last_name
 ):
-    """Public tenant self-registration (business/subscription-billing-policy.md's lifecycle starts
-    here: every new clinic enters on a Trial, exactly like subscriptions.services.start_trial's own
-    docstring calls out as its still-missing hook point). The clinic's first user is always its
-    clinic_admin — there is no other way to become clinic_admin of a brand-new tenant."""
+    """Auto-inscription publique d'un tenant (le cycle de vie de business/subscription-billing-policy.md
+    commence ici : chaque nouvelle clinique démarre en Trial, exactement le point d'ancrage encore
+    manquant que mentionne le docstring de subscriptions.services.start_trial). Le premier
+    utilisateur de la clinique est toujours son clinic_admin — il n'existe aucun autre moyen de
+    devenir clinic_admin d'un tenant tout juste créé."""
     clinic = Clinic.objects.create(name=clinic_name, email=clinic_email, phone=clinic_phone)
     start_trial(clinic=clinic)
 
@@ -106,17 +110,18 @@ def register_clinic(
     return user
 
 
-# Roles a clinic_admin can assign through the staff management screen. "doctor" is deliberately
-# excluded — it has its own profile model (doctors.models.Doctor) and stays owned by the doctors
-# app's own create_doctor/endpoint. "patient" is excluded — created via the separate
-# patients + OTP activation flow, not as staff.
+# Rôles qu'un clinic_admin peut attribuer via l'écran de gestion du personnel. "doctor" est
+# volontairement exclu — il possède son propre modèle de profil (doctors.models.Doctor) et reste
+# géré par le endpoint/create_doctor propre à l'app doctors. "patient" est exclu — créé via le
+# flux séparé patients + activation OTP, pas en tant que membre du personnel.
 STAFF_ROLES_ASSIGNABLE = ["secretary", "accountant", "clinic_admin"]
 
 
 @transaction.atomic
 def create_staff_member(*, clinic, role, user_data, actor):
-    """Creates a User and assigns it one of STAFF_ROLES_ASSIGNABLE. Doctor creation is intentionally
-    not handled here — see doctors.services.create_doctor, exposed via its own endpoint/screen."""
+    """Crée un User et lui attribue l'un des STAFF_ROLES_ASSIGNABLE. La création d'un médecin n'est
+    volontairement pas gérée ici — voir doctors.services.create_doctor, exposée via son propre
+    endpoint/écran."""
     user = User.objects.create_user(clinic=clinic, **user_data)
     group, _ = Group.objects.get_or_create(name=role)
     user.groups.add(group)
@@ -127,9 +132,10 @@ def create_staff_member(*, clinic, role, user_data, actor):
 
 @transaction.atomic
 def update_staff_role(*, user, new_role, actor):
-    """Swaps group membership among STAFF_ROLES_ASSIGNABLE only. Any transition touching "doctor"
-    (in either direction) is rejected — it would require creating/deleting a Doctor profile with its
-    own required fields, a materially bigger operation deliberately deferred (docs/known-issues.md)."""
+    """Échange l'appartenance aux groupes uniquement parmi STAFF_ROLES_ASSIGNABLE. Toute transition
+    touchant "doctor" (dans un sens ou dans l'autre) est rejetée — cela nécessiterait de
+    créer/supprimer un profil Doctor avec ses propres champs obligatoires, une opération
+    nettement plus lourde et volontairement différée (docs/known-issues.md)."""
     if new_role not in STAFF_ROLES_ASSIGNABLE:
         raise ValidationError("Unsupported role transition.")
     if user.groups.filter(name="doctor").exists():
@@ -149,9 +155,10 @@ def update_staff_role(*, user, new_role, actor):
 
 @transaction.atomic
 def deactivate_staff_member(*, user, actor):
-    """business/permissions-matrix.md UTILISATEURS: "Désactiver" is allowed (unlike physical
-    deletion, forbidden system-wide). Two guards enforced here, not in the view or frontend: an
-    admin can never deactivate themselves, and a clinic can never be left with zero active admins."""
+    """business/permissions-matrix.md UTILISATEURS : "Désactiver" est autorisé (contrairement à la
+    suppression physique, interdite dans tout le système). Deux garde-fous appliqués ici, pas dans
+    la vue ni le frontend : un admin ne peut jamais se désactiver lui-même, et une clinique ne peut
+    jamais se retrouver sans aucun admin actif."""
     if user.pk == actor.pk:
         raise ValidationError("You cannot deactivate your own account.")
     if user.groups.filter(name="clinic_admin").exists():

@@ -37,8 +37,8 @@ def _compute_totals(*, lines, vat_rate):
 @transaction.atomic
 def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_RATE, issue_date=None, **fields):
     if patient.clinic_id != clinic.id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
+        # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if doctor and doctor.clinic_id != clinic.id:
         raise ValidationError("Invalid doctor.")
@@ -69,8 +69,8 @@ def update_invoice(*, invoice, lines=None, **fields):
         raise ValidationError("A paid or cancelled invoice can no longer be edited.")
 
     if "patient" in fields and fields["patient"].clinic_id != invoice.clinic_id:
-        # Deliberately generic (security audit, 2026-09-02): does not confirm whether the
-        # submitted ID exists in another clinic, to avoid a cross-tenant existence oracle.
+        # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
+        # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
         raise ValidationError("Invalid patient.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != invoice.clinic_id:
         raise ValidationError("Invalid doctor.")
@@ -114,7 +114,7 @@ def cancel_invoice(*, invoice):
 
 @transaction.atomic
 def recompute_invoice_status(*, invoice):
-    """Called from payments.services whenever a payment is validated/refunded (business-rules.md)."""
+    """Appelée depuis payments.services chaque fois qu'un paiement est validé/remboursé (business-rules.md)."""
     if invoice.status in (Invoice.Status.DRAFT, Invoice.Status.CANCELLED):
         return invoice
 

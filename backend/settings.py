@@ -1,5 +1,5 @@
 """
-Django settings for backend project.
+Réglages Django du projet backend.
 """
 
 import sys
@@ -13,10 +13,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 env = environ.Env(DEBUG=(bool, False))
 environ.Env.read_env(BASE_DIR / ".env")
-# Local-only overrides (gitignored, never present in production) — lets a developer point at a
-# local Postgres instance for pre-commit testing without touching the real .env (which may hold
-# production credentials). Only the keys actually present in .env.local are overridden; anything
-# not repeated there still comes from .env above.
+# Surcharges locales uniquement (ignorées par git, jamais présentes en production) — permet à un
+# développeur de pointer vers une instance Postgres locale pour des tests avant commit, sans
+# toucher au vrai .env (qui peut contenir des identifiants de production). Seules les clés
+# réellement présentes dans .env.local sont surchargées ; tout ce qui n'y est pas répété vient
+# toujours de .env ci-dessus.
 _local_env_file = BASE_DIR / ".env.local"
 if _local_env_file.exists():
     environ.Env.read_env(_local_env_file, overwrite=True)
@@ -40,14 +41,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    # third-party
+    # bibliothèques tierces
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "django_filters",
     "corsheaders",
     "drf_spectacular",
     "django_celery_beat",
-    # business apps
+    # applications métier
     "common",
     "clinics",
     "accounts",
@@ -98,13 +99,15 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "backend.wsgi.application"
 
-# exemple_prod.md §1: production (Render + Supabase) sets a single DATABASE_URL (Supabase's
-# pooling connection string); local dev keeps the 5 separate DB_* fields already in .env.example.
+# exemple_prod.md §1 : en production (Render + Supabase), une seule DATABASE_URL est définie
+# (la chaîne de connexion pooling de Supabase) ; en dev local, on garde les 5 champs DB_* séparés
+# déjà présents dans .env.example.
 if env("DATABASE_URL", default=""):
     DATABASES = {"default": env.db_url("DATABASE_URL")}
 elif env("DB_NAME", default=""):
-    # .env.local leaves DATABASE_URL blank on purpose to fall back to a local Postgres instance
-    # via these 5 fields instead of the production connection string in .env (see .env.local).
+    # .env.local laisse volontairement DATABASE_URL vide pour retomber sur une instance Postgres
+    # locale via ces 5 champs, au lieu de la chaîne de connexion de production dans .env (voir
+    # .env.local).
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -116,15 +119,15 @@ elif env("DB_NAME", default=""):
         }
     }
 else:
-    # Fails loudly and explicitly here instead of leaving DATABASES unset, which Django would
-    # otherwise silently resolve to its "dummy" backend and report as a confusing
-    # "supply the ENGINE value" error with no mention of DATABASE_URL (seen in a Render build
-    # failure, 2026-09-16).
+    # Échoue ici de façon explicite et bruyante, plutôt que de laisser DATABASES non défini, ce
+    # que Django résoudrait silencieusement vers son backend "dummy" et signalerait par une
+    # erreur confuse "supply the ENGINE value" sans mentionner DATABASE_URL (rencontré lors d'un
+    # échec de build Render, 2026-09-16).
     raise ImproperlyConfigured(
-        "Neither DATABASE_URL nor DB_NAME is set. In Render: Environment -> Environment "
-        "Variables -> DATABASE_URL must hold the Supabase connection string (see "
-        "exemple_prod.md §1/§2). For local dev, set DATABASE_URL or the DB_* fields in "
-        "backend/.env or backend/.env.local."
+        "Ni DATABASE_URL ni DB_NAME ne sont définis. Sur Render : Environment -> Environment "
+        "Variables -> DATABASE_URL doit contenir la chaîne de connexion Supabase (voir "
+        "exemple_prod.md §1/§2). En dev local, définir DATABASE_URL ou les champs DB_* dans "
+        "backend/.env ou backend/.env.local."
     )
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -142,9 +145,10 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STORAGES = {
-    # "default" was missing entirely, which meant any FileField save (e.g. clinic logo upload)
-    # raised InvalidStorageError in production, not just in tests (found while adding logo
-    # upload tests during the security audit, 2026-09-02).
+    # "default" était totalement absent, ce qui faisait qu'un enregistrement FileField (ex.
+    # upload du logo de la clinique) levait InvalidStorageError en production, pas seulement
+    # dans les tests (découvert en ajoutant les tests d'upload du logo pendant l'audit de
+    # sécurité, 2026-09-02).
     "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
     "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
 }
@@ -170,15 +174,17 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "EXCEPTION_HANDLER": "common.exceptions.api_exception_handler",
     "DEFAULT_THROTTLE_RATES": {
-        # Per-IP ceiling on patient activation request/verify (business/communication-policy.md
-        # "OTP generation limited") — the per-principal cooldown in communication/services.py alone
-        # doesn't stop someone sweeping many (patient_number, phone) guesses across different targets.
+        # Plafond par IP sur la demande/vérification d'activation patient (business/
+        # communication-policy.md "OTP generation limited") — le délai de refroidissement par
+        # principal dans communication/services.py ne suffit pas seul à empêcher quelqu'un de
+        # tester en masse des combinaisons (patient_number, phone) sur des cibles différentes.
         "patient_activation": "5/hour",
-        # Per-IP ceiling on public clinic self-registration — prevents automated bulk creation of
-        # trial tenants (each one starts a real Stripe-adjacent trial lifecycle).
+        # Plafond par IP sur l'auto-inscription publique d'une clinique — empêche la création
+        # automatisée en masse de tenants d'essai (chacun démarre un vrai cycle de vie d'essai
+        # lié à Stripe).
         "clinic_registration": "5/hour",
-        # Per-IP ceiling on login — without this, password brute-forcing against a known email is
-        # unrestricted (security audit finding, 2026-09-02).
+        # Plafond par IP sur la connexion — sans cela, le brute-forcing de mot de passe contre un
+        # email connu n'est pas limité (constat de l'audit de sécurité, 2026-09-02).
         "login": "10/min",
     },
 }
@@ -231,7 +237,7 @@ CORS_ALLOW_METHODS = [
     "POST",
     "PUT",
 ]
-# --- Proxy / HTTPS (exemple_prod.md §2: Render terminates TLS and forwards plain HTTP) ----------
+# --- Proxy / HTTPS (exemple_prod.md §2 : Render termine le TLS et transmet en HTTP simple) ------
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -251,17 +257,19 @@ CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", default="redis://localhost:
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
-# Tasks here are fire-and-forget (docs/communication-architecture.md) — nothing ever calls
-# .get()/AsyncResult on them. Without this, .delay() opens a synchronous connection to the
-# result backend before returning; if that backend (Redis) is unreachable, the connection
-# retry loop raises and crashes the caller's request (e.g. appointment creation) even though
-# the task itself would have been queued fine on the broker.
+# Les tâches ici sont "fire-and-forget" (docs/communication-architecture.md) — rien n'appelle
+# jamais .get()/AsyncResult dessus. Sans ce réglage, .delay() ouvre une connexion synchrone vers
+# le backend de résultats avant de retourner ; si ce backend (Redis) est injoignable, la boucle
+# de nouvelle tentative de connexion lève une exception et fait planter la requête appelante
+# (ex. création d'un rendez-vous) alors même que la tâche aurait été correctement mise en file
+# sur le broker.
 CELERY_TASK_IGNORE_RESULT = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
-# `manage.py test` must never depend on live broker connectivity (CloudAMQP) — tasks run inline,
-# synchronously, in the same process instead of being queued. Existing tests
-# (e.g. appointments/tests/test_api.py) create appointments, which dispatch notifications, with no
-# mocking of Celery, so without this every test run silently required real network access.
+# `manage.py test` ne doit jamais dépendre d'une connectivité réelle au broker (CloudAMQP) — les
+# tâches s'exécutent en ligne, de façon synchrone, dans le même processus plutôt que d'être mises
+# en file. Les tests existants (ex. appointments/tests/test_api.py) créent des rendez-vous, ce qui
+# déclenche des notifications, sans aucun mock de Celery ; sans ce réglage, chaque exécution de
+# test nécessiterait silencieusement un accès réseau réel.
 if "test" in sys.argv:
     CELERY_TASK_ALWAYS_EAGER = True
     CELERY_TASK_EAGER_PROPAGATES = True
@@ -271,37 +279,41 @@ if "test" in sys.argv:
 # EMAIL_BACKEND = env("EMAIL_BACKEND", default="django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@clinic-management.local")
 
-# communication/providers/email_provider.py: empty-string default so manage.py/tests never crash
-# when the key is missing — get_email_provider() falls back to DjangoEmailProvider in that case.
+# communication/providers/email_provider.py : valeur par défaut vide pour que manage.py/les
+# tests ne plantent jamais quand la clé est absente — get_email_provider() retombe alors sur
+# DjangoEmailProvider.
 RESEND_API_KEY = env("RESEND_API_KEY", default="")
 RESEND_FROM_EMAIL = env("RESEND_FROM_EMAIL", default="onboarding@resend.dev")
 
 # --- SMS (httpsms.com) ----------------------------------------------------------
 
-# communication/providers/sms_provider.py: empty-string default so manage.py/tests never crash
-# when the key is missing — HttpSmsProvider falls back to logging instead of sending in that case.
+# communication/providers/sms_provider.py : valeur par défaut vide pour que manage.py/les tests
+# ne plantent jamais quand la clé est absente — HttpSmsProvider se contente alors de logger au
+# lieu d'envoyer.
 HTTPSMS_API_KEY = env("HTTPSMS_API_KEY", default="")
 HTTPSMS_FROM_NUMBER = env("HTTPSMS_FROM_NUMBER", default="")
 
 # --- Appointments ---------------------------------------------------------------
 
-# business/workflow-policy.md: "Patient may cancel before the configured deadline" — this is that
-# configured value. A patient can self-cancel a pending/confirmed appointment only more than this
-# many hours before its scheduled date/time.
+# business/workflow-policy.md : "Patient may cancel before the configured deadline" — voici cette
+# valeur configurée. Un patient ne peut annuler lui-même un rendez-vous en attente/confirmé que
+# plus de ce nombre d'heures avant sa date/heure prévue.
 APPOINTMENT_CANCELLATION_DEADLINE_HOURS = env.int("APPOINTMENT_CANCELLATION_DEADLINE_HOURS", default=24)
 
 # --- Subscriptions/Stripe --------------------------------------------------------
 
-# Platform subscription billing (business/subscription-billing-policy.md, docs/subscription-billing.md)
-# — the clinic paying for its own use of the platform, entirely separate from backend/billing/
-# (patient invoicing). Empty-string defaults so manage.py/tests never crash for a missing Stripe
-# key — same "architecture ready, credentials not" posture already established for SMS.
+# Facturation de l'abonnement plateforme (business/subscription-billing-policy.md,
+# docs/subscription-billing.md) — la clinique qui paie pour son propre usage de la plateforme,
+# entièrement distinct de backend/billing/ (facturation des patients). Valeurs par défaut vides
+# pour que manage.py/les tests ne plantent jamais faute de clé Stripe — même posture "architecture
+# prête, identifiants pas encore là" déjà établie pour le SMS.
 SUBSCRIPTION_PAYMENT_PROVIDER = env("SUBSCRIPTION_PAYMENT_PROVIDER", default="stripe")
 STRIPE_API_KEY = env("STRIPE_API_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 
-# PLACEHOLDER Stripe Price IDs — indicative 3-tier x 2-cycle catalog (subscriptions/catalog.py),
-# not final pricing. Populate from the Stripe Dashboard once real prices are created.
+# Price ID Stripe TEMPORAIRES — catalogue indicatif 3 paliers x 2 cycles (subscriptions/catalog.py),
+# pas une tarification définitive. À renseigner depuis le Dashboard Stripe une fois les vrais
+# prix créés.
 STRIPE_PRICE_STARTER_MONTHLY = env("STRIPE_PRICE_STARTER_MONTHLY", default="")
 STRIPE_PRICE_STARTER_ANNUAL = env("STRIPE_PRICE_STARTER_ANNUAL", default="")
 STRIPE_PRICE_PROFESSIONAL_MONTHLY = env("STRIPE_PRICE_PROFESSIONAL_MONTHLY", default="")
