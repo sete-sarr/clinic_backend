@@ -7,6 +7,7 @@ from datetime import timedelta
 from pathlib import Path
 
 import environ
+from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -101,17 +102,30 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # pooling connection string); local dev keeps the 5 separate DB_* fields already in .env.example.
 if env("DATABASE_URL", default=""):
     DATABASES = {"default": env.db_url("DATABASE_URL")}
-# else:
-#     DATABASES = {
-#         "default": {
-#             "ENGINE": "django.db.backends.postgresql",
-#             "NAME": env("DB_NAME"),
-#             "USER": env("DB_USER"),
-#             "PASSWORD": env("DB_PASSWORD"),
-#             "HOST": env("DB_HOST"),
-#             "PORT": env("DB_PORT"),
-#         }
-#     }
+elif env("DB_NAME", default=""):
+    # .env.local leaves DATABASE_URL blank on purpose to fall back to a local Postgres instance
+    # via these 5 fields instead of the production connection string in .env (see .env.local).
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": env("DB_HOST"),
+            "PORT": env("DB_PORT"),
+        }
+    }
+else:
+    # Fails loudly and explicitly here instead of leaving DATABASES unset, which Django would
+    # otherwise silently resolve to its "dummy" backend and report as a confusing
+    # "supply the ENGINE value" error with no mention of DATABASE_URL (seen in a Render build
+    # failure, 2026-09-16).
+    raise ImproperlyConfigured(
+        "Neither DATABASE_URL nor DB_NAME is set. In Render: Environment -> Environment "
+        "Variables -> DATABASE_URL must hold the Supabase connection string (see "
+        "exemple_prod.md §1/§2). For local dev, set DATABASE_URL or the DB_* fields in "
+        "backend/.env or backend/.env.local."
+    )
 
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
