@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     "prescriptions",
     "billing",
     "payments",
+    "pharmacy",
     "communication",
     "reports",
     "subscriptions",

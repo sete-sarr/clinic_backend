@@ -60,6 +60,13 @@ class InvoiceLine(models.Model):
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     unit_price = models.DecimalField(max_digits=12, decimal_places=2)
     line_total = models.DecimalField(max_digits=12, decimal_places=2)
+    # Nullable : la plupart des lignes de facture (consultation, acte...) ne correspondent à aucun
+    # article de stock. Quand elle est renseignée, pharmacy/services.py::sync_invoice_stock
+    # décrémente le stock de ce médicament à l'émission de la facture (business decision,
+    # session du 2026-09-16).
+    medication = models.ForeignKey(
+        "pharmacy.Medication", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
+    )
 
     class Meta:
         ordering = ["id"]

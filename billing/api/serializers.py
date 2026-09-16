@@ -8,7 +8,7 @@ from billing.services import create_invoice, update_invoice
 class InvoiceLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceLine
-        fields = ["id", "description", "quantity", "unit_price", "line_total"]
+        fields = ["id", "description", "quantity", "unit_price", "line_total", "medication"]
         read_only_fields = ["id", "line_total"]
 
 
@@ -75,7 +75,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data.pop("clinic", None)
         lines = validated_data.pop("lines", None)
+        actor = self.context["request"].user if "request" in self.context else None
         try:
-            return update_invoice(invoice=instance, lines=lines, **validated_data)
+            return update_invoice(invoice=instance, lines=lines, actor=actor, **validated_data)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc

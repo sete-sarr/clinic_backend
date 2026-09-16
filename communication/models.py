@@ -27,6 +27,8 @@ class NotificationLog(TimeStampedModel):
         APPOINTMENT_REMINDER = "appointment_reminder", "Appointment reminder"
         SUBSCRIPTION_EXPIRING = "subscription_expiring", "Subscription expiring"
         LICENSE_EXPIRED = "license_expired", "License expired"
+        STOCK_LOW = "stock_low", "Low stock"
+        STOCK_OVERSTOCK = "stock_overstock", "Overstock"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

@@ -60,7 +60,7 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
     def issue(self, request, pk=None):
         invoice = self.get_object()
         try:
-            invoice = issue_invoice(invoice=invoice)
+            invoice = issue_invoice(invoice=invoice, actor=request.user)
         except DjangoValidationError as exc:
             return Response({"code": 400, "message": exc.messages[0], "field": None}, status=400)
         record_audit(user=request.user, action=AuditLog.Action.UPDATE, obj=invoice, metadata={"transition": "issue"})
@@ -72,7 +72,7 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
             raise PermissionDenied("Only a clinic admin can cancel an invoice.")
         invoice = self.get_object()
         try:
-            invoice = cancel_invoice(invoice=invoice)
+            invoice = cancel_invoice(invoice=invoice, actor=request.user)
         except DjangoValidationError as exc:
             return Response({"code": 400, "message": exc.messages[0], "field": None}, status=400)
         record_audit(user=request.user, action=AuditLog.Action.CANCEL, obj=invoice)
