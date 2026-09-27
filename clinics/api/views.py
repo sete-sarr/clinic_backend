@@ -1,6 +1,10 @@
+from pathlib import Path
+
+from django.http import FileResponse, Http404
 from rest_framework import generics, mixins, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.views import APIView
 
 from clinics.models import Clinic
 from common.audit import record_audit
@@ -52,3 +56,27 @@ class ClinicPublicListView(generics.ListAPIView):
     queryset = Clinic.objects.filter(is_active=True)
     filter_backends = [SearchFilter]
     search_fields = ["name"]
+
+
+# Copie publiée de guide-utilisateur/Guide-de-la-Clinique.pdf (source HTML dans ce dossier) —
+# volontairement hors de STATIC_ROOT/MEDIA_ROOT pour ne jamais être servie sans authentification.
+USER_GUIDE_PATH = Path(__file__).resolve().parent.parent / "resources" / "Guide-de-la-Clinique.pdf"
+USER_GUIDE_FILENAME = "Guide-de-la-Clinique.pdf"
+
+
+class UserGuideDownloadView(APIView):
+    """Guide d'utilisation de la plateforme, réservé à l'administrateur de clinique (décision
+    produit, session du 2026-09-28). Document générique, sans donnée de clinique ni de patient :
+    aucun scoping tenant nécessaire au-delà du contrôle de rôle."""
+
+    permission_classes = [IsAuthenticated, IsClinicAdmin]
+
+    def get(self, request):
+        if not USER_GUIDE_PATH.is_file():
+            raise Http404("Le guide d'utilisation n'est pas disponible.")
+        return FileResponse(
+            USER_GUIDE_PATH.open("rb"),
+            as_attachment=True,
+            filename=USER_GUIDE_FILENAME,
+            content_type="application/pdf",
+        )

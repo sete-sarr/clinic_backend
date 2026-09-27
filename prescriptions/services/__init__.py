@@ -9,19 +9,19 @@ LOCKED_STATUSES = {Prescription.Status.VALIDATED, Prescription.Status.CANCELLED}
 @transaction.atomic
 def create_prescription(*, clinic, consultation, patient, doctor=None, items, **fields):
     if doctor is None:
-        raise ValidationError("Doctor is required.")
+        raise ValidationError("Le médecin est obligatoire.")
     if patient.clinic_id != clinic.id:
         # Message volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si
         # l'ID soumis existe dans une autre clinique, afin d'éviter un oracle d'existence cross-tenant.
-        raise ValidationError("Invalid patient.")
+        raise ValidationError("Patient invalide.")
     if doctor.clinic_id != clinic.id:
-        raise ValidationError("Invalid doctor.")
+        raise ValidationError("Médecin invalide.")
     if consultation.clinic_id != clinic.id:
-        raise ValidationError("Invalid consultation.")
+        raise ValidationError("Consultation invalide.")
     if not items:
-        raise ValidationError("A prescription must contain at least one medication line.")
+        raise ValidationError("Une ordonnance doit contenir au moins une ligne de médicament.")
     if hasattr(consultation, "prescription"):
-        raise ValidationError("This consultation already has a prescription.")
+        raise ValidationError("Cette consultation a déjà une ordonnance.")
 
     prescription = Prescription.objects.create(
         clinic=clinic, consultation=consultation, patient=patient, doctor=doctor, **fields
@@ -35,14 +35,14 @@ def create_prescription(*, clinic, consultation, patient, doctor=None, items, **
 @transaction.atomic
 def update_prescription(*, prescription, items=None, **fields):
     if prescription.status in LOCKED_STATUSES:
-        raise ValidationError("A validated or cancelled prescription can no longer be edited.")
+        raise ValidationError("Une ordonnance validée ou annulée ne peut plus être modifiée.")
 
     if "patient" in fields and fields["patient"].clinic_id != prescription.clinic_id:
         # Message volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si
         # l'ID soumis existe dans une autre clinique, afin d'éviter un oracle d'existence cross-tenant.
-        raise ValidationError("Invalid patient.")
+        raise ValidationError("Patient invalide.")
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != prescription.clinic_id:
-        raise ValidationError("Invalid doctor.")
+        raise ValidationError("Médecin invalide.")
 
     for key, value in fields.items():
         setattr(prescription, key, value)
@@ -50,7 +50,7 @@ def update_prescription(*, prescription, items=None, **fields):
 
     if items is not None:
         if not items:
-            raise ValidationError("A prescription must contain at least one medication line.")
+            raise ValidationError("Une ordonnance doit contenir au moins une ligne de médicament.")
         prescription.items.all().delete()
         PrescriptionItem.objects.bulk_create(
             [PrescriptionItem(prescription=prescription, **item) for item in items]

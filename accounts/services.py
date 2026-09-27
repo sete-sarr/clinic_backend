@@ -51,7 +51,7 @@ def activate_patient_account(*, clinic_id, patient_number, phone, date_of_birth,
         clinic_id=clinic_id, patient_number=patient_number, phone=phone, date_of_birth=date_of_birth
     )
     if patient is None:
-        raise ValidationError("No matching patient record was found.")
+        raise ValidationError("Aucun dossier patient correspondant n'a été trouvé.")
 
     # email est l'identifiant de connexion unique à l'échelle de la plateforme
     # (User.USERNAME_FIELD) — Patient.email étant optionnel, cette vérification doit avoir lieu
@@ -59,11 +59,11 @@ def activate_patient_account(*, clinic_id, patient_number, phone, date_of_birth,
     # jamais aboutir.
     if not patient.email:
         raise ValidationError(
-            "No email address is on file for this patient. Please contact your clinic to add one "
-            "before activating your portal account."
+            "Aucune adresse e-mail n'est enregistrée pour ce patient. Contactez votre clinique pour en ajouter une "
+            "avant d'activer votre espace patient."
         )
     if User.objects.filter(email=patient.email).exists():
-        raise ValidationError("A user with that email already exists.")
+        raise ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
 
     verify_otp(principal=patient, code=code, purpose=OtpCode.Purpose.ACCOUNT_ACTIVATION)
 
@@ -139,7 +139,7 @@ def update_staff_role(*, user, new_role, actor):
     if new_role not in STAFF_ROLES_ASSIGNABLE:
         raise ValidationError("Unsupported role transition.")
     if user.groups.filter(name="doctor").exists():
-        raise ValidationError("Cannot change a doctor's role from this screen.")
+        raise ValidationError("Le rôle d'un médecin ne peut pas être modifié depuis cet écran.")
     old_roles = list(user.groups.values_list("name", flat=True))
     user.groups.clear()
     group, _ = Group.objects.get_or_create(name=new_role)
@@ -160,7 +160,7 @@ def deactivate_staff_member(*, user, actor):
     la vue ni le frontend : un admin ne peut jamais se désactiver lui-même, et une clinique ne peut
     jamais se retrouver sans aucun admin actif."""
     if user.pk == actor.pk:
-        raise ValidationError("You cannot deactivate your own account.")
+        raise ValidationError("Vous ne pouvez pas désactiver votre propre compte.")
     if user.groups.filter(name="clinic_admin").exists():
         remaining_admins = (
             User.objects.filter(clinic=user.clinic, groups__name="clinic_admin", is_active=True)
@@ -168,7 +168,7 @@ def deactivate_staff_member(*, user, actor):
             .count()
         )
         if remaining_admins == 0:
-            raise ValidationError("Cannot deactivate the last active clinic administrator.")
+            raise ValidationError("Impossible de désactiver le dernier administrateur actif de la clinique.")
     user.is_active = False
     user.save(update_fields=["is_active"])
     record_audit(user=actor, action=AuditLog.Action.ARCHIVE, obj=user, metadata={"reason": "deactivated"})

@@ -19,7 +19,7 @@ def _check_duplicate(*, clinic, first_name, last_name, date_of_birth, phone):
     ).exclude(phone="").filter(phone=phone)
     if duplicate.exists():
         raise ValidationError(
-            "A patient with the same name, date of birth, and phone number already exists in this clinic."
+            "Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique."
         )
 
 
@@ -53,4 +53,4 @@ def create_patient(*, clinic, **fields):
 
 def validate_date_of_birth(value: date):
     if value > timezone.now().date():
-        raise ValidationError("Date of birth cannot be in the future.")
+        raise ValidationError("La date de naissance ne peut pas être dans le futur.")

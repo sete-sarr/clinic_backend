@@ -13,11 +13,25 @@ ACTIVE_STATUSES = [Appointment.Status.PENDING, Appointment.Status.CONFIRMED]
 TERMINAL_STATUSES = {Appointment.Status.CANCELLED, Appointment.Status.COMPLETED, Appointment.Status.NO_SHOW}
 PATIENT_CANCELLABLE_STATUSES = [Appointment.Status.PENDING, Appointment.Status.CONFIRMED]
 
+# Libellés français pour les messages d'erreur — les labels de Appointment.Status restent en anglais
+# (les changer imposerait une migration) ; même vocabulaire que APPOINTMENT_STATUS_LABELS côté frontend.
+_STATUS_LABELS_FR = {
+    Appointment.Status.PENDING: "en attente",
+    Appointment.Status.CONFIRMED: "confirmé",
+    Appointment.Status.COMPLETED: "terminé",
+    Appointment.Status.CANCELLED: "annulé",
+    Appointment.Status.NO_SHOW: "marqué absent",
+}
+
+
+def _status_label(appointment):
+    return _STATUS_LABELS_FR.get(appointment.status, appointment.status)
+
 
 def validate_not_past(*, date, time):
     now = timezone.localtime(timezone.now())
     if date < now.date() or (date == now.date() and time < now.time()):
-        raise ValidationError("Cannot schedule an appointment in the past.")
+        raise ValidationError("Impossible de programmer un rendez-vous dans le passé.")
 
 
 def validate_no_overlap(*, clinic, doctor, patient, date, time, exclude_pk=None):
@@ -27,7 +41,7 @@ def validate_no_overlap(*, clinic, doctor, patient, date, time, exclude_pk=None)
     if exclude_pk:
         conflicts = conflicts.exclude(pk=exclude_pk)
     if conflicts.exists():
-        raise ValidationError("This doctor or patient already has an appointment at that date and time.")
+        raise ValidationError("Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure.")
 
 
 @transaction.atomic
@@ -35,16 +49,16 @@ def create_appointment(*, clinic, doctor, patient, date, time, **fields):
     if patient.clinic_id != clinic.id:
         # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
         # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-        raise ValidationError("Invalid patient.")
+        raise ValidationError("Patient invalide.")
     if doctor.clinic_id != clinic.id:
-        raise ValidationError("Invalid doctor.")
+        raise ValidationError("Médecin invalide.")
     # business/validation-rules.md VALIDATION DÉPARTEMENT : "Les rendez-vous requièrent un
     # département actif" / "Les départements inactifs ne peuvent pas recevoir de nouveaux
     # rendez-vous". Un médecin sans département assigné reste sans restriction (le département
     # est aujourd'hui optionnel sur Doctor).
     department = doctor.department
     if department is not None and department.status != department.Status.ACTIVE:
-        raise ValidationError("This doctor's department is not active and cannot accept new appointments.")
+        raise ValidationError("Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous.")
     validate_not_past(date=date, time=time)
     validate_no_overlap(clinic=clinic, doctor=doctor, patient=patient, date=date, time=time)
     appointment = Appointment.objects.create(
@@ -59,7 +73,7 @@ def create_appointment(*, clinic, doctor, patient, date, time, **fields):
 @transaction.atomic
 def update_appointment(*, appointment, **fields):
     if appointment.status in TERMINAL_STATUSES:
-        raise ValidationError(f"Cannot modify an appointment that is already {appointment.get_status_display()}.")
+        raise ValidationError(f"Impossible de modifier ce rendez-vous : il est déjà {_status_label(appointment)}.")
 
     date = fields.get("date", appointment.date)
     time = fields.get("time", appointment.time)
@@ -69,9 +83,9 @@ def update_appointment(*, appointment, **fields):
     if "patient" in fields and patient.clinic_id != appointment.clinic_id:
         # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
         # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-        raise ValidationError("Invalid patient.")
+        raise ValidationError("Patient invalide.")
     if "doctor" in fields and doctor.clinic_id != appointment.clinic_id:
-        raise ValidationError("Invalid doctor.")
+        raise ValidationError("Médecin invalide.")
 
     if "date" in fields or "time" in fields:
         validate_not_past(date=date, time=time)
@@ -104,13 +118,13 @@ def update_appointment(*, appointment, **fields):
 
 def validate_cancellable_by_patient(*, appointment):
     if appointment.status not in PATIENT_CANCELLABLE_STATUSES:
-        raise ValidationError(f"Cannot cancel an appointment that is already {appointment.get_status_display()}.")
+        raise ValidationError(f"Impossible d'annuler ce rendez-vous : il est déjà {_status_label(appointment)}.")
     appointment_dt = timezone.make_aware(datetime.combine(appointment.date, appointment.time))
     deadline = timezone.now() + timedelta(hours=settings.APPOINTMENT_CANCELLATION_DEADLINE_HOURS)
     if appointment_dt <= deadline:
         raise ValidationError(
-            f"Appointments can only be cancelled more than "
-            f"{settings.APPOINTMENT_CANCELLATION_DEADLINE_HOURS}h in advance."
+            f"Un rendez-vous ne peut être annulé que plus de "
+            f"{settings.APPOINTMENT_CANCELLATION_DEADLINE_HOURS} h à l'avance."
         )
 
 
@@ -136,11 +150,11 @@ def check_in_appointment(*, appointment):
     pour Patient.patient_number (patients/services/__init__.py::generate_patient_number) — pas un
     nouveau concept de compteur."""
     if appointment.checked_in_at is not None:
-        raise ValidationError("This appointment has already been checked in.")
+        raise ValidationError("L'arrivée du patient a déjà été enregistrée pour ce rendez-vous.")
     if appointment.status not in ACTIVE_STATUSES:
-        raise ValidationError(f"Cannot check in an appointment that is already {appointment.get_status_display()}.")
+        raise ValidationError(f"Impossible d'enregistrer l'arrivée : ce rendez-vous est déjà {_status_label(appointment)}.")
     if appointment.date != timezone.localdate():
-        raise ValidationError("Can only check in an appointment scheduled for today.")
+        raise ValidationError("L'arrivée ne peut être enregistrée que pour un rendez-vous prévu aujourd'hui.")
 
     year = timezone.localdate().year
     sequence = SequenceCounter.next_value(clinic=appointment.clinic, key="checkin_ticket", year=year)

@@ -36,6 +36,30 @@ class MedicationSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
 
+    # Les contraintes de base (unique_medication_name_per_clinic,
+    # medication_max_threshold_gte_min_threshold) restent le filet de sécurité ; elles sont
+    # revérifiées ici pour renvoyer un 400 {code, message, field} au lieu d'une IntegrityError (500).
+    def validate_name(self, value):
+        request = self.context.get("request")
+        clinic_id = self.instance.clinic_id if self.instance else getattr(request.user, "clinic_id", None)
+        # Insensible à la casse : "Doliprane" et "doliprane" désignent le même produit au catalogue.
+        duplicates = Medication.objects.filter(clinic_id=clinic_id, name__iexact=value)
+        if self.instance is not None:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise serializers.ValidationError("Un médicament portant ce nom existe déjà dans cette clinique.")
+        return value
+
+    def validate(self, attrs):
+        # PATCH partiel : comparer aux valeurs déjà enregistrées pour le champ non envoyé.
+        min_threshold = attrs.get("min_threshold", getattr(self.instance, "min_threshold", 0))
+        max_threshold = attrs.get("max_threshold", getattr(self.instance, "max_threshold", None))
+        if max_threshold is not None and max_threshold < (min_threshold or 0):
+            raise serializers.ValidationError(
+                {"max_threshold": "Le seuil maximal doit être supérieur ou égal au seuil minimal."}
+            )
+        return attrs
+
 
 class StockBatchSerializer(serializers.ModelSerializer):
     medication_display = serializers.CharField(source="medication.name", read_only=True)

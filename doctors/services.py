@@ -12,7 +12,7 @@ def create_doctor(*, clinic, professional_number, specialty, user_data, departme
     if department and department.clinic_id != clinic.id:
         # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID soumis
         # existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-        raise ValidationError("Invalid department.")
+        raise ValidationError("Département invalide.")
     user = User.objects.create_user(
         username=user_data["username"],
         email=user_data.get("email", ""),

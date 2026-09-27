@@ -135,10 +135,10 @@ def adjust_stock(*, batch, actor, quantity_delta, reason):
     """Correction manuelle (ex. casse constatée à l'inventaire) — toujours rattachée à un lot
     précis pour que current_stock reste exactement la somme des lots (voir StockMovement.batch)."""
     if quantity_delta == 0:
-        raise ValidationError("The adjustment quantity cannot be zero.")
+        raise ValidationError("La quantité d'ajustement ne peut pas être nulle.")
     new_remaining = batch.quantity_remaining + quantity_delta
     if new_remaining < 0:
-        raise ValidationError("This adjustment would make the batch's remaining quantity negative.")
+        raise ValidationError("Cet ajustement rendrait négative la quantité restante du lot.")
     batch.quantity_remaining = new_remaining
     batch.save(update_fields=["quantity_remaining"])
     movement = StockMovement.objects.create(
@@ -183,7 +183,7 @@ def _dispense(*, medication, quantity, invoice, actor):
 
     if remaining_to_take > 0:
         raise ValidationError(
-            f"Insufficient stock for {medication.name}: missing {remaining_to_take} {medication.unit}."
+            f"Stock insuffisant pour {medication.name} : il manque {remaining_to_take} {medication.unit}."
         )
 
 

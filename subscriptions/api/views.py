@@ -20,7 +20,7 @@ class StripeWebhookView(APIView):
         signature = request.META.get("HTTP_STRIPE_SIGNATURE", "")
         result = get_payment_provider().construct_webhook_event(payload=request.body, signature=signature)
         if not result.success:
-            return Response({"detail": "Invalid signature."}, status=400)
+            return Response({"detail": "Signature invalide."}, status=400)
         services.handle_stripe_event(event_type=result.event_type, event_id=result.event_id, payload=result.payload)
         return Response({"received": True}, status=200)
 

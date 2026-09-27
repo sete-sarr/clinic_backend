@@ -41,7 +41,7 @@ class PrescriptionViewSet(TenantScopedModelViewSet):
         if in_role(user, "doctor") and not in_role(user, "clinic_admin"):
             doctor_profile = getattr(user, "doctor_profile", None)
             if doctor_profile is None:
-                raise PermissionDenied("This account has no doctor profile in this clinic.")
+                raise PermissionDenied("Ce compte n'a pas de profil médecin dans cette clinique.")
             # Un médecin prescrit toujours sous son propre nom — ne jamais faire confiance au champ
             # doctor soumis par le client, on le remplace simplement (business/access-policy.md :
             # moindre privilège).
@@ -60,7 +60,7 @@ class PrescriptionViewSet(TenantScopedModelViewSet):
         try:
             pdf_bytes = render_prescription_pdf(prescription=prescription, user=request.user)
         except PermissionError:
-            return Response({"code": 403, "message": "Not allowed to access this document.", "field": None}, status=403)
+            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="prescription-{prescription.id}.pdf"'

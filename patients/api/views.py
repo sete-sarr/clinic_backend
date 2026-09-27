@@ -67,7 +67,7 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
                 patient=patient, user=request.user, date_from=date_from, date_to=date_to
             )
         except PermissionError:
-            return Response({"code": 403, "message": "Not allowed to access this document.", "field": None}, status=403)
+            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="statement-{patient.patient_number}.pdf"'

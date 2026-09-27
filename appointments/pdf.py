@@ -24,7 +24,7 @@ def render_checkin_ticket_pdf(*, appointment, user):
     if not can_access_checkin_ticket(user=user, appointment=appointment):
         raise PermissionError("You are not allowed to access this ticket.")
     if appointment.checked_in_at is None:
-        raise ValidationError("This appointment has not been checked in yet.")
+        raise ValidationError("L'arrivée du patient n'a pas encore été enregistrée pour ce rendez-vous.")
 
     html = render_to_string("appointments/checkin_ticket_pdf.html", {"appointment": appointment})
     pdf_bytes = HTML(string=html).write_pdf()
