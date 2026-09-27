@@ -4,12 +4,16 @@ from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from common.audit import record_audit
-from common.models import AuditLog
 from common.viewsets import TenantScopedMixin, TenantScopedModelViewSet
 from pharmacy.models import Medication, StockBatch, StockMovement
 from pharmacy.permissions import CanManageMedications, CanManageStock
-from pharmacy.services import adjust_stock, archive_medication, restore_medication
+from pharmacy.services import (
+    adjust_stock,
+    archive_medication,
+    create_medication,
+    restore_medication,
+    update_medication,
+)
 
 from .serializers import MedicationSerializer, StockBatchSerializer, StockMovementSerializer
 
@@ -22,13 +26,17 @@ class MedicationViewSet(TenantScopedModelViewSet):
     filterset_fields = ["is_active", "low_stock_alerted", "overstock_alerted"]
     http_method_names = ["get", "post", "patch", "head", "options"]  # pas de PUT/DELETE — voir archive()
 
+    # Passe par pharmacy/services.py (audit + revérification des seuils à la modification) plutôt
+    # que serializer.save() — docs/backend-guidelines.md : la logique métier vit dans les services.
     def perform_create(self, serializer):
-        medication = serializer.save(clinic=self.request.user.clinic)
-        record_audit(user=self.request.user, action=AuditLog.Action.CREATE, obj=medication)
+        serializer.instance = create_medication(
+            clinic=self.request.user.clinic, actor=self.request.user, **serializer.validated_data
+        )
 
     def perform_update(self, serializer):
-        medication = serializer.save()
-        record_audit(user=self.request.user, action=AuditLog.Action.UPDATE, obj=medication)
+        serializer.instance = update_medication(
+            medication=serializer.instance, actor=self.request.user, **serializer.validated_data
+        )
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
@@ -67,7 +75,7 @@ class StockBatchViewSet(
         try:
             quantity_delta = int(quantity_delta)
         except (TypeError, ValueError):
-            return Response({"code": 400, "message": "quantity_delta must be an integer.", "field": "quantity_delta"}, status=400)
+            return Response({"code": 400, "message": "La quantité d'ajustement doit être un nombre entier.", "field": "quantity_delta"}, status=400)
         try:
             adjust_stock(batch=batch, actor=request.user, quantity_delta=quantity_delta, reason=reason)
         except DjangoValidationError as exc:

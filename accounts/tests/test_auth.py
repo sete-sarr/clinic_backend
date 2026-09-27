@@ -24,6 +24,14 @@ class LoginLogoutAuditTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(AuditLog.objects.filter(user=self.user, action=AuditLog.Action.LOGIN).exists())
 
+    def test_wrong_password_returns_french_message(self):
+        response = self.client.post(
+            reverse("token_obtain_pair"),
+            {"email": "secretary1@example.com", "password": "wrong-password"},
+        )
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.data["message"], "Adresse e-mail ou mot de passe incorrect.")
+
     def test_logout_blacklists_refresh_token_and_records_audit(self):
         refresh = RefreshToken.for_user(self.user)
         self.client.force_authenticate(self.user)

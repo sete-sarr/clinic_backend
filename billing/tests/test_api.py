@@ -182,3 +182,70 @@ class InvoiceSearchTests(APITestCase):
         ids = [item["id"] for item in response.data["results"]]
         self.assertIn(self.invoice_match.id, ids)
         self.assertNotIn(self.invoice_other.id, ids)
+
+
+class InvoiceMedicationLineTests(APITestCase):
+    """Parcours utilisé par le formulaire de facture : ligne liée à un médicament, stock
+    décrémenté à l'émission, et erreur lisible (400) si le stock est insuffisant."""
+
+    def setUp(self):
+        from datetime import timedelta
+
+        from pharmacy.services import create_medication, receive_stock_batch
+
+        self.clinic = create_clinic()
+        self.accountant = create_user(clinic=self.clinic, role="accountant")
+        self.patient = _create_patient(self.clinic, "PAT-2026-00010")
+        self.medication = create_medication(clinic=self.clinic, actor=self.accountant, name="Doliprane", unit="boîte")
+        receive_stock_batch(
+            medication=self.medication,
+            actor=self.accountant,
+            batch_number="LOT-1",
+            expiry_date=date.today() + timedelta(days=365),
+            received_date=date.today(),
+            quantity_received=5,
+        )
+        self.client.force_authenticate(self.accountant)
+
+    def _create_invoice(self, quantity):
+        payload = {
+            "patient": self.patient.id,
+            "issue_date": date.today().isoformat(),
+            "vat_rate": "0.18",
+            "lines": [
+                {"description": "Doliprane (boîte)", "quantity": quantity, "unit_price": "3.00", "medication": self.medication.id}
+            ],
+        }
+        response = self.client.post(reverse("invoice-list"), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(response.data["lines"][0]["medication"], self.medication.id)
+        return response.data["id"]
+
+    def test_issuing_decrements_stock(self):
+        invoice_id = self._create_invoice(quantity=3)
+        response = self.client.post(reverse("invoice-issue", args=[invoice_id]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.medication.refresh_from_db()
+        self.assertEqual(self.medication.current_stock, 2)
+
+    def test_insufficient_stock_blocks_issue_with_readable_error(self):
+        invoice_id = self._create_invoice(quantity=9)
+        response = self.client.post(reverse("invoice-issue", args=[invoice_id]))
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Stock insuffisant pour Doliprane : il manque 4 boîte.", response.data["message"])
+        self.medication.refresh_from_db()
+        self.assertEqual(self.medication.current_stock, 5)
+        self.assertEqual(Invoice.objects.get(pk=invoice_id).status, Invoice.Status.DRAFT)
+
+    def test_medication_from_another_clinic_is_rejected(self):
+        from pharmacy.models import Medication
+
+        other = Medication.objects.create(clinic=create_clinic("Other"), name="X", unit="boîte")
+        payload = {
+            "patient": self.patient.id,
+            "issue_date": date.today().isoformat(),
+            "vat_rate": "0.18",
+            "lines": [{"description": "X", "quantity": 1, "unit_price": "1.00", "medication": other.id}],
+        }
+        response = self.client.post(reverse("invoice-list"), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)

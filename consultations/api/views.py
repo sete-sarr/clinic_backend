@@ -37,7 +37,7 @@ class ConsultationViewSet(TenantScopedModelViewSet):
         if in_role(user, "doctor") and not in_role(user, "clinic_admin"):
             doctor_profile = getattr(user, "doctor_profile", None)
             if doctor_profile is None:
-                raise PermissionDenied("This account has no doctor profile in this clinic.")
+                raise PermissionDenied("Ce compte n'a pas de profil médecin dans cette clinique.")
             # Un médecin crée toujours ses propres consultations — ne jamais faire confiance à un
             # champ doctor soumis par le client ici, on l'écrase simplement (business/access-policy.md :
             # moindre privilège).

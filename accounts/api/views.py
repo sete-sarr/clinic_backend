@@ -119,7 +119,7 @@ class PatientActivationRequestView(APIView):
             phone=serializer.validated_data["phone"],
             date_of_birth=serializer.validated_data["date_of_birth"],
         )
-        return Response({"message": "If the information matches, a verification code has been sent."})
+        return Response({"message": "Si les informations correspondent, un code de vérification vous a été envoyé."})
 
 
 class PatientActivationVerifyView(APIView):
@@ -145,7 +145,7 @@ class PatientActivationVerifyView(APIView):
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
-        return Response({"message": "Account activated. You can now log in."})
+        return Response({"message": "Compte activé. Vous pouvez maintenant vous connecter."})
 
 
 class StaffViewSet(

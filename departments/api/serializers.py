@@ -28,5 +28,5 @@ class DepartmentSerializer(serializers.ModelSerializer):
         # création n'est pas affectée (self.instance vaut alors None), seules les modifications
         # d'un département déjà archivé le sont.
         if self.instance is not None and self.instance.status == Department.Status.ARCHIVED:
-            raise serializers.ValidationError("Archived departments are read-only. Restore it before editing.")
+            raise serializers.ValidationError("Un département archivé est en lecture seule. Restaurez-le avant de le modifier.")
         return attrs

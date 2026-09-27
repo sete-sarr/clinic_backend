@@ -45,6 +45,56 @@ class MedicationApiTests(APITestCase):
         self.assertEqual(len(results), 0)
 
 
+class MedicationValidationTests(APITestCase):
+    """Les contraintes de base (nom unique par clinique, seuil max >= seuil min) doivent être
+    renvoyées en 400 {code, message, field}, jamais remonter en IntegrityError (500)."""
+
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.pharmacist = create_user(clinic=self.clinic, role="pharmacist")
+        self.client.force_authenticate(self.pharmacist)
+        self.existing = Medication.objects.create(clinic=self.clinic, name="Doliprane", unit="boîte")
+
+    def test_duplicate_name_in_same_clinic_is_rejected_on_name_field(self):
+        response = self.client.post(reverse("medication-list"), {"name": "doliprane ", "unit": "boîte"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "name")
+        self.assertEqual(response.data["message"], "Un médicament portant ce nom existe déjà dans cette clinique.")
+
+    def test_same_name_in_another_clinic_is_allowed(self):
+        other_clinic = create_clinic("Other Clinic")
+        self.client.force_authenticate(create_user(clinic=other_clinic, role="pharmacist"))
+        response = self.client.post(reverse("medication-list"), {"name": "Doliprane", "unit": "boîte"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+
+    def test_updating_a_medication_keeps_its_own_name(self):
+        url = reverse("medication-detail", args=[self.existing.id])
+        response = self.client.patch(url, {"name": "Doliprane", "unit_price": "2.00"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+
+    def test_renaming_to_an_existing_name_is_rejected(self):
+        other = Medication.objects.create(clinic=self.clinic, name="Ibuprofène", unit="boîte")
+        url = reverse("medication-detail", args=[other.id])
+        response = self.client.patch(url, {"name": "Doliprane"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "name")
+
+    def test_max_threshold_below_min_threshold_is_rejected(self):
+        payload = {"name": "Amoxicilline", "unit": "boîte", "min_threshold": 10, "max_threshold": 5}
+        response = self.client.post(reverse("medication-list"), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "max_threshold")
+        self.assertEqual(response.data["message"], "Le seuil maximal doit être supérieur ou égal au seuil minimal.")
+
+    def test_partial_update_checks_thresholds_against_stored_values(self):
+        self.existing.min_threshold = 10
+        self.existing.save(update_fields=["min_threshold"])
+        url = reverse("medication-detail", args=[self.existing.id])
+        response = self.client.patch(url, {"max_threshold": 5}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "max_threshold")
+
+
 class StockBatchApiTests(APITestCase):
     def setUp(self):
         self.clinic = create_clinic()

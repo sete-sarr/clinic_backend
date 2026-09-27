@@ -27,14 +27,14 @@ class DoctorSerializer(serializers.ModelSerializer):
         # cette clinique compte.
         clinic = self.context["request"].user.clinic
         if User.objects.filter(username=value, clinic=clinic).exists():
-            raise serializers.ValidationError("This username is already taken.")
+            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return value
 
     def validate_email(self, value):
         # l'email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique à travers
         # toutes les cliniques.
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with that email already exists.")
+            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
         return value
 
     def validate(self, attrs):
@@ -44,7 +44,7 @@ class DoctorSerializer(serializers.ModelSerializer):
         if self.instance is None:
             for field in ("username", "email"):
                 if not attrs.get(field):
-                    raise serializers.ValidationError({field: "This field is required."})
+                    raise serializers.ValidationError({field: "Ce champ est obligatoire."})
         return attrs
 
     class Meta:
@@ -73,7 +73,7 @@ class DoctorSerializer(serializers.ModelSerializer):
         if department and department.clinic_id != clinic.id:
             # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
             # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-            raise serializers.ValidationError("Invalid department.")
+            raise serializers.ValidationError("Département invalide.")
         return department
 
     def create(self, validated_data):

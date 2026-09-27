@@ -138,7 +138,10 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-LANGUAGE_CODE = "en-us"
+# Français : messages d'erreur intégrés de Django/DRF/SimpleJWT (« Ce champ est obligatoire. »...)
+# et dates des PDF (« 27 septembre 2026 »). Le séparateur décimal reste "." (backend/formats/fr).
+LANGUAGE_CODE = "fr"
+FORMAT_MODULE_PATH = ["backend.formats"]
 TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True

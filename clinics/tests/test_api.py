@@ -107,3 +107,28 @@ class ClinicLogoUploadTests(APITestCase):
             reverse("clinic-detail", args=[self.clinic.id]), {"logo_light": upload}, format="multipart"
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+
+class UserGuideDownloadTests(APITestCase):
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.url = reverse("clinic-user-guide")
+
+    def test_clinic_admin_downloads_pdf_as_attachment(self):
+        self.client.force_authenticate(create_user(clinic=self.clinic, role="clinic_admin"))
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response["Content-Type"], "application/pdf")
+        self.assertIn("attachment", response["Content-Disposition"])
+        self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
+
+    def test_other_staff_roles_are_forbidden(self):
+        for role in ("doctor", "secretary", "accountant", "pharmacist", "patient"):
+            with self.subTest(role=role):
+                self.client.force_authenticate(create_user(clinic=self.clinic, role=role))
+                response = self.client.get(self.url)
+                self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_unauthenticated_request_is_rejected(self):
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)

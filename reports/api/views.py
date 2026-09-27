@@ -19,7 +19,7 @@ class ClinicActivityReportView(APIView):
     def get(self, request):
         clinic = request.user.clinic
         if clinic is None:
-            raise ValidationError("Your account is not attached to a clinic.")
+            raise ValidationError("Votre compte n'est rattaché à aucune clinique.")
 
         today = timezone.localdate()
         date_from_raw = request.query_params.get("date_from")
@@ -32,7 +32,7 @@ class ClinicActivityReportView(APIView):
                 clinic=clinic, user=request.user, date_from=date_from, date_to=date_to
             )
         except PermissionError:
-            return Response({"code": 403, "message": "Not allowed to access this report.", "field": None}, status=403)
+            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce rapport.", "field": None}, status=403)
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="activity-report-{date_from}-{date_to}.pdf"'
         return response

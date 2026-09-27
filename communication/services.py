@@ -51,7 +51,7 @@ def generate_and_send_otp(*, principal, purpose):
         **filter_kwargs, consumed_at__isnull=True, created_at__gte=cooldown_cutoff
     ).exists()
     if already_sent_recently:
-        raise ValidationError("A code was already sent recently. Please wait before requesting another one.")
+        raise ValidationError("Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau.")
 
     code = _generate_code()
     clinic = getattr(principal, "clinic", None)
@@ -97,7 +97,7 @@ def verify_otp(*, principal, code, purpose):
 
     otp = OtpCode.objects.filter(**filter_kwargs, consumed_at__isnull=True).order_by("-created_at").first()
     if not otp or otp.expires_at < timezone.now():
-        raise ValidationError("This code has expired or does not exist. Please request a new one.")
+        raise ValidationError("Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau.")
 
     if not check_password(code, otp.code_hash):
         otp.attempts += 1

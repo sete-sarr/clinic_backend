@@ -31,6 +31,9 @@ class UserSerializer(serializers.ModelSerializer):
 class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     """Intègre clinic_id et roles dans le JWT afin que le frontend n'ait jamais à les deviner."""
 
+    # SimpleJWT n'a pas de traduction française pour ce message, affiché tel quel sur l'écran de connexion.
+    default_error_messages = {"no_active_account": "Adresse e-mail ou mot de passe incorrect."}
+
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -66,12 +69,12 @@ class ClinicRegistrationSerializer(serializers.Serializer):
         # essayant de choisir sa propre clinique.
         value = value.strip()
         if Clinic.objects.filter(name__iexact=value).exists():
-            raise serializers.ValidationError("A clinic with that name already exists.")
+            raise serializers.ValidationError("Une clinique portant ce nom existe déjà.")
         return value
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with that email already exists.")
+            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
         return value
 
 
@@ -112,13 +115,13 @@ class StaffCreateSerializer(serializers.Serializer):
         # cette clinique compte.
         clinic = self.context["request"].user.clinic
         if User.objects.filter(username=value, clinic=clinic).exists():
-            raise serializers.ValidationError("This username is already taken.")
+            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return value
 
     def validate_email(self, value):
         # email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique sur toutes les cliniques.
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("A user with that email already exists.")
+            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
         return value
 
 
@@ -147,5 +150,5 @@ class PatientActivationVerifySerializer(serializers.Serializer):
         # inter-champs n'existent.
         clinic_id = self.initial_data.get("clinic")
         if User.objects.filter(username=value, clinic_id=clinic_id).exists():
-            raise serializers.ValidationError("This username is already taken.")
+            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
         return value
