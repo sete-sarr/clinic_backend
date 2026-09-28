@@ -42,6 +42,6 @@ class ClinicAdminSaveModelTests(TestCase):
     def test_illegal_transition_raises_validation_error(self):
         from django.core.exceptions import ValidationError
 
-        self.clinic.subscription_status = Clinic.SubscriptionStatus.SUSPENDED  # Trial -> Suspended est interdite
+        self.clinic.subscription_status = Clinic.SubscriptionStatus.PAST_DUE  # Trial -> Past Due est interdite
         with self.assertRaises(ValidationError):
             self.model_admin.save_model(self.request, self.clinic, _FakeForm(["subscription_status"]), change=True)

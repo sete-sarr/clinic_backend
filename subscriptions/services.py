@@ -4,12 +4,17 @@ from clinics.models import Clinic
 from common.audit import record_audit
 from common.models import AuditLog
 
+from .catalog import SUBSCRIBABLE_TIERS, TRIAL_DAYS, plan_for_stripe_price_id
 from .models import SubscriptionEvent
 
 # Cycle de vie stabilisé (business/subscription-billing-policy.md) : Trial -> Active -> Past Due ->
 # Suspended -> Cancelled, chacun des états Trial/PastDue/Suspended pouvant court-circuiter vers Cancelled.
+# Trial -> Suspended : fin de l'essai gratuit sans souscription (décision métier du 2026-09-28, voir
+# expire_trials()).
 _ALLOWED_TRANSITIONS = {
-    Clinic.SubscriptionStatus.TRIAL: {Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.CANCELLED},
+    Clinic.SubscriptionStatus.TRIAL: {
+        Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.SUSPENDED, Clinic.SubscriptionStatus.CANCELLED,
+    },
     Clinic.SubscriptionStatus.ACTIVE: {Clinic.SubscriptionStatus.PAST_DUE, Clinic.SubscriptionStatus.CANCELLED},
     Clinic.SubscriptionStatus.PAST_DUE: {Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.SUSPENDED},
     Clinic.SubscriptionStatus.SUSPENDED: {Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.CANCELLED},
@@ -17,7 +22,7 @@ _ALLOWED_TRANSITIONS = {
 }
 
 
-def start_trial(*, clinic: Clinic, trial_days: int = 14) -> Clinic:
+def start_trial(*, clinic: Clinic, trial_days: int = TRIAL_DAYS) -> Clinic:
     """Point d'accroche pour l'endroit où le provisioning de clinique aura lieu (le provisioning de
     tenant lui-même n'existe pas encore dans cette base de code — hors périmètre ici)."""
     from datetime import timedelta
@@ -63,7 +68,7 @@ def change_subscription_status(
     )
 
     if status == Clinic.SubscriptionStatus.SUSPENDED and status != from_status:
-        _notify_license_expired(clinic=clinic)
+        _notify_license_expired(clinic=clinic, trial_ended=from_status == Clinic.SubscriptionStatus.TRIAL)
 
     return clinic
 
@@ -87,14 +92,73 @@ def change_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, changed_b
 
 
 def start_checkout(*, clinic: Clinic, plan_tier: str, billing_cycle: str, success_url: str, cancel_url: str):
-    """Simple relais vers le PaymentProvider résolu — le seul point que api/views.py peut appeler
-    pour créer une Checkout Session."""
+    """Relais vers le PaymentProvider résolu — le seul point que api/views.py peut appeler pour
+    créer une Checkout Session. Seules les formules de SUBSCRIBABLE_TIERS sont proposées."""
     from .providers import get_payment_provider
+    from .providers.base import CheckoutSessionResult
+
+    if plan_tier not in SUBSCRIBABLE_TIERS:
+        return CheckoutSessionResult(
+            success=False, provider_name="", error_message="Cette formule n'est pas disponible à la souscription."
+        )
+    if billing_cycle not in Clinic.BillingCycle.values:
+        return CheckoutSessionResult(success=False, provider_name="", error_message="Cycle de facturation invalide.")
+    # Un abonnement Stripe existe déjà : une nouvelle Checkout Session en créerait un second (double
+    # prélèvement). Le changement de formule passe par change_subscribed_plan, le règlement d'un
+    # impayé par le portail client.
+    existing_error = _existing_subscription_error(clinic)
+    if existing_error:
+        return CheckoutSessionResult(success=False, provider_name="", error_message=existing_error)
 
     return get_payment_provider().create_checkout_session(
         clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle,
         success_url=success_url, cancel_url=cancel_url,
     )
+
+
+_LIVE_SUBSCRIPTION_STATUSES = (
+    Clinic.SubscriptionStatus.ACTIVE, Clinic.SubscriptionStatus.PAST_DUE, Clinic.SubscriptionStatus.SUSPENDED,
+)
+
+
+def _existing_subscription_error(clinic: Clinic) -> str:
+    if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
+        return ""
+    if clinic.subscription_status == Clinic.SubscriptionStatus.ACTIVE:
+        return "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
+    return "Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."
+
+
+def change_subscribed_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, actor):
+    """Change la formule d'une clinique déjà abonnée en modifiant son abonnement Stripe existant
+    (jamais un second abonnement). Réservé au statut Actif ; un impayé se règle d'abord via le
+    portail client."""
+    from .providers import get_payment_provider
+    from .providers.base import PlanChangeResult
+
+    def _failure(message):
+        return PlanChangeResult(success=False, provider_name="", error_message=message)
+
+    if plan_tier not in SUBSCRIBABLE_TIERS:
+        return _failure("Cette formule n'est pas disponible à la souscription.")
+    if billing_cycle not in Clinic.BillingCycle.values:
+        return _failure("Cycle de facturation invalide.")
+    if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
+        return _failure("Aucun abonnement en cours : choisissez une formule pour souscrire.")
+    if clinic.subscription_status != Clinic.SubscriptionStatus.ACTIVE:
+        return _failure("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement ».")
+    if (plan_tier, billing_cycle) == (clinic.plan_tier, clinic.billing_cycle):
+        return _failure("C'est déjà votre formule actuelle.")
+
+    result = get_payment_provider().change_subscription_plan(
+        clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle
+    )
+    if result.success:
+        change_plan(
+            clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle, changed_by=actor,
+            metadata={"source": "plan_change"},
+        )
+    return result
 
 
 def start_billing_portal_session(*, clinic: Clinic, return_url: str):
@@ -120,6 +184,14 @@ def _on_checkout_completed(*, event_id, payload):
     clinic.stripe_customer_id = payload.get("customer") or clinic.stripe_customer_id
     clinic.stripe_subscription_id = payload.get("subscription") or clinic.stripe_subscription_id
     clinic.save(update_fields=["stripe_customer_id", "stripe_subscription_id"])
+    metadata = payload.get("metadata") or {}
+    plan_tier, billing_cycle = metadata.get("plan_tier"), metadata.get("billing_cycle")
+    if plan_tier in Clinic.PlanTier.values and billing_cycle in Clinic.BillingCycle.values:
+        if (plan_tier, billing_cycle) != (clinic.plan_tier, clinic.billing_cycle):
+            change_plan(
+                clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle, changed_by=None,
+                metadata={"source": SubscriptionEvent.Source.STRIPE_WEBHOOK, "stripe_event_id": event_id},
+            )
     change_subscription_status(
         clinic=clinic, status=Clinic.SubscriptionStatus.ACTIVE, changed_by=None,
         source=SubscriptionEvent.Source.STRIPE_WEBHOOK, stripe_event_id=event_id,
@@ -129,7 +201,11 @@ def _on_checkout_completed(*, event_id, payload):
 
 _STRIPE_STATUS_MAP = {
     "active": Clinic.SubscriptionStatus.ACTIVE,
-    "trialing": Clinic.SubscriptionStatus.TRIAL,
+    # Une clinique qui souscrit pendant son essai garde ses jours gratuits restants côté Stripe
+    # (trial_end, voir StripePaymentProvider) : l'abonnement Stripe est alors "trialing" mais la
+    # clinique a bien souscrit (moyen de paiement enregistré) — elle est Active ici, et n'est donc
+    # jamais suspendue par expire_trials() qui ne vise que les essais sans souscription.
+    "trialing": Clinic.SubscriptionStatus.ACTIVE,
     "past_due": Clinic.SubscriptionStatus.PAST_DUE,
     "unpaid": Clinic.SubscriptionStatus.SUSPENDED,
     "canceled": Clinic.SubscriptionStatus.CANCELLED,
@@ -158,6 +234,17 @@ def _on_subscription_updated(*, event_id, payload):
                 "current_period_end", "expiring_notified_30d_at", "expiring_notified_15d_at",
                 "expiring_notified_7d_at", "expiring_notified_1d_at",
             ]
+        )
+
+    # Changement de formule fait côté Stripe (portail client) ou confirmation de change_subscribed_plan :
+    # la formule de la clinique suit le Price de l'abonnement.
+    items = (payload.get("items") or {}).get("data") or []
+    price_id = ((items[0].get("price") or {}).get("id") if items else "") or ""
+    plan = plan_for_stripe_price_id(price_id)
+    if plan and plan != (clinic.plan_tier, clinic.billing_cycle):
+        change_plan(
+            clinic=clinic, plan_tier=plan[0], billing_cycle=plan[1], changed_by=None,
+            metadata={"source": SubscriptionEvent.Source.STRIPE_WEBHOOK, "stripe_event_id": event_id},
         )
 
     new_status = _STRIPE_STATUS_MAP.get(payload.get("status"))
@@ -213,23 +300,54 @@ def handle_stripe_event(*, event_type: str, event_id: str, payload: dict) -> Non
         handler(event_id=event_id, payload=payload)
 
 
-def _notify_license_expired(*, clinic: Clinic) -> None:
+def _notify_license_expired(*, clinic: Clinic, trial_ended: bool = False) -> None:
     from communication.models import NotificationLog
-    from communication.services import send_notification
+    from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
 
+    if trial_ended:
+        subject = f"Fin de votre mois d'essai gratuit — {clinic.name}"
+        paragraphs = [
+            f"Le mois d'essai gratuit de {clinic.name} est arrivé à son terme. Nous espérons que la "
+            "plateforme a répondu à vos attentes.",
+            "La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
+            "formule. Vos données restent intégralement conservées et consultables.",
+            "Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement ».",
+        ]
+    else:
+        subject = f"Suspension de votre abonnement — {clinic.name}"
+        paragraphs = [
+            f"Nous vous informons que l'abonnement de {clinic.name} est suspendu.",
+            "La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données "
+            "restent intégralement conservées et consultables.",
+            "Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement ».",
+        ]
+    body = compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
     for admin_user in clinic.users.filter(groups__name="clinic_admin"):
         if admin_user.email:
             send_notification(
                 clinic=clinic, recipient_user=admin_user, channel=NotificationLog.Channel.EMAIL,
                 notification_type=NotificationLog.NotificationType.LICENSE_EXPIRED,
-                recipient_address=admin_user.email,
-                subject=f"Your {clinic.name} subscription has been suspended",
-                body=(
-                    f"{clinic.name}'s platform subscription has been suspended. New records can no "
-                    f"longer be created until the subscription is reactivated. Existing data remains "
-                    f"accessible."
-                ),
+                recipient_address=admin_user.email, subject=subject, body=body,
             )
         # docs/known-issues.md : User n'a pas de champ phone — le canal SMS est aujourd'hui
         # inaccessible pour les destinataires clinic_admin, même manque préexistant que pour les
         # notifications de rendez-vous.
+
+
+def expire_trials(*, now=None) -> int:
+    """Suspend les cliniques dont l'essai gratuit est terminé sans souscription (décision métier du
+    2026-09-28). Appelée chaque jour par tasks.py::expire_ended_trials. Une clinique qui a souscrit
+    pendant l'essai est déjà Active (voir _STRIPE_STATUS_MAP) et n'est donc jamais concernée. Les
+    données restent consultables (SubscriptionActivePermission ne bloque que l'écriture)."""
+    from django.utils import timezone
+
+    now = now or timezone.now()
+    expired = Clinic.objects.filter(subscription_status=Clinic.SubscriptionStatus.TRIAL, trial_ends_at__lte=now)
+    count = 0
+    for clinic in expired:
+        change_subscription_status(
+            clinic=clinic, status=Clinic.SubscriptionStatus.SUSPENDED, changed_by=None,
+            source=SubscriptionEvent.Source.SYSTEM, metadata={"clinic_id": clinic.pk, "reason": "trial_ended"},
+        )
+        count += 1
+    return count
