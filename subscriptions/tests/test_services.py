@@ -28,9 +28,11 @@ class ChangeSubscriptionStatusTests(TestCase):
         self.assertEqual(event.to_status, Clinic.SubscriptionStatus.ACTIVE)
 
     def test_illegal_transition_raises_value_error(self):
+        # Trial -> Past Due reste interdite (Trial -> Suspended est autorisée depuis le 2026-09-28 :
+        # fin d'essai sans souscription, voir expire_trials).
         with self.assertRaises(ValueError):
             change_subscription_status(
-                clinic=self.clinic, status=Clinic.SubscriptionStatus.SUSPENDED, changed_by=None,
+                clinic=self.clinic, status=Clinic.SubscriptionStatus.PAST_DUE, changed_by=None,
                 source=SubscriptionEvent.Source.SYSTEM,
             )
         self.clinic.refresh_from_db()
@@ -173,3 +175,124 @@ class HandleStripeEventTests(TestCase):
 
     def test_unknown_event_type_is_a_noop(self):
         handle_stripe_event(event_type="some.unrelated.event", event_id="evt_6", payload={})  # ne doit pas lever d'exception
+
+
+class TrialAndPricingRulesTests(TestCase):
+    """Décision métier du 2026-09-28 : premier mois gratuit, suspension à la fin de l'essai sans
+    souscription, seules Starter/Professional sont proposées à la souscription."""
+
+    def setUp(self):
+        from datetime import timedelta
+
+        from django.utils import timezone
+
+        self.now = timezone.now()
+        self.timedelta = timedelta
+        self.clinic = create_clinic()
+
+    def _set_trial_end(self, clinic, days):
+        clinic.subscription_status = Clinic.SubscriptionStatus.TRIAL
+        clinic.trial_ends_at = self.now + self.timedelta(days=days)
+        clinic.save(update_fields=["subscription_status", "trial_ends_at"])
+
+    def test_start_trial_gives_thirty_days(self):
+        from subscriptions.services import start_trial
+
+        start_trial(clinic=self.clinic)
+        self.clinic.refresh_from_db()
+        remaining = self.clinic.trial_ends_at - self.now
+        self.assertEqual(round(remaining.total_seconds() / 86400), 30)
+
+    def test_expire_trials_suspends_only_ended_trials(self):
+        from subscriptions.services import expire_trials
+
+        ended = self.clinic
+        self._set_trial_end(ended, days=-1)
+        running = create_clinic("Running Trial")
+        self._set_trial_end(running, days=10)
+        active = create_clinic("Paying Clinic")
+        active.subscription_status = Clinic.SubscriptionStatus.ACTIVE
+        active.trial_ends_at = self.now - self.timedelta(days=5)
+        active.save(update_fields=["subscription_status", "trial_ends_at"])
+
+        self.assertEqual(expire_trials(), 1)
+
+        ended.refresh_from_db()
+        running.refresh_from_db()
+        active.refresh_from_db()
+        self.assertEqual(ended.subscription_status, Clinic.SubscriptionStatus.SUSPENDED)
+        self.assertEqual(running.subscription_status, Clinic.SubscriptionStatus.TRIAL)
+        self.assertEqual(active.subscription_status, Clinic.SubscriptionStatus.ACTIVE)
+        event = SubscriptionEvent.objects.get(clinic=ended, to_status=Clinic.SubscriptionStatus.SUSPENDED)
+        self.assertEqual(event.metadata["reason"], "trial_ended")
+
+    def test_expire_trials_is_idempotent(self):
+        from subscriptions.services import expire_trials
+
+        self._set_trial_end(self.clinic, days=-1)
+        expire_trials()
+        self.assertEqual(expire_trials(), 0)
+
+    def test_checkout_rejects_enterprise_and_invalid_cycle(self):
+        from subscriptions.services import start_checkout
+
+        result = start_checkout(
+            clinic=self.clinic, plan_tier=Clinic.PlanTier.ENTERPRISE, billing_cycle=Clinic.BillingCycle.MONTHLY,
+            success_url="https://x/ok", cancel_url="https://x/ko",
+        )
+        self.assertFalse(result.success)
+        self.assertEqual(result.error_message, "Cette formule n'est pas disponible à la souscription.")
+
+        result = start_checkout(
+            clinic=self.clinic, plan_tier=Clinic.PlanTier.STARTER, billing_cycle="weekly",
+            success_url="https://x/ok", cancel_url="https://x/ko",
+        )
+        self.assertFalse(result.success)
+        self.assertEqual(result.error_message, "Cycle de facturation invalide.")
+
+    def test_stripe_trialing_subscription_marks_clinic_active(self):
+        self.clinic.stripe_customer_id = "cus_trial"
+        self.clinic.save(update_fields=["stripe_customer_id"])
+        handle_stripe_event(
+            event_type="customer.subscription.updated", event_id="evt_trialing",
+            payload={"customer": "cus_trial", "status": "trialing"},
+        )
+        self.clinic.refresh_from_db()
+        self.assertEqual(self.clinic.subscription_status, Clinic.SubscriptionStatus.ACTIVE)
+
+
+class CheckoutCompletedRecordsPlanTests(TestCase):
+    def test_subscribed_plan_and_cycle_are_saved_on_the_clinic(self):
+        clinic = create_clinic()  # TRIAL / STARTER / MONTHLY par défaut
+        handle_stripe_event(
+            event_type="checkout.session.completed", event_id="evt_checkout_pro",
+            payload={
+                "customer": "cus_pro", "subscription": "sub_pro",
+                "metadata": {"clinic_id": str(clinic.pk), "plan_tier": "professional", "billing_cycle": "annual"},
+            },
+        )
+        clinic.refresh_from_db()
+        self.assertEqual(clinic.subscription_status, Clinic.SubscriptionStatus.ACTIVE)
+        self.assertEqual(clinic.plan_tier, Clinic.PlanTier.PROFESSIONAL)
+        self.assertEqual(clinic.billing_cycle, Clinic.BillingCycle.ANNUAL)
+
+
+class SubscriptionUpdatedSyncsPlanTests(TestCase):
+    def test_price_change_made_in_stripe_portal_updates_clinic_plan(self):
+        from django.test import override_settings
+
+        clinic = create_clinic()
+        clinic.subscription_status = Clinic.SubscriptionStatus.ACTIVE
+        clinic.stripe_customer_id = "cus_portal"
+        clinic.save(update_fields=["subscription_status", "stripe_customer_id"])
+        with override_settings(STRIPE_PRICE_PROFESSIONAL_MONTHLY="price_pro_monthly"):
+            handle_stripe_event(
+                event_type="customer.subscription.updated", event_id="evt_portal_change",
+                payload={
+                    "customer": "cus_portal", "status": "active",
+                    "items": {"data": [{"id": "si_1", "price": {"id": "price_pro_monthly"}}]},
+                },
+            )
+        clinic.refresh_from_db()
+        self.assertEqual(clinic.plan_tier, Clinic.PlanTier.PROFESSIONAL)
+        self.assertEqual(clinic.subscription_status, Clinic.SubscriptionStatus.ACTIVE)

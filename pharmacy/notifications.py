@@ -6,7 +6,7 @@ et l'administrateur de clinique de l'établissement concerné, sur le canal In-A
 d'email/SMS pour l'instant — à revoir avec la table faisant autorité)."""
 
 from communication.models import NotificationLog
-from communication.services import send_notification
+from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
 
 
 def _stock_recipients(clinic):
@@ -23,7 +23,10 @@ def _dispatch(*, clinic, notification_type, subject, body):
             notification_type=notification_type,
             recipient_address=entry["email"],
             subject=subject,
-            body=body,
+            body=compose_email(
+                paragraphs=[body, "Vous pouvez consulter le stock depuis l'écran « Pharmacie »."],
+                signature=PLATFORM_SIGNATURE,
+            ),
         )
 
 
@@ -34,10 +37,11 @@ def send_low_stock_alert(*, medication_id):
         medication = Medication.objects.select_related("clinic").get(pk=medication_id)
     except Medication.DoesNotExist:
         return
-    subject = f"Stock bas — {medication.name}"
+    subject = f"Alerte stock bas : {medication.name} — {medication.clinic.name}"
     body = (
-        f"Le stock de {medication.name} ({medication.current_stock} {medication.unit}) est passé "
-        f"sous le seuil minimal ({medication.min_threshold} {medication.unit})."
+        f"Le stock de {medication.name} est de {medication.current_stock} {medication.unit}, en dessous "
+        f"du seuil minimal fixé à {medication.min_threshold} {medication.unit}. Nous vous recommandons "
+        f"de prévoir un réapprovisionnement."
     )
     _dispatch(
         clinic=medication.clinic,
@@ -54,10 +58,11 @@ def send_overstock_alert(*, medication_id):
         medication = Medication.objects.select_related("clinic").get(pk=medication_id)
     except Medication.DoesNotExist:
         return
-    subject = f"Surstock — {medication.name}"
+    subject = f"Alerte surstock : {medication.name} — {medication.clinic.name}"
     body = (
-        f"Le stock de {medication.name} ({medication.current_stock} {medication.unit}) dépasse le "
-        f"seuil maximal ({medication.max_threshold} {medication.unit})."
+        f"Le stock de {medication.name} est de {medication.current_stock} {medication.unit}, au-dessus "
+        f"du seuil maximal fixé à {medication.max_threshold} {medication.unit}. Nous vous recommandons "
+        f"de suspendre les commandes de ce médicament."
     )
     _dispatch(
         clinic=medication.clinic,

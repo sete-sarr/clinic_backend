@@ -29,6 +29,17 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
     return log
 
 
+PLATFORM_SIGNATURE = "L'équipe Clinic Management"
+_AUTOMATED_NOTICE = "Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement."
+
+
+def compose_email(*, paragraphs, signature, greeting="Bonjour,"):
+    """Mise en forme commune des e-mails (formule d'appel, paragraphes, signature, mention d'envoi
+    automatique), pour une présentation professionnelle identique dans tous les modules. Les SMS
+    n'utilisent pas cette mise en forme : ils restent courts et préfixés par l'expéditeur."""
+    return "\n\n".join([greeting, *paragraphs, f"Cordialement,\n{signature}", _AUTOMATED_NOTICE])
+
+
 def _generate_code() -> str:
     return f"{secrets.randbelow(1_000_000):06d}"
 
@@ -65,8 +76,21 @@ def generate_and_send_otp(*, principal, purpose):
 
     email = getattr(principal, "email", "") or ""
     phone = getattr(principal, "phone", "") or ""
-    subject = "Your verification code"
-    body = f"Your verification code is {code}. It expires in {OtpCode.EXPIRY_MINUTES} minutes."
+    sender = clinic.name if clinic else PLATFORM_SIGNATURE
+    subject = f"Votre code de vérification — {sender}"
+    email_body = compose_email(
+        paragraphs=[
+            f"Voici votre code de vérification : {code}",
+            f"Ce code est valable {OtpCode.EXPIRY_MINUTES} minutes. Ne le communiquez à personne : "
+            "nos équipes ne vous le demanderont jamais.",
+            "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.",
+        ],
+        signature=sender,
+    )
+    sms_body = (
+        f"{sender} : votre code de vérification est {code} (valable {OtpCode.EXPIRY_MINUTES} min). "
+        "Ne le communiquez à personne."
+    )
     recipient_user = None if is_patient else principal
 
     if email:
@@ -77,7 +101,7 @@ def generate_and_send_otp(*, principal, purpose):
             notification_type=NotificationLog.NotificationType.OTP,
             recipient_address=email,
             subject=subject,
-            body=body,
+            body=email_body,
         )
     if phone:
         send_notification(
@@ -87,7 +111,7 @@ def generate_and_send_otp(*, principal, purpose):
             notification_type=NotificationLog.NotificationType.OTP,
             recipient_address=phone,
             subject=subject,
-            body=body,
+            body=sms_body,
         )
     return otp
 

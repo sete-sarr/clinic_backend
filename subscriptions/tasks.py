@@ -3,7 +3,7 @@ from django.utils import timezone
 
 from clinics.models import Clinic
 from communication.models import NotificationLog
-from communication.services import send_notification
+from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
 
 # business/notification-rules.md "SUBSCRIPTION EXPIRING" : 30/15/7/1 jours avant current_period_end.
 _THRESHOLDS = [
@@ -40,10 +40,15 @@ def _notify_expiring(*, clinic, days_left):
     # docs/known-issues.md pour appointments/notifications.py : nom de rôle -> tous les
     # utilisateurs correspondants dans la clinique, ce qui peut donner zéro ou plusieurs résultats.
     admins = clinic.users.filter(groups__name="clinic_admin")
-    subject = f"Your subscription expires in {days_left} day{'s' if days_left != 1 else ''}"
-    body = (
-        f"{clinic.name}'s subscription is set to renew/expire on {clinic.current_period_end.date()}. "
-        f"Please ensure your payment method is up to date."
+    subject = f"Échéance de votre abonnement dans {days_left} jour{'s' if days_left != 1 else ''} — {clinic.name}"
+    body = compose_email(
+        paragraphs=[
+            f"L'abonnement de {clinic.name} arrive à échéance le {clinic.current_period_end.date():%d/%m/%Y} "
+            "et sera renouvelé automatiquement.",
+            "Afin d'éviter toute interruption de service, nous vous invitons à vérifier que votre moyen "
+            "de paiement est à jour depuis l'écran « Abonnement ».",
+        ],
+        signature=PLATFORM_SIGNATURE,
     )
     for admin_user in admins:
         if admin_user.email:
@@ -55,3 +60,13 @@ def _notify_expiring(*, clinic, days_left):
         # docs/known-issues.md : User n'a pas de champ phone — le canal SMS est aujourd'hui
         # inaccessible pour les destinataires clinic_admin. Non corrigé ici, non contourné
         # silencieusement.
+
+
+@shared_task
+def expire_ended_trials():
+    """S'exécute quotidiennement : suspend les cliniques dont le mois d'essai gratuit est terminé
+    sans souscription (logique dans services.expire_trials)."""
+    from .services import expire_trials
+
+    return expire_trials()
+

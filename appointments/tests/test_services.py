@@ -305,3 +305,101 @@ class CheckInAppointmentTests(TestCase):
         appointment.refresh_from_db()
         with self.assertRaises(ValidationError):
             check_in_appointment(appointment=appointment)
+
+
+class PlanRestrictedAppointmentNotificationsTests(TestCase):
+    """Décision métier du 2026-09-28 : SMS de rendez-vous et rappel groupé de la veille réservés à
+    la formule Professional (15 000 FCFA) et à l'essai ; Starter garde les e-mails individuels."""
+
+    def setUp(self):
+        self.clinic = create_clinic()
+        self.doctor = _create_doctor(self.clinic, email="doctor@example.com")
+        self.patient = _create_patient(self.clinic, "PAT-2026-00020", email="patient@example.com")
+
+    def _subscribe(self, plan_tier):
+        from clinics.models import Clinic
+
+        self.clinic.subscription_status = Clinic.SubscriptionStatus.ACTIVE
+        self.clinic.plan_tier = plan_tier
+        self.clinic.save(update_fields=["subscription_status", "plan_tier"])
+
+    def _tomorrow_appointment(self):
+        return Appointment.objects.create(
+            clinic=self.clinic, doctor=self.doctor, patient=self.patient,
+            date=timezone.localdate() + timedelta(days=1), time="09:00:00", status=Appointment.Status.CONFIRMED,
+        )
+
+    def test_starter_sends_individual_emails_but_no_sms(self):
+        self._subscribe("starter")
+        appointment = _appointment_at(self.clinic, self.doctor, self.patient, timezone.now() + timedelta(days=2))
+        send_appointment_created_notifications(appointment_id=appointment.id)
+        logs = NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.APPOINTMENT_CREATED)
+        self.assertEqual(logs.filter(channel=NotificationLog.Channel.EMAIL).count(), 2)  # patient + médecin
+        self.assertFalse(logs.filter(channel=NotificationLog.Channel.SMS).exists())
+
+    def test_starter_gets_no_day_before_reminder_and_appointment_stays_unmarked(self):
+        from appointments.tasks import send_day_before_reminders
+
+        self._subscribe("starter")
+        appointment = self._tomorrow_appointment()
+        send_day_before_reminders()
+        appointment.refresh_from_db()
+        self.assertIsNone(appointment.day_before_reminder_sent_at)
+        self.assertFalse(
+            NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.APPOINTMENT_REMINDER).exists()
+        )
+
+    def test_professional_gets_sms_and_reminders(self):
+        from appointments.tasks import send_day_before_reminders
+
+        self._subscribe("professional")
+        appointment = self._tomorrow_appointment()
+        send_day_before_reminders()
+        appointment.refresh_from_db()
+        self.assertIsNotNone(appointment.day_before_reminder_sent_at)
+        logs = NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.APPOINTMENT_REMINDER)
+        self.assertTrue(logs.filter(channel=NotificationLog.Channel.SMS).exists())
+
+    def test_trial_clinic_gets_professional_features(self):
+        # create_clinic() démarre en essai (plan_tier = starter par défaut) : l'essai prime.
+        appointment = _appointment_at(self.clinic, self.doctor, self.patient, timezone.now() + timedelta(days=2))
+        send_appointment_created_notifications(appointment_id=appointment.id)
+        self.assertTrue(NotificationLog.objects.filter(channel=NotificationLog.Channel.SMS).exists())
+
+
+class AppointmentNotificationTextTests(TestCase):
+    """Rédaction professionnelle : un message au patient, un autre au personnel (le médecin ne doit
+    pas recevoir « votre rendez-vous avec le Dr [lui-même] »), SMS courts signés de la clinique."""
+
+    def setUp(self):
+        self.clinic = create_clinic("Clinique du Parc")
+        self.clinic.phone = "33 800 00 00"
+        self.clinic.save(update_fields=["phone"])
+        doctor = _create_doctor(self.clinic, email="doctor@example.com")
+        doctor.user.first_name, doctor.user.last_name = "Awa", "Diop"
+        doctor.user.save(update_fields=["first_name", "last_name"])
+        patient = _create_patient(self.clinic, "PAT-2026-00030", email="patient@example.com")
+        self.appointment = Appointment.objects.create(
+            clinic=self.clinic, doctor=doctor, patient=patient, date=date(2026, 10, 1), time="09:30:00",
+            status=Appointment.Status.CONFIRMED,
+        )
+        send_appointment_created_notifications(appointment_id=self.appointment.id)
+
+    def test_patient_email_is_professional_and_signed(self):
+        log = NotificationLog.objects.get(recipient_address="patient@example.com")
+        self.assertEqual(log.subject, "Confirmation de votre rendez-vous — Clinique du Parc")
+        self.assertTrue(log.body.startswith("Bonjour,"))
+        self.assertIn("avec le Dr Awa Diop le 01/10/2026 à 09h30", log.body)
+        self.assertIn("contacter la clinique au 33 800 00 00", log.body)
+        self.assertIn("Cordialement,\nClinique du Parc", log.body)
+
+    def test_doctor_receives_a_staff_message_naming_the_patient(self):
+        log = NotificationLog.objects.get(recipient_address="doctor@example.com")
+        self.assertEqual(log.subject, "Nouveau rendez-vous — Test Patient")
+        self.assertIn("pour Test Patient avec le Dr Awa Diop", log.body)
+        self.assertNotIn("votre rendez-vous", log.body.lower())
+
+    def test_patient_sms_is_short_and_signed(self):
+        log = NotificationLog.objects.get(channel=NotificationLog.Channel.SMS)
+        self.assertTrue(log.body.startswith("Clinique du Parc : votre rendez-vous"))
+        self.assertLessEqual(len(log.body), 160)

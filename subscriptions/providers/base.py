@@ -19,6 +19,13 @@ class BillingPortalResult:
 
 
 @dataclass
+class PlanChangeResult:
+    success: bool
+    provider_name: str
+    error_message: str = ""
+
+
+@dataclass
 class WebhookEventResult:
     success: bool
     provider_name: str
@@ -40,6 +47,10 @@ class PaymentProvider(ABC):
 
     @abstractmethod
     def create_billing_portal_session(self, *, clinic, return_url: str) -> BillingPortalResult: ...
+
+    @abstractmethod
+    def change_subscription_plan(self, *, clinic, plan_tier: str, billing_cycle: str) -> PlanChangeResult:
+        """Modifie la formule de l'abonnement existant de la clinique (jamais un second abonnement)."""
 
     @abstractmethod
     def construct_webhook_event(self, *, payload: bytes, signature: str) -> WebhookEventResult: ...
