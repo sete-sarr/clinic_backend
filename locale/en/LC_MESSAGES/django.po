@@ -5,9 +5,33 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en\n"
 
+#: appointments/notifications.py:80
+msgid "%(clinic)s : %(message)s"
+msgstr "%(clinic)s: %(message)s"
+
+#: communication/services.py:134
+msgid "%(sender)s : votre code de vérification est %(code)s (valable %(minutes)s min). Ne le communiquez à personne."
+msgstr "%(sender)s: your verification code is %(code)s (valid for %(minutes)s min). Do not share it with anyone."
+
 #: accounts/api/serializers.py:48
 msgid "Adresse e-mail ou mot de passe incorrect."
 msgstr "Incorrect email address or password."
+
+#: subscriptions/tasks.py:62
+msgid "Afin d'éviter toute interruption de service, nous vous invitons à vérifier que votre moyen de paiement est à jour depuis l'écran « Abonnement »."
+msgstr "To avoid any interruption of service, please check that your payment method is up to date from the “Subscription” screen."
+
+#: pharmacy/notifications.py:55
+msgid "Alerte stock bas : %(name)s — %(clinic)s"
+msgstr "Low stock alert: %(name)s — %(clinic)s"
+
+#: pharmacy/notifications.py:79
+msgid "Alerte surstock : %(name)s — %(clinic)s"
+msgstr "Overstock alert: %(name)s — %(clinic)s"
+
+#: appointments/notifications.py:219
+msgid "Annulation de votre rendez-vous"
+msgstr "Your appointment has been cancelled"
 
 #: subscriptions/services.py:148
 msgid "Aucun abonnement en cours : choisissez une formule pour souscrire."
@@ -29,6 +53,10 @@ msgstr "No patient profile is linked to this account."
 msgid "Aucune adresse e-mail n'est enregistrée pour ce patient. Contactez votre clinique pour en ajouter une avant d'activer votre espace patient."
 msgstr "No email address is on file for this patient. Please contact your clinic to add one before activating your patient portal."
 
+#: communication/services.py:72
+msgid "Bonjour,"
+msgstr "Hello,"
+
 #: subscriptions/services.py:152
 msgid "C'est déjà votre formule actuelle."
 msgstr "This is already your current plan."
@@ -38,9 +66,13 @@ msgstr "This is already your current plan."
 msgid "Ce champ est obligatoire."
 msgstr "This field is required."
 
-#: communication/services.py:125
+#: communication/services.py:167
 msgid "Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau."
 msgstr "This code has expired or does not exist. Please request a new one."
+
+#: communication/services.py:126
+msgid "Ce code est valable %(minutes)s minutes. Ne le communiquez à personne : nos équipes ne vous le demanderont jamais."
+msgstr "This code is valid for %(minutes)s minutes. Do not share it with anyone: our staff will never ask you for it."
 
 #: consultations/api/views.py:41
 #: prescriptions/api/views.py:45
@@ -50,6 +82,10 @@ msgstr "This account has no doctor profile in this clinic."
 #: departments/services.py:22
 msgid "Ce département a des médecins actifs et ne peut pas être archivé. Réaffectez-les ou désactivez-les d'abord."
 msgstr "This department has active doctors and cannot be archived. Reassign or deactivate them first."
+
+#: communication/services.py:36
+msgid "Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement."
+msgstr "This is an automated message; please do not reply to it directly."
 
 #: appointments/services.py:45
 msgid "Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure."
@@ -78,7 +114,7 @@ msgstr "This consultation already has a prescription."
 msgid "Cette formule n'est pas disponible à la souscription."
 msgstr "This plan is not available for subscription."
 
-#: accounts/services.py:141
+#: accounts/services.py:143
 msgid "Changement de rôle non pris en charge."
 msgstr "Unsupported role change."
 
@@ -86,31 +122,51 @@ msgstr "Unsupported role change."
 msgid "Chaque ligne de facture doit avoir une quantité et un prix unitaire."
 msgstr "Every invoice line needs a quantity and a unit price."
 
-#: communication/services.py:135
+#: communication/services.py:177
 msgid "Code incorrect."
 msgstr "Incorrect code."
 
-#: accounts/api/views.py:157
+#: accounts/api/views.py:163
 msgid "Compte activé. Vous pouvez maintenant vous connecter."
 msgstr "Account activated. You can now log in."
+
+#: appointments/notifications.py:151
+msgid "Confirmation de votre rendez-vous"
+msgstr "Appointment confirmation"
 
 #: prescriptions/services/__init__.py:21
 msgid "Consultation invalide."
 msgstr "Invalid consultation."
+
+#: communication/services.py:74
+msgid "Cordialement,"
+msgstr "Kind regards,"
 
 #: subscriptions/services.py:146
 #: subscriptions/services.py:106
 msgid "Cycle de facturation invalide."
 msgstr "Invalid billing cycle."
 
+#: appointments/notifications.py:60
+msgid "Dr %(name)s"
+msgstr "Dr. %(name)s"
+
 #: doctors/api/serializers.py:77
 #: doctors/services.py:16
 msgid "Département invalide."
 msgstr "Invalid department."
 
+#: appointments/notifications.py:155
+msgid "En cas d'empêchement, nous vous remercions de bien vouloir %(contact)s le plus tôt possible."
+msgstr "If you are unable to attend, please %(contact)s as soon as possible."
+
 #: payments/services/__init__.py:17
 msgid "Facture invalide."
 msgstr "Invalid invoice."
+
+#: subscriptions/services.py:313
+msgid "Fin de votre mois d'essai gratuit — %(clinic)s"
+msgstr "Your free trial month has ended — %(clinic)s"
 
 #: appointments/services.py:122
 msgid "Impossible d'annuler ce rendez-vous : il est déjà %(status)s."
@@ -120,7 +176,7 @@ msgstr "This appointment cannot be cancelled: it is already %(status)s."
 msgid "Impossible d'enregistrer l'arrivée : ce rendez-vous est déjà %(status)s."
 msgstr "Unable to check in: this appointment is already %(status)s."
 
-#: accounts/services.py:172
+#: accounts/services.py:174
 msgid "Impossible de désactiver le dernier administrateur actif de la clinique."
 msgstr "The clinic's last active administrator cannot be deactivated."
 
@@ -131,6 +187,10 @@ msgstr "This appointment cannot be changed: it is already %(status)s."
 #: appointments/services.py:35
 msgid "Impossible de programmer un rendez-vous dans le passé."
 msgstr "An appointment cannot be scheduled in the past."
+
+#: subscriptions/tasks.py:61
+msgid "L'abonnement de %(clinic)s arrive à échéance le %(date)s et sera renouvelé automatiquement."
+msgstr "The %(clinic)s subscription is due on %(date)s and will renew automatically."
 
 #: common/permissions.py:50
 msgid "L'abonnement de cette clinique est suspendu. Aucune création ni modification ne peut être enregistrée tant que l'abonnement n'est pas réactivé."
@@ -151,6 +211,18 @@ msgstr "Check-in is only possible for an appointment scheduled today."
 #: clinics/api/serializers.py:17
 msgid "L'image ne doit pas dépasser 2 Mo."
 msgstr "The image must not exceed 2 MB."
+
+#: communication/services.py:35
+msgid "L'équipe Clinic Management"
+msgstr "The Clinic Management team"
+
+#: subscriptions/services.py:325
+msgid "La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données restent intégralement conservées et consultables."
+msgstr "Creating new records is blocked until it is reactivated. All your data is kept and remains accessible."
+
+#: subscriptions/services.py:317
+msgid "La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une formule. Vos données restent intégralement conservées et consultables."
+msgstr "Creating new records is suspended until you subscribe to a plan. All your data is kept and remains accessible."
 
 #: patients/services/__init__.py:57
 msgid "La date de naissance ne peut pas être dans le futur."
@@ -176,6 +248,10 @@ msgstr "This doctor's department is not active and cannot accept new appointment
 msgid "Le guide d'utilisation n'est pas disponible."
 msgstr "The user guide is not available."
 
+#: subscriptions/services.py:315
+msgid "Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la plateforme a répondu à vos attentes."
+msgstr "The free trial month for %(clinic)s has ended. We hope the platform has met your expectations."
+
 #: payments/services/__init__.py:19
 msgid "Le montant du paiement doit être positif."
 msgstr "The payment amount must be positive."
@@ -197,13 +273,33 @@ msgstr "The payment of %(amount)s exceeds the balance due of %(balance)s on this
 msgid "Le paiement en ligne est momentanément indisponible. Réessayez plus tard."
 msgstr "Online payment is temporarily unavailable. Please try again later."
 
-#: accounts/services.py:143
+#: appointments/notifications.py:201
+msgid "Le rendez-vous de %(patient)s avec le %(doctor)s a été déplacé %(when)s."
+msgstr "The appointment of %(patient)s with %(doctor)s has been moved to %(when)s."
+
+#: appointments/notifications.py:235
+msgid "Le rendez-vous de %(patient)s avec le %(doctor)s, prévu %(when)s, a été annulé."
+msgstr "The appointment of %(patient)s with %(doctor)s, scheduled %(when)s, has been cancelled."
+
+#: accounts/services.py:145
 msgid "Le rôle d'un médecin ne peut pas être modifié depuis cet écran."
 msgstr "A doctor's role cannot be changed from this screen."
 
 #: pharmacy/api/serializers.py:60
 msgid "Le seuil maximal doit être supérieur ou égal au seuil minimal."
 msgstr "The maximum threshold must be greater than or equal to the minimum threshold."
+
+#: pharmacy/notifications.py:80
+msgid "Le stock de %(name)s est de %(stock)s %(unit)s, au-dessus du seuil maximal fixé à %(threshold)s %(unit)s. Nous vous recommandons de suspendre les commandes de ce médicament."
+msgstr "The stock of %(name)s is %(stock)s %(unit)s, above the maximum threshold of %(threshold)s %(unit)s. We recommend pausing orders for this medication."
+
+#: pharmacy/notifications.py:56
+msgid "Le stock de %(name)s est de %(stock)s %(unit)s, en dessous du seuil minimal fixé à %(threshold)s %(unit)s. Nous vous recommandons de prévoir un réapprovisionnement."
+msgstr "The stock of %(name)s is %(stock)s %(unit)s, below the minimum threshold of %(threshold)s %(unit)s. We recommend planning a restock."
+
+#: appointments/notifications.py:185
+msgid "Modification de votre rendez-vous"
+msgstr "Your appointment has been changed"
 
 #: appointments/services.py:55
 #: appointments/services.py:89
@@ -220,6 +316,34 @@ msgstr "Invalid doctor."
 msgid "Médicament invalide."
 msgstr "Invalid medication."
 
+#: appointments/notifications.py:153
+msgid "Nous vous confirmons l'enregistrement de votre rendez-vous avec le %(doctor)s %(when)s."
+msgstr "We confirm your appointment with %(doctor)s %(when)s."
+
+#: subscriptions/services.py:324
+msgid "Nous vous informons que l'abonnement de %(clinic)s est suspendu."
+msgstr "Please note that the %(clinic)s subscription is suspended."
+
+#: appointments/notifications.py:187
+msgid "Nous vous informons que votre rendez-vous avec le %(doctor)s a été modifié. Il aura désormais lieu %(when)s."
+msgstr "Please note that your appointment with %(doctor)s has been changed. It will now take place %(when)s."
+
+#: appointments/notifications.py:221
+msgid "Nous vous informons que votre rendez-vous avec le %(doctor)s, prévu %(when)s, a été annulé."
+msgstr "Please note that your appointment with %(doctor)s, scheduled %(when)s, has been cancelled."
+
+#: appointments/notifications.py:261
+msgid "Nous vous rappelons votre rendez-vous de demain avec le %(doctor)s, %(when)s."
+msgstr "This is a reminder of your appointment tomorrow with %(doctor)s, %(when)s."
+
+#: appointments/notifications.py:263
+msgid "Nous vous remercions de vous présenter quelques minutes en avance. En cas d'empêchement, merci de bien vouloir %(contact)s."
+msgstr "Please arrive a few minutes early. If you are unable to attend, please %(contact)s."
+
+#: appointments/notifications.py:165
+msgid "Nouveau rendez-vous"
+msgstr "New appointment"
+
 #: appointments/services.py:53
 #: appointments/services.py:87
 #: billing/services/__init__.py:48
@@ -231,10 +355,42 @@ msgstr "Invalid medication."
 msgid "Patient invalide."
 msgstr "Invalid patient."
 
+#: appointments/notifications.py:223
+msgid "Pour convenir d'un nouveau rendez-vous, nous vous invitons à %(contact)s."
+msgstr "To arrange a new appointment, please %(contact)s."
+
+#: appointments/notifications.py:275
+msgid "Pour rappel, vous recevez %(patient)s demain, %(when)s."
+msgstr "Reminder: you are seeing %(patient)s tomorrow, %(when)s."
+
+#: subscriptions/services.py:319
+msgid "Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement »."
+msgstr "To reactivate your account, choose a plan from the “Subscription” screen."
+
+#: subscriptions/services.py:327
+msgid "Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement »."
+msgstr "To resolve this, go to the “Subscription” screen."
+
+#: appointments/notifications.py:273
+msgid "Rappel : rendez-vous de demain"
+msgstr "Reminder: tomorrow's appointment"
+
+#: appointments/notifications.py:259
+msgid "Rappel de votre rendez-vous de demain"
+msgstr "Reminder: your appointment tomorrow"
+
+#: appointments/notifications.py:233
+msgid "Rendez-vous annulé"
+msgstr "Appointment cancelled"
+
 #: consultations/services.py:31
 #: consultations/services.py:50
 msgid "Rendez-vous invalide."
 msgstr "Invalid appointment."
+
+#: appointments/notifications.py:199
+msgid "Rendez-vous modifié"
+msgstr "Appointment changed"
 
 #: billing/api/views.py:73
 msgid "Seul l'administrateur de la clinique peut annuler une facture."
@@ -256,9 +412,17 @@ msgstr "Only a draft invoice can be issued."
 msgid "Seuls les formats PNG et JPEG sont acceptés."
 msgstr "Only PNG and JPEG formats are accepted."
 
-#: accounts/api/views.py:131
+#: appointments/notifications.py:189
+msgid "Si cette nouvelle date ne vous convient pas, nous vous invitons à %(contact)s."
+msgstr "If this new date does not suit you, please %(contact)s."
+
+#: accounts/api/views.py:137
 msgid "Si les informations correspondent, un code de vérification vous a été envoyé."
 msgstr "If the details match, a verification code has been sent to you."
+
+#: communication/services.py:130
+msgid "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message."
+msgstr "If you did not make this request, you can ignore this message."
 
 #: subscriptions/api/views.py:24
 msgid "Signature invalide."
@@ -268,7 +432,11 @@ msgstr "Invalid signature."
 msgid "Stock insuffisant pour %(name)s : il manque %(missing)s %(unit)s."
 msgstr "Insufficient stock for %(name)s: %(missing)s %(unit)s missing."
 
-#: communication/services.py:66
+#: subscriptions/services.py:322
+msgid "Suspension de votre abonnement — %(clinic)s"
+msgstr "Your subscription is suspended — %(clinic)s"
+
+#: communication/services.py:101
 msgid "Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."
 msgstr "A code was sent recently. Please wait before requesting a new one."
 
@@ -297,6 +465,10 @@ msgstr "A subscription payment is outstanding: settle it from “Manage subscrip
 #: patients/services/__init__.py:23
 msgid "Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique."
 msgstr "A patient with the same name, date of birth and phone number already exists in this clinic."
+
+#: appointments/notifications.py:167
+msgid "Un rendez-vous a été enregistré pour %(patient)s avec le %(doctor)s %(when)s."
+msgstr "An appointment has been booked for %(patient)s with %(doctor)s %(when)s."
 
 #: appointments/services.py:127
 msgid "Un rendez-vous ne peut être annulé que plus de %(hours)s h à l'avance."
@@ -339,9 +511,17 @@ msgstr "A prescription must contain at least one medication line."
 msgid "Une ordonnance validée ou annulée ne peut plus être modifiée."
 msgstr "A finalized or cancelled prescription can no longer be edited."
 
+#: communication/services.py:125
+msgid "Voici votre code de vérification : %(code)s"
+msgstr "Your verification code is: %(code)s"
+
 #: subscriptions/services.py:129
 msgid "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
 msgstr "Your clinic already has an active subscription: change plans instead of subscribing again."
+
+#: communication/services.py:122
+msgid "Votre code de vérification — %(sender)s"
+msgstr "Your verification code — %(sender)s"
 
 #: reports/api/views.py:23
 msgid "Votre compte n'est rattaché à aucune clinique."
@@ -359,9 +539,13 @@ msgstr "You are not allowed to access this document."
 msgid "Vous n'êtes pas autorisé(e) à accéder à ce rapport."
 msgstr "You are not allowed to access this report."
 
-#: accounts/services.py:164
+#: accounts/services.py:166
 msgid "Vous ne pouvez pas désactiver votre propre compte."
 msgstr "You cannot deactivate your own account."
+
+#: pharmacy/notifications.py:27
+msgid "Vous pouvez consulter le stock depuis l'écran « Pharmacie »."
+msgstr "You can check the stock from the “Pharmacy” screen."
 
 #: appointments/services.py:23
 msgid "annulé"
@@ -371,14 +555,50 @@ msgstr "cancelled"
 msgid "confirmé"
 msgstr "confirmed"
 
+#: appointments/notifications.py:72
+msgid "contacter la clinique"
+msgstr "contact the clinic"
+
+#: appointments/notifications.py:71
+msgid "contacter la clinique au %(phone)s"
+msgstr "contact the clinic on %(phone)s"
+
 #: appointments/services.py:20
 msgid "en attente"
 msgstr "pending"
+
+#: appointments/notifications.py:52
+msgid "le %(date)s à %(time)s"
+msgstr "on %(date)s at %(time)s"
 
 #: appointments/services.py:24
 msgid "marqué absent"
 msgstr "marked as a no-show"
 
+#: appointments/notifications.py:266
+msgid "rappel de votre rendez-vous demain avec le %(doctor)s, %(when)s. En cas d'empêchement, merci de nous prévenir."
+msgstr "reminder of your appointment tomorrow with %(doctor)s, %(when)s. If you cannot attend, please let us know."
+
 #: appointments/services.py:22
 msgid "terminé"
 msgstr "completed"
+
+#: appointments/notifications.py:192
+msgid "votre rendez-vous avec le %(doctor)s a été déplacé %(when)s. Pour toute question, merci de nous contacter."
+msgstr "your appointment with %(doctor)s has been moved to %(when)s. For any questions, please contact us."
+
+#: appointments/notifications.py:158
+msgid "votre rendez-vous avec le %(doctor)s est confirmé %(when)s. En cas d'empêchement, merci de nous prévenir."
+msgstr "your appointment with %(doctor)s is confirmed %(when)s. If you cannot attend, please let us know."
+
+#: appointments/notifications.py:226
+msgid "votre rendez-vous avec le %(doctor)s prévu %(when)s est annulé. Contactez-nous pour en fixer un nouveau."
+msgstr "your appointment with %(doctor)s scheduled %(when)s is cancelled. Contact us to book a new one."
+
+#: subscriptions/tasks.py:58
+msgid "Échéance de votre abonnement dans %(days)s jours — %(clinic)s"
+msgstr "Your subscription is due in %(days)s days — %(clinic)s"
+
+#: subscriptions/tasks.py:56
+msgid "Échéance de votre abonnement dans 1 jour — %(clinic)s"
+msgstr "Your subscription is due in 1 day — %(clinic)s"
