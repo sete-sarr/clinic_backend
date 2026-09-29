@@ -1,6 +1,7 @@
 from django.db import models
 from django.db.models.functions import Lower
 
+from common.currency import CURRENCY_CHOICES, DEFAULT_CURRENCY
 from common.models import TimeStampedModel
 
 
@@ -39,10 +40,12 @@ class Clinic(TimeStampedModel):
     email = models.EmailField(blank=True)
     is_active = models.BooleanField(default=True)
 
-    # Branding / préférences (design-system/branding.md). locale ne fait pour l'instant que
-    # stocker la préférence — aucune traduction en runtime n'existe encore, l'UI reste en
-    # français quelle que soit cette valeur.
+    # Branding / préférences (design-system/branding.md). locale : langue des e-mails, SMS et PDF
+    # destinés aux patients, et langue par défaut du personnel (docs/i18n.md §2).
     locale = models.CharField(max_length=2, choices=Locale.choices, default=Locale.FRENCH)
+    # Devise de facturation des patients, choisie par le clinic_admin (docs/i18n.md §8). Copiée sur
+    # chaque facture à sa création : la changer n'affecte que les factures suivantes.
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
     logo_light = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
     logo_dark = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
     logo_print = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)

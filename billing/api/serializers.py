@@ -38,6 +38,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
             "vat_amount",
             "total_amount",
             "status",
+            "currency",
             "amount_paid",
             "balance_due",
             "lines",
@@ -47,6 +48,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "clinic",
+            "currency",
             "number",
             "subtotal",
             "vat_amount",

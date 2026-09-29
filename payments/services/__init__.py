@@ -5,6 +5,7 @@ from django.db import transaction
 from django.utils.translation import gettext as _
 
 from billing.services import recompute_invoice_status
+from common.currency import format_money
 
 from ..models import Payment
 
@@ -22,7 +23,10 @@ def create_payment(*, clinic, invoice, amount, created_by, **fields):
     if amount > invoice.balance_due:
         raise ValidationError(
             _("Le paiement de %(amount)s dépasse le solde restant dû de %(balance)s sur cette facture.")
-            % {"amount": amount, "balance": invoice.balance_due}
+            % {
+                "amount": format_money(amount, invoice.currency),
+                "balance": format_money(invoice.balance_due, invoice.currency),
+            }
         )
 
     payment = Payment.objects.create(

@@ -1,5 +1,5 @@
 {% extends "pdf/base_document.html" %}
-{% load i18n %}
+{% load i18n money %}
 
 {% block doc_title %}{% translate "Facture" %} {{ invoice.number }}{% endblock %}
 
@@ -51,8 +51,8 @@
       <td>{{ forloop.counter }}</td>
       <td>{{ line.description }}</td>
       <td>{{ line.quantity }}</td>
-      <td>{{ line.unit_price }}</td>
-      <td>{{ line.line_total }}</td>
+      <td>{{ line.unit_price|money:invoice.currency }}</td>
+      <td>{{ line.line_total|money:invoice.currency }}</td>
     </tr>
     {% empty %}
     <tr><td colspan="5" class="empty-row">{% translate "Aucune ligne sur cette facture." %}</td></tr>
@@ -64,9 +64,9 @@
 {% block totals %}
 <div class="totals-block">
   <table>
-    <tr><td class="label">{% translate "Sous-total" %}</td><td class="value">{{ invoice.subtotal }}</td></tr>
-    <tr><td class="label">{% translate "TVA" %} ({{ invoice.vat_rate }})</td><td class="value">{{ invoice.vat_amount }}</td></tr>
-    <tr class="grand-total"><td class="label">{% translate "Total à payer" %}</td><td class="value">{{ invoice.total_amount }}</td></tr>
+    <tr><td class="label">{% translate "Sous-total" %}</td><td class="value">{{ invoice.subtotal|money:invoice.currency }}</td></tr>
+    <tr><td class="label">{% translate "TVA" %} ({{ invoice.vat_rate }})</td><td class="value">{{ invoice.vat_amount|money:invoice.currency }}</td></tr>
+    <tr class="grand-total"><td class="label">{% translate "Total à payer" %}</td><td class="value">{{ invoice.total_amount|money:invoice.currency }}</td></tr>
   </table>
 </div>
 {% endblock %}

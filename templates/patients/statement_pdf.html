@@ -1,5 +1,5 @@
 {% extends "pdf/base_document.html" %}
-{% load i18n %}
+{% load i18n money %}
 
 {% block doc_title %}{% translate "Relevé patient" %} — {{ patient.first_name }} {{ patient.last_name }}{% endblock %}
 
@@ -32,8 +32,8 @@
       <td>{{ invoice.number }}</td>
       <td>{{ invoice.issue_date }}</td>
       <td>{{ invoice.get_status_display }}</td>
-      <td>{{ invoice.total_amount }}</td>
-      <td>{{ invoice.balance_due }}</td>
+      <td>{{ invoice.total_amount|money:invoice.currency }}</td>
+      <td>{{ invoice.balance_due|money:invoice.currency }}</td>
     </tr>
     {% endfor %}
   </tbody>
@@ -52,7 +52,7 @@
       <td>{{ payment.date }}</td>
       <td>{{ payment.invoice.number }}</td>
       <td>{{ payment.get_method_display }}</td>
-      <td>{{ payment.amount }}</td>
+      <td>{{ payment.amount|money:payment.invoice.currency }}</td>
       <td>{{ payment.get_status_display }}</td>
     </tr>
     {% endfor %}

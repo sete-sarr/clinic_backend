@@ -1,5 +1,5 @@
 {% extends "pdf/base_document.html" %}
-{% load i18n %}
+{% load i18n money %}
 
 {% block doc_title %}{% translate "Reçu de paiement" %} #{{ payment.id }}{% endblock %}
 
@@ -39,9 +39,9 @@
 {% block totals %}
 <div class="totals-block" style="width: 320px;">
   <table>
-    <tr><td class="label">{% translate "Total de la facture" %}</td><td class="value">{{ invoice.total_amount }}</td></tr>
-    <tr><td class="label">{% translate "Solde restant" %}</td><td class="value">{{ invoice.balance_due }}</td></tr>
-    <tr class="grand-total"><td class="label">{% translate "Montant reçu" %}</td><td class="value">{{ payment.amount }}</td></tr>
+    <tr><td class="label">{% translate "Total de la facture" %}</td><td class="value">{{ invoice.total_amount|money:invoice.currency }}</td></tr>
+    <tr><td class="label">{% translate "Solde restant" %}</td><td class="value">{{ invoice.balance_due|money:invoice.currency }}</td></tr>
+    <tr class="grand-total"><td class="label">{% translate "Montant reçu" %}</td><td class="value">{{ payment.amount|money:invoice.currency }}</td></tr>
   </table>
 </div>
 {% endblock %}

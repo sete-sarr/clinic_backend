@@ -11,6 +11,8 @@ class PaymentSerializer(serializers.ModelSerializer):
     # donc n'ajoutent aucune requête supplémentaire.
     invoice_number = serializers.SerializerMethodField()
     patient_display = serializers.SerializerMethodField()
+    # Un paiement est toujours dans la devise de sa facture (docs/i18n.md §8).
+    currency = serializers.CharField(source="invoice.currency", read_only=True)
 
     class Meta:
         model = Payment
@@ -21,6 +23,7 @@ class PaymentSerializer(serializers.ModelSerializer):
             "invoice_number",
             "patient_display",
             "amount",
+            "currency",
             "method",
             "status",
             "date",

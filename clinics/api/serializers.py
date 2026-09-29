@@ -42,7 +42,7 @@ class ClinicSerializer(serializers.ModelSerializer):
         fields = [
             "id", "name", "address", "phone", "email", "is_active", "created_at", "updated_at",
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
-            "locale", "logo_light", "logo_dark", "logo_print", "favicon",
+            "locale", "currency", "logo_light", "logo_dark", "logo_print", "favicon",
         ]
         # Les champs d'abonnement sont en lecture seule ici : leur mutation ne se fait que via le
         # webhook Stripe ou les appels subscriptions.services.change_subscription_status/change_plan
@@ -50,7 +50,7 @@ class ClinicSerializer(serializers.ModelSerializer):
         # stripe_customer_id/stripe_subscription_id sont volontairement exclus de `fields` en
         # totalité (aucun besoin côté frontend, éviter de divulguer les ID d'objets Stripe même en
         # lecture seule).
-        # locale/logo_*/favicon ne sont volontairement PAS en lecture seule — le clinic_admin les
+        # locale/currency/logo_*/favicon ne sont volontairement PAS en lecture seule — le clinic_admin les
         # modifie via ce même endpoint (ClinicViewSet.get_permissions() restreint déjà
         # update/partial_update à IsClinicAdmin, voir backend/clinics/api/views.py).
         read_only_fields = [
