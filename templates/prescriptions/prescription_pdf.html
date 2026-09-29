@@ -1,13 +1,14 @@
 {% extends "pdf/base_document.html" %}
+{% load i18n %}
 
-{% block doc_title %}Ordonnance #{{ prescription.id }}{% endblock %}
+{% block doc_title %}{% translate "Ordonnance" %} #{{ prescription.id }}{% endblock %}
 
-{% block doc_title_label %}ORDONNANCE{% endblock %}
+{% block doc_title_label %}{% translate "ORDONNANCE" %}{% endblock %}
 
 {% block doc_number %}<div class="doc-number">RX-{{ prescription.id }}</div>{% endblock %}
 
 {% block doc_meta %}
-<div class="doc-meta-row"><strong>Date :</strong> {{ prescription.created_at|date:"Y-m-d" }}</div>
+<div class="doc-meta-row"><strong>{% translate "Date :" %}</strong> {{ prescription.created_at|date }}</div>
 {% endblock %}
 
 {% block doc_status %}
@@ -23,13 +24,13 @@
 {% block info_cards %}
 <div class="info-cards">
   <div class="info-card">
-    <div class="info-card-title">Patient</div>
+    <div class="info-card-title">{% translate "Patient" %}</div>
     <div class="primary-line">{{ prescription.patient.first_name }} {{ prescription.patient.last_name }}</div>
     <div class="secondary-line">{{ prescription.patient.patient_number }}</div>
   </div>
   <div class="info-card">
-    <div class="info-card-title">M&eacute;decin prescripteur</div>
-    <div class="primary-line">Dr. {{ prescription.doctor.user.get_full_name }}</div>
+    <div class="info-card-title">{% translate "Médecin prescripteur" %}</div>
+    <div class="primary-line">{% translate "Dr" %} {{ prescription.doctor.user.get_full_name }}</div>
     {% if prescription.doctor.department %}<div class="secondary-line">{{ prescription.doctor.department.name }}</div>{% endif %}
   </div>
 </div>
@@ -39,12 +40,12 @@
 <table class="doc-table">
   <thead>
     <tr>
-      <th>M&eacute;dicament</th>
-      <th>Dosage</th>
-      <th>Fr&eacute;quence</th>
-      <th>Dur&eacute;e</th>
-      <th>Qt&eacute;</th>
-      <th>Instructions</th>
+      <th>{% translate "Médicament" %}</th>
+      <th>{% translate "Dosage" %}</th>
+      <th>{% translate "Fréquence" %}</th>
+      <th>{% translate "Durée" %}</th>
+      <th>{% translate "Qté" %}</th>
+      <th>{% translate "Instructions" %}</th>
     </tr>
   </thead>
   <tbody>
@@ -58,7 +59,7 @@
       <td>{{ item.instructions|default:"&mdash;" }}</td>
     </tr>
     {% empty %}
-    <tr><td colspan="6" class="empty-row">Aucun m&eacute;dicament prescrit.</td></tr>
+    <tr><td colspan="6" class="empty-row">{% translate "Aucun médicament prescrit." %}</td></tr>
     {% endfor %}
   </tbody>
 </table>
@@ -67,23 +68,23 @@
 {% block notes %}
 {% if prescription.notes %}
 <div class="notes-card">
-  <div class="notes-title">Notes du m&eacute;decin</div>
+  <div class="notes-title">{% translate "Notes du médecin" %}</div>
   {{ prescription.notes }}
 </div>
 {% else %}
 <div class="notes-card">
-  <div class="notes-title">Notes</div>
-  &mdash;
+  <div class="notes-title">{% translate "Notes" %}</div>
+  —
 </div>
 {% endif %}
 {% endblock %}
 
-{% block signature_role %}Dr. {{ prescription.doctor.user.get_full_name }}{% endblock %}
+{% block signature_role %}{% translate "Dr" %} {{ prescription.doctor.user.get_full_name }}{% endblock %}
 
 {% block confidentiality %}
 <div class="confidential-banner">
-  Document m&eacute;dical confidentiel &mdash; g&eacute;n&eacute;r&eacute; pour {{ clinic.name }}. Toute diffusion non autoris&eacute;e est interdite.
+  {% blocktranslate with clinic=clinic.name %}Document médical confidentiel — généré pour {{ clinic }}. Toute diffusion non autorisée est interdite.{% endblocktranslate %}
 </div>
 {% endblock %}
 
-{% block footer_confidentiality %}Ordonnance confidentielle &mdash; {{ clinic.name }}{% endblock %}
+{% block footer_confidentiality %}{% translate "Ordonnance confidentielle" %} — {{ clinic.name }}{% endblock %}

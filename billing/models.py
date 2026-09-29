@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.validators import MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.models import TimeStampedModel
 
@@ -10,11 +11,11 @@ DEFAULT_VAT_RATE = Decimal("0.18")
 
 class Invoice(TimeStampedModel):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        ISSUED = "issued", "Issued"
-        PENDING_PAYMENT = "pending_payment", "Pending payment"
-        PAID = "paid", "Paid"
-        CANCELLED = "cancelled", "Cancelled"
+        DRAFT = "draft", _("Brouillon")
+        ISSUED = "issued", _("Émise")
+        PENDING_PAYMENT = "pending_payment", _("Paiement partiel")
+        PAID = "paid", _("Payée")
+        CANCELLED = "cancelled", _("Annulée")
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="invoices")
     patient = models.ForeignKey("patients.Patient", on_delete=models.PROTECT, related_name="invoices")
@@ -58,7 +59,7 @@ class InvoiceLine(models.Model):
     invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, related_name="lines")
     description = models.CharField(max_length=255)
     quantity = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=12, decimal_places=2, validators=[MinValueValidator(Decimal("0.00"))])
     line_total = models.DecimalField(max_digits=12, decimal_places=2)
     # Nullable : la plupart des lignes de facture (consultation, acte...) ne correspondent à aucun
     # article de stock. Quand elle est renseignée, pharmacy/services.py::sync_invoice_stock

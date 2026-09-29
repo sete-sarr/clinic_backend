@@ -1,8 +1,6 @@
-from django.template.loader import render_to_string
-from weasyprint import HTML
-
 from common.audit import record_audit
 from common.models import AuditLog
+from common.pdf import render_pdf
 
 
 def can_access_payment(*, user, payment):
@@ -21,11 +19,11 @@ def render_receipt_pdf(*, payment, user):
     if not can_access_payment(user=user, payment=payment):
         raise PermissionError("You are not allowed to access this payment.")
 
-    html = render_to_string(
+    pdf_bytes = render_pdf(
         "payments/receipt_pdf.html",
         {"payment": payment, "invoice": payment.invoice, "clinic": payment.clinic},
+        clinic=payment.clinic,
     )
-    pdf_bytes = HTML(string=html).write_pdf()
 
     record_audit(user=user, action=AuditLog.Action.PRINT, obj=payment, metadata={"document": "receipt_pdf"})
     return pdf_bytes

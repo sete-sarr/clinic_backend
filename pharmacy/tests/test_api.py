@@ -67,6 +67,13 @@ class MedicationValidationTests(APITestCase):
         response = self.client.post(reverse("medication-list"), {"name": "Doliprane", "unit": "boîte"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
 
+    def test_negative_unit_price_is_rejected(self):
+        response = self.client.post(
+            reverse("medication-list"), {"name": "Amoxicilline", "unit": "boîte", "unit_price": "-1"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "unit_price")
+
     def test_updating_a_medication_keeps_its_own_name(self):
         url = reverse("medication-detail", args=[self.existing.id])
         response = self.client.patch(url, {"name": "Doliprane", "unit_price": "2.00"}, format="json")
@@ -116,6 +123,22 @@ class StockBatchApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
         self.medication.refresh_from_db()
         self.assertEqual(self.medication.current_stock, 40)
+
+    def test_negative_unit_cost_is_rejected(self):
+        self.client.force_authenticate(self.pharmacist)
+        payload = {
+            "medication": self.medication.id,
+            "batch_number": "LOT-002",
+            "expiry_date": (date.today() + timedelta(days=365)).isoformat(),
+            "received_date": date.today().isoformat(),
+            "quantity_received": 10,
+            "unit_cost": "-0.50",
+        }
+        response = self.client.post(reverse("stock-batch-list"), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data["field"], "unit_cost")
+        self.medication.refresh_from_db()
+        self.assertEqual(self.medication.current_stock, 0)
 
     def test_secretary_cannot_receive_a_batch(self):
         self.client.force_authenticate(self.secretary)
