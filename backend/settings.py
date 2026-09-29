@@ -201,7 +201,7 @@ REST_FRAMEWORK = {
 }
 
 SPECTACULAR_SETTINGS = {
-    "TITLE": "Clinic Management API",
+    "TITLE": "proCli API",
     "DESCRIPTION": "Multi-tenant SaaS API for medical clinic management.",
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,

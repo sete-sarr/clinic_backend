@@ -127,7 +127,7 @@ class SubscriptionEmailLanguageTests(TestCase):
         email = NotificationLog.objects.get(recipient_address="owner@example.com")
         self.assertEqual(email.subject, "Your subscription is due in 15 days — Sunrise Clinic")
         self.assertIn("is due on October 15, 2026", email.body)
-        self.assertIn("Kind regards,\nThe Clinic Management team", email.body)
+        self.assertIn("Kind regards,\nThe proCli team", email.body)
 
     def test_trial_end_notice_in_french_by_default(self):
         from subscriptions.services import _notify_license_expired
@@ -137,4 +137,4 @@ class SubscriptionEmailLanguageTests(TestCase):
         _notify_license_expired(clinic=clinic, trial_ended=True)
         email = NotificationLog.objects.get(recipient_address="owner@example.com")
         self.assertEqual(email.subject, "Fin de votre mois d'essai gratuit — Clinique du Parc")
-        self.assertIn("Cordialement,\nL'équipe Clinic Management", email.body)
+        self.assertIn("Cordialement,\nL'équipe proCli", email.body)
