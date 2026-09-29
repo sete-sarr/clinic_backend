@@ -1,8 +1,8 @@
-<!doctype html>
-<html lang="fr">
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="utf-8" />
-<title>Ticket de passage</title>
+<title>{% translate "Ticket de passage" %}</title>
 <style>
   :root {
     --color-primary: #2563EB;
@@ -52,42 +52,42 @@
     {% endif %}
     <div>
       <div class="clinic-name">{{ appointment.clinic.name }}</div>
-      <div class="clinic-sub">Ticket de passage</div>
+      <div class="clinic-sub">{% translate "Ticket de passage" %}</div>
     </div>
   </div>
 
   <div class="ticket">
-    <div class="ticket-label">N&deg; de ticket</div>
+    <div class="ticket-label">{% translate "N° de ticket" %}</div>
     <div class="ticket-number">{{ appointment.ticket_number }}</div>
 
     <div class="field">
-      <div class="field-label">Patient</div>
+      <div class="field-label">{% translate "Patient" %}</div>
       <div class="field-value">{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</div>
     </div>
     <div class="field">
-      <div class="field-label">N&deg; patient</div>
+      <div class="field-label">{% translate "N° patient" %}</div>
       <div class="field-value patient-number">{{ appointment.patient.patient_number }}</div>
     </div>
     <div class="field">
-      <div class="field-label">D&eacute;partement</div>
+      <div class="field-label">{% translate "Département" %}</div>
       <div class="field-value">
         {% if appointment.doctor.department %}{{ appointment.doctor.department.name }}{% else %}&mdash;{% endif %}
       </div>
     </div>
     <div class="field">
-      <div class="field-label">M&eacute;decin</div>
-      <div class="field-value">Dr. {{ appointment.doctor.user.get_full_name }}</div>
+      <div class="field-label">{% translate "Médecin" %}</div>
+      <div class="field-value">{% translate "Dr" %} {{ appointment.doctor.user.get_full_name }}</div>
     </div>
     <div class="field">
-      <div class="field-label">Rendez-vous</div>
+      <div class="field-label">{% translate "Date du rendez-vous" %}</div>
       <div class="field-value">{{ appointment.date }} &middot; {{ appointment.time }}</div>
     </div>
     <div class="field">
-      <div class="field-label">Arriv&eacute;e enregistr&eacute;e</div>
+      <div class="field-label">{% translate "Arrivée enregistrée" %}</div>
       <div class="field-value">{{ appointment.checked_in_at }}</div>
     </div>
   </div>
 
-  <div class="footer-note">{{ appointment.clinic.name }} &mdash; document g&eacute;n&eacute;r&eacute; automatiquement</div>
+  <div class="footer-note">{{ appointment.clinic.name }} — {% translate "document généré automatiquement" %}</div>
 </body>
 </html>

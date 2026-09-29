@@ -1,7 +1,9 @@
 """Catalogue de traductions du backend (docs/i18n.md §4), sans dépendre des outils GNU gettext
 (absents des postes Windows et du build Render) :
 
-- extract_msgids() liste les messages traduisibles du code (appels gettext / _ / gettext_lazy) ;
+- extract_msgids() liste les messages traduisibles du code (appels gettext / _ / gettext_lazy) et
+  des gabarits (balises {% translate "…" %} et {% blocktranslate %}…{% endblocktranslate %} sur
+  une ligne — les PDF, rendus dans la langue de la clinique) ;
 - read_po() lit un fichier .po ; build_mo() produit le .mo binaire que Django charge.
 
 Les messages source (msgid) sont en français, langue par défaut (LANGUAGE_CODE) : seul le
@@ -9,15 +11,20 @@ catalogue anglais existe, locale/en/LC_MESSAGES/django.po. Après toute modifica
 `python manage.py compile_translations` (le .mo compilé est commité)."""
 
 import ast
+import re
 import struct
 from pathlib import Path
 
 GETTEXT_FUNCTIONS = {"_", "gettext", "gettext_lazy"}
 _SKIP_DIRS = {"venv", "tests", "migrations", "__pycache__", "locale", "staticfiles", "media"}
+_TEMPLATE_TRANSLATE = re.compile(r'{%\s*(?:translate|trans)\s+"((?:[^"\\]|\\.)*)"')
+_TEMPLATE_BLOCK = re.compile(r"{%\s*blocktrans(?:late)?\b[^%]*%}(.*?){%\s*endblocktrans(?:late)?\s*%}")
+_TEMPLATE_VARIABLE = re.compile(r"{{\s*(\w+)\s*}}")
 
 
 def extract_msgids(root: Path) -> dict[str, list[str]]:
-    """msgid -> emplacements ("app/fichier.py:ligne") des appels de traduction à argument littéral."""
+    """msgid -> emplacements ("app/fichier.py:ligne") des appels de traduction à argument littéral
+    et des balises de traduction des gabarits."""
     found: dict[str, list[str]] = {}
     for path in sorted(root.rglob("*.py")):
         rel = path.relative_to(root)
@@ -34,6 +41,16 @@ def extract_msgids(root: Path) -> dict[str, list[str]]:
                 and isinstance(node.args[0].value, str)
             ):
                 found.setdefault(node.args[0].value, []).append(f"{rel.as_posix()}:{node.lineno}")
+    for path in sorted(root.rglob("*.html")):
+        rel = path.relative_to(root)
+        if set(rel.parts) & _SKIP_DIRS:
+            continue
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            msgids = [m.group(1) for m in _TEMPLATE_TRANSLATE.finditer(line)]
+            # {{ var }} d'un blocktranslate devient %(var)s dans le msgid, comme le fait Django.
+            msgids += [_TEMPLATE_VARIABLE.sub(r"%(\1)s", m.group(1)) for m in _TEMPLATE_BLOCK.finditer(line)]
+            for msgid in msgids:
+                found.setdefault(msgid, []).append(f"{rel.as_posix()}:{lineno}")
     return found
 
 

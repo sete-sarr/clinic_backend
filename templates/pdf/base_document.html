@@ -1,8 +1,8 @@
-<!doctype html>
-<html lang="fr">
+{% load i18n %}<!doctype html>
+{% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="utf-8" />
-<title>{% block doc_title %}Document{% endblock %}</title>
+<title>{% block doc_title %}{% translate "Document" %}{% endblock %}</title>
 <style>
   {# design-system/colors.md tokens — do not introduce ad hoc colors here. #}
   :root {
@@ -25,13 +25,13 @@
     size: A4;
     margin: 1.6cm 1.8cm 2.2cm;
     @bottom-left {
-      content: "{% block footer_confidentiality %}Document confidentiel{% endblock %}";
+      content: "{% block footer_confidentiality %}{% translate "Document confidentiel" %}{% endblock %}";
       font-family: 'Inter', 'Segoe UI', sans-serif;
       font-size: 8.5px;
       color: #9CA3AF;
     }
     @bottom-right {
-      content: "Page " counter(page) " / " counter(pages);
+      content: "{% translate "Page" %} " counter(page) " / " counter(pages);
       font-family: 'Inter', 'Segoe UI', sans-serif;
       font-size: 8.5px;
       color: #9CA3AF;
@@ -221,14 +221,14 @@
   <div class="bottom-block">
     {% block notes %}
     <div class="notes-card">
-      <div class="notes-title">Notes</div>
-      Merci pour votre confiance. Pour toute question, n'h&eacute;sitez pas &agrave; nous contacter.
+      <div class="notes-title">{% translate "Notes" %}</div>
+      {% translate "Merci pour votre confiance. Pour toute question, n'hésitez pas à nous contacter." %}
     </div>
     {% endblock %}
     {% block signature %}
     <div class="signature-block">
       <div class="signature-line">
-        <div class="signature-role">{% block signature_role %}Service administratif{% endblock %}</div>
+        <div class="signature-role">{% block signature_role %}{% translate "Service administratif" %}{% endblock %}</div>
         <div class="signature-clinic">{{ clinic.name }}</div>
       </div>
     </div>

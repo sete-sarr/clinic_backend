@@ -1,13 +1,14 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.models import TimeStampedModel
 
 
 class Prescription(TimeStampedModel):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        VALIDATED = "validated", "Validated"
-        CANCELLED = "cancelled", "Cancelled"
+        DRAFT = "draft", _("Brouillon")
+        VALIDATED = "validated", _("Validée")
+        CANCELLED = "cancelled", _("Annulée")
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="prescriptions")
     consultation = models.OneToOneField(

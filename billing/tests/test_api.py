@@ -53,6 +53,17 @@ class InvoiceCreationTests(APITestCase):
         response = self.client.post(reverse("invoice-list"), payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_negative_unit_price_is_rejected(self):
+        # business/validation-rules.md : les montants d'une facture ne peuvent pas être négatifs.
+        payload = {
+            "patient": self.patient.id,
+            "issue_date": date.today().isoformat(),
+            "lines": [{"description": "Remise", "quantity": 1, "unit_price": "-50.00"}],
+        }
+        response = self.client.post(reverse("invoice-list"), payload, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(Invoice.objects.exists())
+
     def test_secretary_cannot_see_other_clinics_invoices(self):
         other_clinic = create_clinic("Other Clinic")
         other_secretary = create_user(clinic=other_clinic, role="secretary")

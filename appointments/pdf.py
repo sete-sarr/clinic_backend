@@ -1,10 +1,9 @@
 from django.core.exceptions import ValidationError
-from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
-from weasyprint import HTML
 
 from common.audit import record_audit
 from common.models import AuditLog
+from common.pdf import render_pdf
 
 
 def can_access_checkin_ticket(*, user, appointment):
@@ -27,8 +26,9 @@ def render_checkin_ticket_pdf(*, appointment, user):
     if appointment.checked_in_at is None:
         raise ValidationError(_("L'arrivée du patient n'a pas encore été enregistrée pour ce rendez-vous."))
 
-    html = render_to_string("appointments/checkin_ticket_pdf.html", {"appointment": appointment})
-    pdf_bytes = HTML(string=html).write_pdf()
+    pdf_bytes = render_pdf(
+        "appointments/checkin_ticket_pdf.html", {"appointment": appointment}, clinic=appointment.clinic
+    )
 
     record_audit(
         user=user,
