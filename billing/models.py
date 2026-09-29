@@ -4,6 +4,7 @@ from django.core.validators import MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from common.currency import CURRENCY_CHOICES, DEFAULT_CURRENCY
 from common.models import TimeStampedModel
 
 DEFAULT_VAT_RATE = Decimal("0.18")
@@ -29,6 +30,9 @@ class Invoice(TimeStampedModel):
     vat_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    # Devise de la clinique au moment de la création (common/currency.py) — jamais modifiée ensuite,
+    # pour qu'un changement de devise de la clinique ne réinterprète pas les factures existantes.
+    currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
 
     class Meta:
         ordering = ["-issue_date", "-number"]

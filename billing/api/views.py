@@ -34,6 +34,7 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
         "issue_date",
         "patient_display",
         "status",
+        "currency",
         "subtotal",
         "vat_amount",
         "total_amount",

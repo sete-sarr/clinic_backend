@@ -63,6 +63,7 @@ def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_
         vat_rate=vat_rate,
         vat_amount=vat_amount,
         total_amount=total_amount,
+        currency=clinic.currency,
         **fields,
     )
     InvoiceLine.objects.bulk_create([InvoiceLine(invoice=invoice, **line) for line in computed_lines])

@@ -42,7 +42,7 @@ class PaymentViewSet(
         "invoice__patient__last_name",
         "invoice__patient__patient_number",
     ]
-    export_fields = ["date", "invoice_number", "patient_display", "method", "amount", "status"]
+    export_fields = ["date", "invoice_number", "patient_display", "method", "amount", "currency", "status"]
 
     def get_queryset(self):
         qs = super().get_queryset()

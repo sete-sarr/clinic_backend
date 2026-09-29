@@ -13,12 +13,19 @@ from common.models import AuditLog
 class UserSerializer(serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     doctor_id = serializers.SerializerMethodField()
+    # Devise de la clinique (docs/i18n.md §8), pour les montants saisis avant d'exister côté API
+    # (estimation d'une nouvelle facture) — tous les rôles, alors que la fiche clinique est
+    # réservée au clinic_admin.
+    clinic_currency = serializers.CharField(source="clinic.currency", read_only=True, default=None)
 
     class Meta:
         model = User
         # language : préférence explicite ("" = suit la clinique) — le frontend l'applique après
         # connexion si elle est renseignée (docs/i18n.md §2).
-        fields = ["id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id", "language"]
+        fields = [
+            "id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id", "language",
+            "clinic_currency",
+        ]
         read_only_fields = ["language"]
 
     def get_roles(self, obj):
