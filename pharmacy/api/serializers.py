@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from pharmacy.models import Medication, StockBatch, StockMovement
@@ -47,7 +48,7 @@ class MedicationSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             duplicates = duplicates.exclude(pk=self.instance.pk)
         if duplicates.exists():
-            raise serializers.ValidationError("Un médicament portant ce nom existe déjà dans cette clinique.")
+            raise serializers.ValidationError(_("Un médicament portant ce nom existe déjà dans cette clinique."))
         return value
 
     def validate(self, attrs):
@@ -56,7 +57,7 @@ class MedicationSerializer(serializers.ModelSerializer):
         max_threshold = attrs.get("max_threshold", getattr(self.instance, "max_threshold", None))
         if max_threshold is not None and max_threshold < (min_threshold or 0):
             raise serializers.ValidationError(
-                {"max_threshold": "Le seuil maximal doit être supérieur ou égal au seuil minimal."}
+                {"max_threshold": _("Le seuil maximal doit être supérieur ou égal au seuil minimal.")}
             )
         return attrs
 

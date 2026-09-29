@@ -1,15 +1,16 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.models import TimeStampedModel
 
 
 class Appointment(TimeStampedModel):
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        CONFIRMED = "confirmed", "Confirmed"
-        COMPLETED = "completed", "Completed"
-        CANCELLED = "cancelled", "Cancelled"
-        NO_SHOW = "no_show", "No-show"
+        PENDING = "pending", _("En attente")
+        CONFIRMED = "confirmed", _("Confirmé")
+        COMPLETED = "completed", _("Terminé")
+        CANCELLED = "cancelled", _("Annulé")
+        NO_SHOW = "no_show", _("Absence")
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="appointments")
     patient = models.ForeignKey("patients.Patient", on_delete=models.PROTECT, related_name="appointments")

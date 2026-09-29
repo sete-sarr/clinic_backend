@@ -1,10 +1,13 @@
 import secrets
 from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.utils import timezone
+from django.utils import timezone, translation
+from django.utils.dateformat import format as date_format, time_format
+from django.utils.translation import gettext as _, gettext_lazy
 
 from .models import NotificationLog, OtpCode
 
@@ -29,15 +32,48 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
     return log
 
 
-PLATFORM_SIGNATURE = "L'équipe Clinic Management"
-_AUTOMATED_NOTICE = "Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement."
+PLATFORM_SIGNATURE = gettext_lazy("L'équipe Clinic Management")
+_AUTOMATED_NOTICE = gettext_lazy("Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement.")
 
 
-def compose_email(*, paragraphs, signature, greeting="Bonjour,"):
+# Langue des messages (docs/i18n.md §2) : celle du DESTINATAIRE, jamais celle de la requête qui
+# déclenche l'envoi. Les messages sont composés dans `translation.override(<langue>)`.
+def language_for_user(user) -> str:
+    """Personnel : sa préférence, sinon la langue de sa clinique (User.effective_language)."""
+    return getattr(user, "effective_language", "") or settings.LANGUAGE_CODE
+
+
+def language_for_clinic(clinic) -> str:
+    """Patients et documents : la langue de la clinique (Paramètres → Langue de la clinique)."""
+    return getattr(clinic, "locale", "") or settings.LANGUAGE_CODE
+
+
+def format_message_date(value) -> str:
+    """Date d'un message dans la langue active : « 01/10/2026 » / « October 1, 2026 » (mois en
+    toutes lettres en anglais pour lever l'ambiguïté jour/mois)."""
+    if (translation.get_language() or "").startswith("en"):
+        return date_format(value, "F j, Y")
+    return f"{value:%d/%m/%Y}"
+
+
+def format_message_time(value) -> str:
+    """Heure d'un message dans la langue active : « 09h30 » / « 9:30 AM »."""
+    if (translation.get_language() or "").startswith("en"):
+        return time_format(value, "g:i A")
+    return f"{value:%Hh%M}"
+
+
+def compose_email(*, paragraphs, signature, greeting=None):
     """Mise en forme commune des e-mails (formule d'appel, paragraphes, signature, mention d'envoi
-    automatique), pour une présentation professionnelle identique dans tous les modules. Les SMS
-    n'utilisent pas cette mise en forme : ils restent courts et préfixés par l'expéditeur."""
-    return "\n\n".join([greeting, *paragraphs, f"Cordialement,\n{signature}", _AUTOMATED_NOTICE])
+    automatique), pour une présentation professionnelle identique dans tous les modules — dans la
+    langue active (translation.override du destinataire). Les SMS n'utilisent pas cette mise en
+    forme : ils restent courts et préfixés par l'expéditeur."""
+    return "\n\n".join([
+        str(greeting or _("Bonjour,")),
+        *(str(p) for p in paragraphs),
+        f"{_('Cordialement,')}\n{signature}",
+        str(_AUTOMATED_NOTICE),
+    ])
 
 
 def _generate_code() -> str:
@@ -62,7 +98,7 @@ def generate_and_send_otp(*, principal, purpose):
         **filter_kwargs, consumed_at__isnull=True, created_at__gte=cooldown_cutoff
     ).exists()
     if already_sent_recently:
-        raise ValidationError("Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau.")
+        raise ValidationError(_("Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."))
 
     code = _generate_code()
     clinic = getattr(principal, "clinic", None)
@@ -76,22 +112,29 @@ def generate_and_send_otp(*, principal, purpose):
 
     email = getattr(principal, "email", "") or ""
     phone = getattr(principal, "phone", "") or ""
-    sender = clinic.name if clinic else PLATFORM_SIGNATURE
-    subject = f"Votre code de vérification — {sender}"
-    email_body = compose_email(
-        paragraphs=[
-            f"Voici votre code de vérification : {code}",
-            f"Ce code est valable {OtpCode.EXPIRY_MINUTES} minutes. Ne le communiquez à personne : "
-            "nos équipes ne vous le demanderont jamais.",
-            "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message.",
-        ],
-        signature=sender,
-    )
-    sms_body = (
-        f"{sender} : votre code de vérification est {code} (valable {OtpCode.EXPIRY_MINUTES} min). "
-        "Ne le communiquez à personne."
-    )
     recipient_user = None if is_patient else principal
+    # Un patient (pas encore de compte) reçoit le code dans la langue de sa clinique ; un
+    # utilisateur, dans la sienne.
+    language = language_for_clinic(clinic) if is_patient else language_for_user(principal)
+    with translation.override(language):
+        sender = clinic.name if clinic else str(PLATFORM_SIGNATURE)
+        minutes = OtpCode.EXPIRY_MINUTES
+        subject = _("Votre code de vérification — %(sender)s") % {"sender": sender}
+        email_body = compose_email(
+            paragraphs=[
+                _("Voici votre code de vérification : %(code)s") % {"code": code},
+                _(
+                    "Ce code est valable %(minutes)s minutes. Ne le communiquez à personne : "
+                    "nos équipes ne vous le demanderont jamais."
+                ) % {"minutes": minutes},
+                _("Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message."),
+            ],
+            signature=sender,
+        )
+        sms_body = _(
+            "%(sender)s : votre code de vérification est %(code)s (valable %(minutes)s min). "
+            "Ne le communiquez à personne."
+        ) % {"sender": sender, "code": code, "minutes": minutes}
 
     if email:
         send_notification(
@@ -121,7 +164,7 @@ def verify_otp(*, principal, code, purpose):
 
     otp = OtpCode.objects.filter(**filter_kwargs, consumed_at__isnull=True).order_by("-created_at").first()
     if not otp or otp.expires_at < timezone.now():
-        raise ValidationError("Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau.")
+        raise ValidationError(_("Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau."))
 
     if not check_password(code, otp.code_hash):
         otp.attempts += 1
@@ -131,7 +174,7 @@ def verify_otp(*, principal, code, purpose):
             # business/communication-policy.md).
             otp.consumed_at = timezone.now()
         otp.save(update_fields=["attempts", "consumed_at"])
-        raise ValidationError("Incorrect code.")
+        raise ValidationError(_("Code incorrect."))
 
     otp.consumed_at = timezone.now()
     otp.save(update_fields=["consumed_at"])

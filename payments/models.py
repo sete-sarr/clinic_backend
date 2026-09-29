@@ -1,19 +1,20 @@
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.models import TimeStampedModel
 
 
 class Payment(TimeStampedModel):
     class Method(models.TextChoices):
-        CASH = "cash", "Cash"
-        MOBILE_MONEY = "mobile_money", "Mobile money"
-        CARD = "card", "Card"
+        CASH = "cash", _("Espèces")
+        MOBILE_MONEY = "mobile_money", _("Mobile money")
+        CARD = "card", _("Carte")
 
     class Status(models.TextChoices):
-        PENDING = "pending", "Pending"
-        VALIDATED = "validated", "Validated"
-        REFUNDED = "refunded", "Refunded"
+        PENDING = "pending", _("En attente")
+        VALIDATED = "validated", _("Validé")
+        REFUNDED = "refunded", _("Remboursé")
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="payments")
     invoice = models.ForeignKey("billing.Invoice", on_delete=models.PROTECT, related_name="payments")

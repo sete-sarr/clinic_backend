@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from common.audit import record_audit
 from common.models import AuditLog
@@ -18,8 +19,8 @@ def archive_department(*, department, actor):
     active_doctor_count = department.doctors.filter(is_active=True).count()
     if active_doctor_count:
         raise ValidationError(
-            "Ce département a des médecins actifs et ne peut pas être archivé. "
-            "Réaffectez-les ou désactivez-les d'abord."
+            _("Ce département a des médecins actifs et ne peut pas être archivé. "
+            "Réaffectez-les ou désactivez-les d'abord.")
         )
     department.status = Department.Status.ARCHIVED
     department.is_active = False
@@ -45,7 +46,7 @@ def deactivate_department(*, department, actor):
     (validation-rules.md: "Les départements inactifs ne peuvent pas recevoir de nouveaux
     rendez-vous" — enforced wherever appointments validate their doctor's department, not here)."""
     if department.status == Department.Status.ARCHIVED:
-        raise ValidationError("Un département archivé est en lecture seule. Restaurez-le d'abord.")
+        raise ValidationError(_("Un département archivé est en lecture seule. Restaurez-le d'abord."))
     department.status = Department.Status.INACTIVE
     department.save(update_fields=["status"])
     record_audit(user=actor, action=AuditLog.Action.UPDATE, obj=department, metadata={"reason": "deactivated"})
@@ -54,7 +55,7 @@ def deactivate_department(*, department, actor):
 
 def activate_department(*, department, actor):
     if department.status == Department.Status.ARCHIVED:
-        raise ValidationError("Un département archivé est en lecture seule. Restaurez-le d'abord.")
+        raise ValidationError(_("Un département archivé est en lecture seule. Restaurez-le d'abord."))
     department.status = Department.Status.ACTIVE
     department.save(update_fields=["status"])
     record_audit(user=actor, action=AuditLog.Action.UPDATE, obj=department, metadata={"reason": "activated"})

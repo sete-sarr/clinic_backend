@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext as _, gettext_lazy
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer as BaseTokenObtainPairSerializer
 
@@ -15,7 +16,10 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id"]
+        # language : préférence explicite ("" = suit la clinique) — le frontend l'applique après
+        # connexion si elle est renseignée (docs/i18n.md §2).
+        fields = ["id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id", "language"]
+        read_only_fields = ["language"]
 
     def get_roles(self, obj):
         return list(obj.groups.values_list("name", flat=True))
@@ -28,11 +32,20 @@ class UserSerializer(serializers.ModelSerializer):
         return doctor_profile.id if doctor_profile else None
 
 
+class MePreferencesSerializer(serializers.ModelSerializer):
+    """Préférences modifiables par l'utilisateur lui-même (PATCH /accounts/me/) — uniquement la
+    langue : aucune donnée d'identité, de rôle ou de clinique n'est modifiable par ce biais."""
+
+    class Meta:
+        model = User
+        fields = ["language"]
+
+
 class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
     """Intègre clinic_id et roles dans le JWT afin que le frontend n'ait jamais à les deviner."""
 
     # SimpleJWT n'a pas de traduction française pour ce message, affiché tel quel sur l'écran de connexion.
-    default_error_messages = {"no_active_account": "Adresse e-mail ou mot de passe incorrect."}
+    default_error_messages = {"no_active_account": gettext_lazy("Adresse e-mail ou mot de passe incorrect.")}
 
     @classmethod
     def get_token(cls, user):
@@ -69,12 +82,12 @@ class ClinicRegistrationSerializer(serializers.Serializer):
         # essayant de choisir sa propre clinique.
         value = value.strip()
         if Clinic.objects.filter(name__iexact=value).exists():
-            raise serializers.ValidationError("Une clinique portant ce nom existe déjà.")
+            raise serializers.ValidationError(_("Une clinique portant ce nom existe déjà."))
         return value
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
+            raise serializers.ValidationError(_("Un utilisateur utilise déjà cette adresse e-mail."))
         return value
 
 
@@ -115,13 +128,13 @@ class StaffCreateSerializer(serializers.Serializer):
         # cette clinique compte.
         clinic = self.context["request"].user.clinic
         if User.objects.filter(username=value, clinic=clinic).exists():
-            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
+            raise serializers.ValidationError(_("Ce nom d'utilisateur est déjà pris."))
         return value
 
     def validate_email(self, value):
         # email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique sur toutes les cliniques.
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
+            raise serializers.ValidationError(_("Un utilisateur utilise déjà cette adresse e-mail."))
         return value
 
 
@@ -150,5 +163,5 @@ class PatientActivationVerifySerializer(serializers.Serializer):
         # inter-champs n'existent.
         clinic_id = self.initial_data.get("clinic")
         if User.objects.filter(username=value, clinic_id=clinic_id).exists():
-            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
+            raise serializers.ValidationError(_("Ce nom d'utilisateur est déjà pris."))
         return value

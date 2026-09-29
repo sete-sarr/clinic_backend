@@ -1,13 +1,14 @@
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from common.models import TimeStampedModel
 
 
 class Consultation(TimeStampedModel):
     class Status(models.TextChoices):
-        DRAFT = "draft", "Draft"
-        COMPLETED = "completed", "Completed"
-        VALIDATED = "validated", "Validated"
+        DRAFT = "draft", _("Brouillon")
+        COMPLETED = "completed", _("Terminée")
+        VALIDATED = "validated", _("Validée")
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="consultations")
     patient = models.ForeignKey("patients.Patient", on_delete=models.PROTECT, related_name="consultations")

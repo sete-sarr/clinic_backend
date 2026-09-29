@@ -122,6 +122,19 @@ class UserGuideDownloadTests(APITestCase):
         self.assertIn("attachment", response["Content-Disposition"])
         self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
 
+    def test_guide_follows_the_interface_language(self):
+        self.client.force_authenticate(create_user(clinic=self.clinic, role="clinic_admin"))
+        for accept_language, filename in (
+            ("fr-FR,fr;q=0.9", "Guide-de-la-Clinique.pdf"),
+            ("en-US,en;q=0.9", "Clinic-User-Guide.pdf"),
+            ("de-DE", "Guide-de-la-Clinique.pdf"),  # langue non proposée : français (LANGUAGE_CODE)
+        ):
+            with self.subTest(accept_language=accept_language):
+                response = self.client.get(self.url, HTTP_ACCEPT_LANGUAGE=accept_language)
+                self.assertEqual(response.status_code, status.HTTP_200_OK)
+                self.assertIn(filename, response["Content-Disposition"])
+                self.assertTrue(b"".join(response.streaming_content).startswith(b"%PDF"))
+
     def test_other_staff_roles_are_forbidden(self):
         for role in ("doctor", "secretary", "accountant", "pharmacist", "patient"):
             with self.subTest(role=role):

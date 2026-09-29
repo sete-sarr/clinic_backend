@@ -2,6 +2,7 @@ from datetime import date
 
 from django.http import HttpResponse
 from django.utils import timezone
+from django.utils.translation import gettext as _
 from rest_framework.exceptions import ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -19,7 +20,7 @@ class ClinicActivityReportView(APIView):
     def get(self, request):
         clinic = request.user.clinic
         if clinic is None:
-            raise ValidationError("Votre compte n'est rattaché à aucune clinique.")
+            raise ValidationError(_("Votre compte n'est rattaché à aucune clinique."))
 
         today = timezone.localdate()
         date_from_raw = request.query_params.get("date_from")
@@ -32,7 +33,7 @@ class ClinicActivityReportView(APIView):
                 clinic=clinic, user=request.user, date_from=date_from, date_to=date_to
             )
         except PermissionError:
-            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce rapport.", "field": None}, status=403)
+            return Response({"code": 403, "message": _("Vous n'êtes pas autorisé(e) à accéder à ce rapport."), "field": None}, status=403)
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="activity-report-{date_from}-{date_to}.pdf"'
         return response

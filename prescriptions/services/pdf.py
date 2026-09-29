@@ -1,8 +1,6 @@
-from django.template.loader import render_to_string
-from weasyprint import HTML
-
 from common.audit import record_audit
 from common.models import AuditLog
+from common.pdf import render_pdf
 
 
 def can_access_prescription(*, user, prescription):
@@ -28,11 +26,11 @@ def render_prescription_pdf(*, prescription, user):
     if not can_access_prescription(user=user, prescription=prescription):
         raise PermissionError("You are not allowed to access this prescription.")
 
-    html = render_to_string(
+    pdf_bytes = render_pdf(
         "prescriptions/prescription_pdf.html",
         {"prescription": prescription, "items": prescription.items.all(), "clinic": prescription.clinic},
+        clinic=prescription.clinic,
     )
-    pdf_bytes = HTML(string=html).write_pdf()
 
     record_audit(
         user=user,
