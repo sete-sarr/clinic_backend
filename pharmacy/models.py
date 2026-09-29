@@ -17,7 +17,9 @@ class Medication(TimeStampedModel, SoftDeleteModel):
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="medications")
     name = models.CharField(max_length=200)
     unit = models.CharField(max_length=50, help_text="Ex. boîte, comprimé, flacon.")
-    unit_price = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    unit_price = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))]
+    )
     current_stock = models.PositiveIntegerField(default=0)
     # 0 = pas d'alerte de stock bas configurée pour ce médicament (valeur par défaut). max_threshold
     # est nullable pour la même raison ("pas de plafond configuré") sans avoir besoin d'une valeur
@@ -60,7 +62,9 @@ class StockBatch(TimeStampedModel):
     received_date = models.DateField()
     quantity_received = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     quantity_remaining = models.PositiveIntegerField()
-    unit_cost = models.DecimalField(max_digits=12, decimal_places=2, default=Decimal("0.00"))
+    unit_cost = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))]
+    )
     supplier = models.CharField(max_length=200, blank=True)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"

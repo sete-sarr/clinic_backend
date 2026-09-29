@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Max, Sum
+from django.utils.translation import gettext as _
 
 from common.audit import record_audit
 from common.models import AuditLog
@@ -135,10 +136,10 @@ def adjust_stock(*, batch, actor, quantity_delta, reason):
     """Correction manuelle (ex. casse constatée à l'inventaire) — toujours rattachée à un lot
     précis pour que current_stock reste exactement la somme des lots (voir StockMovement.batch)."""
     if quantity_delta == 0:
-        raise ValidationError("La quantité d'ajustement ne peut pas être nulle.")
+        raise ValidationError(_("La quantité d'ajustement ne peut pas être nulle."))
     new_remaining = batch.quantity_remaining + quantity_delta
     if new_remaining < 0:
-        raise ValidationError("Cet ajustement rendrait négative la quantité restante du lot.")
+        raise ValidationError(_("Cet ajustement rendrait négative la quantité restante du lot."))
     batch.quantity_remaining = new_remaining
     batch.save(update_fields=["quantity_remaining"])
     movement = StockMovement.objects.create(
@@ -183,7 +184,8 @@ def _dispense(*, medication, quantity, invoice, actor):
 
     if remaining_to_take > 0:
         raise ValidationError(
-            f"Stock insuffisant pour {medication.name} : il manque {remaining_to_take} {medication.unit}."
+            _("Stock insuffisant pour %(name)s : il manque %(missing)s %(unit)s.")
+            % {"name": medication.name, "missing": remaining_to_take, "unit": medication.unit}
         )
 
 

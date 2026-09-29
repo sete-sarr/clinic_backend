@@ -1,8 +1,6 @@
-from django.template.loader import render_to_string
-from weasyprint import HTML
-
 from common.audit import record_audit
 from common.models import AuditLog
+from common.pdf import render_pdf
 
 
 def can_access_activity_report(*, user, clinic):
@@ -38,7 +36,7 @@ def render_clinic_activity_report_pdf(*, clinic, user, date_from, date_to):
         .order_by("date")
     )
 
-    html = render_to_string(
+    pdf_bytes = render_pdf(
         "reports/activity_report_pdf.html",
         {
             "clinic": clinic,
@@ -49,8 +47,8 @@ def render_clinic_activity_report_pdf(*, clinic, user, date_from, date_to):
             "appointments_count": appointments.count(),
             "consultations_count": consultations.count(),
         },
+        clinic=clinic,
     )
-    pdf_bytes = HTML(string=html).write_pdf()
 
     record_audit(
         user=user,

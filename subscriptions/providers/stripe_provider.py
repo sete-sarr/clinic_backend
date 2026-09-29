@@ -4,6 +4,7 @@ from datetime import timedelta
 import stripe
 from django.conf import settings
 from django.utils import timezone
+from django.utils.translation import gettext as _, gettext_lazy
 
 from clinics.models import Clinic
 from subscriptions.catalog import get_stripe_price_id
@@ -17,7 +18,7 @@ _STRIPE_MIN_TRIAL_END = timedelta(hours=48)
 
 # Message affiché à l'administrateur de clinique ; le détail technique (exception Stripe, Price ID
 # manquant...) reste uniquement dans les logs (logger.exception ci-dessous).
-_UNAVAILABLE_MESSAGE = "Le paiement en ligne est momentanément indisponible. Réessayez plus tard."
+_UNAVAILABLE_MESSAGE = gettext_lazy("Le paiement en ligne est momentanément indisponible. Réessayez plus tard.")
 
 
 def _remaining_trial_end(clinic):
@@ -76,7 +77,7 @@ class StripePaymentProvider(PaymentProvider):
                 return BillingPortalResult(
                     success=False,
                     provider_name=self.name,
-                    error_message="Aucun abonnement payant n'est encore associé à cette clinique : choisissez d'abord une formule.",
+                    error_message=_("Aucun abonnement payant n'est encore associé à cette clinique : choisissez d'abord une formule."),
                 )
             session = stripe.billing_portal.Session.create(customer=clinic.stripe_customer_id, return_url=return_url)
             return BillingPortalResult(success=True, provider_name=self.name, portal_url=session.url)

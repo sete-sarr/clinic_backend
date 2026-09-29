@@ -2,6 +2,7 @@ import django_filters
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -61,16 +62,16 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
             doctor_profile = getattr(user, "doctor_profile", None)
             requested_doctor = serializer.validated_data.get("doctor")
             if doctor_profile is None or requested_doctor is None or requested_doctor.id != doctor_profile.id:
-                raise PermissionDenied("Un médecin ne peut créer des rendez-vous qu'à son propre nom.")
+                raise PermissionDenied(_("Un médecin ne peut créer des rendez-vous qu'à son propre nom."))
 
         save_kwargs = {"clinic": user.clinic}
         if in_role(user, "patient") and not in_role(user, "doctor", "secretary", "accountant", "clinic_admin"):
             patient_profile = getattr(user, "patient_profile", None)
             if patient_profile is None:
-                raise PermissionDenied("Aucun profil patient n'est associé à ce compte.")
+                raise PermissionDenied(_("Aucun profil patient n'est associé à ce compte."))
             save_kwargs["patient"] = patient_profile
         elif serializer.validated_data.get("patient") is None:
-            raise serializers.ValidationError({"patient": ["Ce champ est obligatoire."]})
+            raise serializers.ValidationError({"patient": [_("Ce champ est obligatoire.")]})
 
         appointment = serializer.save(**save_kwargs)
         record_audit(user=user, action=AuditLog.Action.CREATE, obj=appointment)
@@ -105,7 +106,7 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
         try:
             pdf_bytes = render_checkin_ticket_pdf(appointment=appointment, user=request.user)
         except PermissionError:
-            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
+            return Response({"code": 403, "message": _("Vous n'êtes pas autorisé(e) à accéder à ce document."), "field": None}, status=403)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages)
 

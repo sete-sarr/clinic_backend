@@ -1,4 +1,5 @@
 from django.contrib.auth.password_validation import validate_password
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from accounts.models import User
@@ -27,14 +28,14 @@ class DoctorSerializer(serializers.ModelSerializer):
         # cette clinique compte.
         clinic = self.context["request"].user.clinic
         if User.objects.filter(username=value, clinic=clinic).exists():
-            raise serializers.ValidationError("Ce nom d'utilisateur est déjà pris.")
+            raise serializers.ValidationError(_("Ce nom d'utilisateur est déjà pris."))
         return value
 
     def validate_email(self, value):
         # l'email est l'identifiant de connexion global (User.USERNAME_FIELD) — unique à travers
         # toutes les cliniques.
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError("Un utilisateur utilise déjà cette adresse e-mail.")
+            raise serializers.ValidationError(_("Un utilisateur utilise déjà cette adresse e-mail."))
         return value
 
     def validate(self, attrs):
@@ -44,7 +45,7 @@ class DoctorSerializer(serializers.ModelSerializer):
         if self.instance is None:
             for field in ("username", "email"):
                 if not attrs.get(field):
-                    raise serializers.ValidationError({field: "Ce champ est obligatoire."})
+                    raise serializers.ValidationError({field: _("Ce champ est obligatoire.")})
         return attrs
 
     class Meta:
@@ -73,7 +74,7 @@ class DoctorSerializer(serializers.ModelSerializer):
         if department and department.clinic_id != clinic.id:
             # Délibérément générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
             # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-            raise serializers.ValidationError("Département invalide.")
+            raise serializers.ValidationError(_("Département invalide."))
         return department
 
     def create(self, validated_data):

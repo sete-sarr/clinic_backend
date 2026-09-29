@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from billing.services import recompute_invoice_status
 
@@ -13,14 +14,15 @@ def create_payment(*, clinic, invoice, amount, created_by, **fields):
     if invoice.clinic_id != clinic.id:
         # Message volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si
         # l'ID soumis existe dans une autre clinique, afin d'éviter un oracle d'existence cross-tenant.
-        raise ValidationError("Facture invalide.")
+        raise ValidationError(_("Facture invalide."))
     if amount is None or amount <= Decimal("0.00"):
-        raise ValidationError("Le montant du paiement doit être positif.")
+        raise ValidationError(_("Le montant du paiement doit être positif."))
     if fields.get("date") and fields["date"] < invoice.issue_date:
-        raise ValidationError("La date du paiement ne peut pas être antérieure à la date de la facture.")
+        raise ValidationError(_("La date du paiement ne peut pas être antérieure à la date de la facture."))
     if amount > invoice.balance_due:
         raise ValidationError(
-            f"Le paiement de {amount} dépasse le solde restant dû de {invoice.balance_due} sur cette facture."
+            _("Le paiement de %(amount)s dépasse le solde restant dû de %(balance)s sur cette facture.")
+            % {"amount": amount, "balance": invoice.balance_due}
         )
 
     payment = Payment.objects.create(
@@ -40,7 +42,7 @@ def refund_payment(*, payment):
     """business/workflow-policy.md : les remboursements nécessitent l'approbation de l'administrateur
     (appliqué au niveau de la couche des permissions)."""
     if payment.status != Payment.Status.VALIDATED:
-        raise ValidationError("Seul un paiement validé peut être remboursé.")
+        raise ValidationError(_("Seul un paiement validé peut être remboursé."))
     payment.status = Payment.Status.REFUNDED
     payment.save(update_fields=["status"])
     recompute_invoice_status(invoice=payment.invoice)

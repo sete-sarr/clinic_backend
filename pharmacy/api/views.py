@@ -1,5 +1,6 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext as _
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -75,7 +76,7 @@ class StockBatchViewSet(
         try:
             quantity_delta = int(quantity_delta)
         except (TypeError, ValueError):
-            return Response({"code": 400, "message": "La quantité d'ajustement doit être un nombre entier.", "field": "quantity_delta"}, status=400)
+            return Response({"code": 400, "message": _("La quantité d'ajustement doit être un nombre entier."), "field": "quantity_delta"}, status=400)
         try:
             adjust_stock(batch=batch, actor=request.user, quantity_delta=quantity_delta, reason=reason)
         except DjangoValidationError as exc:

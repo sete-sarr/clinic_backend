@@ -1,4 +1,6 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils import translation
+from django.utils.translation import gettext as _
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -20,6 +22,7 @@ from accounts.services import (
     request_patient_activation,
     update_staff_role,
 )
+from clinics.models import Clinic
 from common.audit import record_audit
 from common.models import AuditLog
 from common.permissions import IsClinicAdmin, IsSameClinic, SubscriptionActivePermission
@@ -27,6 +30,7 @@ from common.viewsets import TenantScopedMixin
 
 from .serializers import (
     ClinicRegistrationSerializer,
+    MePreferencesSerializer,
     PatientActivationRequestSerializer,
     PatientActivationVerifySerializer,
     StaffCreateSerializer,
@@ -51,6 +55,13 @@ class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        return Response(UserSerializer(request.user).data)
+
+    def patch(self, request):
+        """Préférence de langue de l'utilisateur connecté (docs/i18n.md §2)."""
+        serializer = MePreferencesSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(UserSerializer(request.user).data)
 
 
@@ -86,7 +97,11 @@ class ClinicRegistrationView(APIView):
         serializer = ClinicRegistrationSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            user = register_clinic(**serializer.validated_data)
+            # Langue de la clinique = langue de l'interface utilisée pour s'inscrire (en-tête
+            # Accept-Language, activé par LocaleMiddleware) ; modifiable ensuite dans Paramètres.
+            language = (translation.get_language() or "")[:2]
+            locale = language if language in Clinic.Locale.values else Clinic.Locale.FRENCH
+            user = register_clinic(**serializer.validated_data, locale=locale)
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
@@ -119,7 +134,7 @@ class PatientActivationRequestView(APIView):
             phone=serializer.validated_data["phone"],
             date_of_birth=serializer.validated_data["date_of_birth"],
         )
-        return Response({"message": "Si les informations correspondent, un code de vérification vous a été envoyé."})
+        return Response({"message": _("Si les informations correspondent, un code de vérification vous a été envoyé.")})
 
 
 class PatientActivationVerifyView(APIView):
@@ -145,7 +160,7 @@ class PatientActivationVerifyView(APIView):
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
-        return Response({"message": "Compte activé. Vous pouvez maintenant vous connecter."})
+        return Response({"message": _("Compte activé. Vous pouvez maintenant vous connecter.")})
 
 
 class StaffViewSet(

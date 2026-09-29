@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.utils.translation import gettext as _
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -20,7 +21,7 @@ class StripeWebhookView(APIView):
         signature = request.META.get("HTTP_STRIPE_SIGNATURE", "")
         result = get_payment_provider().construct_webhook_event(payload=request.body, signature=signature)
         if not result.success:
-            return Response({"detail": "Signature invalide."}, status=400)
+            return Response({"detail": _("Signature invalide.")}, status=400)
         services.handle_stripe_event(event_type=result.event_type, event_id=result.event_id, payload=result.payload)
         return Response({"received": True}, status=200)
 

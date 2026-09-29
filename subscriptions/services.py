@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from clinics.models import Clinic
 from common.audit import record_audit
@@ -99,10 +100,10 @@ def start_checkout(*, clinic: Clinic, plan_tier: str, billing_cycle: str, succes
 
     if plan_tier not in SUBSCRIBABLE_TIERS:
         return CheckoutSessionResult(
-            success=False, provider_name="", error_message="Cette formule n'est pas disponible à la souscription."
+            success=False, provider_name="", error_message=_("Cette formule n'est pas disponible à la souscription.")
         )
     if billing_cycle not in Clinic.BillingCycle.values:
-        return CheckoutSessionResult(success=False, provider_name="", error_message="Cycle de facturation invalide.")
+        return CheckoutSessionResult(success=False, provider_name="", error_message=_("Cycle de facturation invalide."))
     # Un abonnement Stripe existe déjà : une nouvelle Checkout Session en créerait un second (double
     # prélèvement). Le changement de formule passe par change_subscribed_plan, le règlement d'un
     # impayé par le portail client.
@@ -125,8 +126,8 @@ def _existing_subscription_error(clinic: Clinic) -> str:
     if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
         return ""
     if clinic.subscription_status == Clinic.SubscriptionStatus.ACTIVE:
-        return "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
-    return "Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."
+        return _("Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle.")
+    return _("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement ».")
 
 
 def change_subscribed_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, actor):
@@ -140,15 +141,15 @@ def change_subscribed_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str
         return PlanChangeResult(success=False, provider_name="", error_message=message)
 
     if plan_tier not in SUBSCRIBABLE_TIERS:
-        return _failure("Cette formule n'est pas disponible à la souscription.")
+        return _failure(_("Cette formule n'est pas disponible à la souscription."))
     if billing_cycle not in Clinic.BillingCycle.values:
-        return _failure("Cycle de facturation invalide.")
+        return _failure(_("Cycle de facturation invalide."))
     if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
-        return _failure("Aucun abonnement en cours : choisissez une formule pour souscrire.")
+        return _failure(_("Aucun abonnement en cours : choisissez une formule pour souscrire."))
     if clinic.subscription_status != Clinic.SubscriptionStatus.ACTIVE:
-        return _failure("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement ».")
+        return _failure(_("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."))
     if (plan_tier, billing_cycle) == (clinic.plan_tier, clinic.billing_cycle):
-        return _failure("C'est déjà votre formule actuelle.")
+        return _failure(_("C'est déjà votre formule actuelle."))
 
     result = get_payment_provider().change_subscription_plan(
         clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle
@@ -301,29 +302,37 @@ def handle_stripe_event(*, event_type: str, event_id: str, payload: dict) -> Non
 
 
 def _notify_license_expired(*, clinic: Clinic, trial_ended: bool = False) -> None:
-    from communication.models import NotificationLog
-    from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
+    from django.utils import translation
 
-    if trial_ended:
-        subject = f"Fin de votre mois d'essai gratuit — {clinic.name}"
-        paragraphs = [
-            f"Le mois d'essai gratuit de {clinic.name} est arrivé à son terme. Nous espérons que la "
-            "plateforme a répondu à vos attentes.",
-            "La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
-            "formule. Vos données restent intégralement conservées et consultables.",
-            "Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement ».",
-        ]
-    else:
-        subject = f"Suspension de votre abonnement — {clinic.name}"
-        paragraphs = [
-            f"Nous vous informons que l'abonnement de {clinic.name} est suspendu.",
-            "La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données "
-            "restent intégralement conservées et consultables.",
-            "Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement ».",
-        ]
-    body = compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
+    from communication.models import NotificationLog
+    from communication.services import PLATFORM_SIGNATURE, compose_email, language_for_user, send_notification
+
+    def build():
+        values = {"clinic": clinic.name}
+        if trial_ended:
+            subject = _("Fin de votre mois d'essai gratuit — %(clinic)s") % values
+            paragraphs = [
+                _("Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la "
+                  "plateforme a répondu à vos attentes.") % values,
+                _("La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
+                  "formule. Vos données restent intégralement conservées et consultables."),
+                _("Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement »."),
+            ]
+        else:
+            subject = _("Suspension de votre abonnement — %(clinic)s") % values
+            paragraphs = [
+                _("Nous vous informons que l'abonnement de %(clinic)s est suspendu.") % values,
+                _("La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données "
+                  "restent intégralement conservées et consultables."),
+                _("Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement »."),
+            ]
+        return subject, compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
+
     for admin_user in clinic.users.filter(groups__name="clinic_admin"):
         if admin_user.email:
+            # Langue de chaque administrateur (docs/i18n.md §2).
+            with translation.override(language_for_user(admin_user)):
+                subject, body = build()
             send_notification(
                 clinic=clinic, recipient_user=admin_user, channel=NotificationLog.Channel.EMAIL,
                 notification_type=NotificationLog.NotificationType.LICENSE_EXPIRED,

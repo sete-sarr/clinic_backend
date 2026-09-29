@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext as _
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.filters import SearchFilter
@@ -69,7 +70,7 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
     @action(detail=True, methods=["post"], url_path="cancel")
     def cancel(self, request, pk=None):
         if not in_role(request.user, "clinic_admin"):
-            raise PermissionDenied("Seul l'administrateur de la clinique peut annuler une facture.")
+            raise PermissionDenied(_("Seul l'administrateur de la clinique peut annuler une facture."))
         invoice = self.get_object()
         try:
             invoice = cancel_invoice(invoice=invoice, actor=request.user)
@@ -84,7 +85,7 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
         try:
             pdf_bytes = render_invoice_pdf(invoice=invoice, user=request.user)
         except PermissionError:
-            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
+            return Response({"code": 403, "message": _("Vous n'êtes pas autorisé(e) à accéder à ce document."), "field": None}, status=403)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="invoice-{invoice.number or invoice.id}.pdf"'
