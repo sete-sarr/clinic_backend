@@ -17,7 +17,7 @@ msgstr "%(sender)s: your verification code is %(code)s (valid for %(minutes)s mi
 msgid "Absence"
 msgstr "No-show"
 
-#: accounts/api/serializers.py:48
+#: accounts/api/serializers.py:55
 msgid "Adresse e-mail ou mot de passe incorrect."
 msgstr "Incorrect email address or password."
 
@@ -41,7 +41,7 @@ msgstr "Your appointment has been cancelled"
 msgid "Annulé"
 msgstr "Cancelled"
 
-#: billing/models.py:18
+#: billing/models.py:19
 #: prescriptions/models.py:11
 msgid "Annulée"
 msgstr "Cancelled"
@@ -98,7 +98,7 @@ msgstr "No items on this invoice."
 msgid "Bonjour,"
 msgstr "Hello,"
 
-#: billing/models.py:14
+#: billing/models.py:15
 #: consultations/models.py:9
 #: prescriptions/models.py:9
 msgid "Brouillon"
@@ -142,8 +142,8 @@ msgstr "This is an automated message; please do not reply to it directly."
 msgid "Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure."
 msgstr "This doctor or patient already has an appointment at this date and time."
 
-#: accounts/api/serializers.py:131
-#: accounts/api/serializers.py:166
+#: accounts/api/serializers.py:138
+#: accounts/api/serializers.py:173
 #: doctors/api/serializers.py:31
 msgid "Ce nom d'utilisateur est déjà pris."
 msgstr "This username is already taken."
@@ -301,7 +301,7 @@ msgstr "INVOICE"
 msgid "Facture"
 msgstr "Invoice"
 
-#: payments/services/__init__.py:17
+#: payments/services/__init__.py:18
 msgid "Facture invalide."
 msgstr "Invalid invoice."
 
@@ -375,8 +375,8 @@ msgid "L'image ne doit pas dépasser 2 Mo."
 msgstr "The image must not exceed 2 MB."
 
 #: communication/services.py:35
-msgid "L'équipe Clinic Management"
-msgstr "The Clinic Management team"
+msgid "L'équipe proCli"
+msgstr "The proCli team"
 
 #: subscriptions/services.py:325
 msgid "La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données restent intégralement conservées et consultables."
@@ -390,7 +390,7 @@ msgstr "Creating new records is suspended until you subscribe to a plan. All you
 msgid "La date de naissance ne peut pas être dans le futur."
 msgstr "The date of birth cannot be in the future."
 
-#: payments/services/__init__.py:21
+#: payments/services/__init__.py:22
 msgid "La date du paiement ne peut pas être antérieure à la date de la facture."
 msgstr "The payment date cannot be earlier than the invoice date."
 
@@ -414,7 +414,7 @@ msgstr "The user guide is not available."
 msgid "Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la plateforme a répondu à vos attentes."
 msgstr "The free trial month for %(clinic)s has ended. We hope the platform has met your expectations."
 
-#: payments/services/__init__.py:19
+#: payments/services/__init__.py:20
 msgid "Le montant du paiement doit être positif."
 msgstr "The payment amount must be positive."
 
@@ -427,7 +427,7 @@ msgstr "The chief complaint, diagnosis and treatment plan are required to comple
 msgid "Le médecin est obligatoire."
 msgstr "A doctor is required."
 
-#: payments/services/__init__.py:24
+#: payments/services/__init__.py:25
 msgid "Le paiement de %(amount)s dépasse le solde restant dû de %(balance)s sur cette facture."
 msgstr "The payment of %(amount)s exceeds the balance due of %(balance)s on this invoice."
 
@@ -498,7 +498,7 @@ msgstr "Doctor"
 #: appointments/services.py:55
 #: appointments/services.py:89
 #: billing/services/__init__.py:50
-#: billing/services/__init__.py:82
+#: billing/services/__init__.py:83
 #: consultations/services.py:29
 #: consultations/services.py:48
 #: prescriptions/services/__init__.py:19
@@ -583,7 +583,7 @@ msgstr "Confidential prescription"
 msgid "Page"
 msgstr "Page"
 
-#: billing/models.py:16
+#: billing/models.py:17
 msgid "Paiement partiel"
 msgstr "Partially paid"
 
@@ -604,7 +604,7 @@ msgstr "Patient"
 #: appointments/services.py:53
 #: appointments/services.py:87
 #: billing/services/__init__.py:48
-#: billing/services/__init__.py:80
+#: billing/services/__init__.py:81
 #: consultations/services.py:27
 #: consultations/services.py:46
 #: prescriptions/services/__init__.py:17
@@ -612,7 +612,7 @@ msgstr "Patient"
 msgid "Patient invalide."
 msgstr "Invalid patient."
 
-#: billing/models.py:17
+#: billing/models.py:18
 msgid "Payée"
 msgstr "Paid"
 
@@ -719,7 +719,7 @@ msgstr "Billing Department"
 msgid "Service administratif"
 msgstr "Administration"
 
-#: billing/api/views.py:73
+#: billing/api/views.py:74
 msgid "Seul l'administrateur de la clinique peut annuler une facture."
 msgstr "Only the clinic administrator can cancel an invoice."
 
@@ -727,11 +727,11 @@ msgstr "Only the clinic administrator can cancel an invoice."
 msgid "Seul l'administrateur de la clinique peut approuver un remboursement."
 msgstr "Only the clinic administrator can approve a refund."
 
-#: payments/services/__init__.py:45
+#: payments/services/__init__.py:49
 msgid "Seul un paiement validé peut être remboursé."
 msgstr "Only a completed payment can be refunded."
 
-#: billing/services/__init__.py:118
+#: billing/services/__init__.py:119
 msgid "Seule une facture en brouillon peut être émise."
 msgstr "Only a draft invoice can be issued."
 
@@ -850,14 +850,14 @@ msgstr "An appointment has been booked for %(patient)s with %(doctor)s %(when)s.
 msgid "Un rendez-vous ne peut être annulé que plus de %(hours)s h à l'avance."
 msgstr "An appointment can only be cancelled more than %(hours)s hours in advance."
 
-#: accounts/api/serializers.py:90
-#: accounts/api/serializers.py:137
+#: accounts/api/serializers.py:97
+#: accounts/api/serializers.py:144
 #: accounts/services.py:67
 #: doctors/api/serializers.py:38
 msgid "Un utilisateur utilise déjà cette adresse e-mail."
 msgstr "This email address is already in use."
 
-#: accounts/api/serializers.py:85
+#: accounts/api/serializers.py:92
 msgid "Une clinique portant ce nom existe déjà."
 msgstr "A clinic with this name already exists."
 
@@ -866,15 +866,15 @@ msgid "Une consultation validée est en lecture seule et ne peut plus être modi
 msgstr "A finalized consultation is read-only and can no longer be edited."
 
 #: billing/services/__init__.py:52
-#: billing/services/__init__.py:91
+#: billing/services/__init__.py:92
 msgid "Une facture doit contenir au moins une ligne."
 msgstr "An invoice must contain at least one line."
 
-#: billing/services/__init__.py:131
+#: billing/services/__init__.py:132
 msgid "Une facture payée ne peut pas être annulée."
 msgstr "A paid invoice cannot be cancelled."
 
-#: billing/services/__init__.py:75
+#: billing/services/__init__.py:76
 msgid "Une facture payée ou annulée ne peut plus être modifiée."
 msgstr "A paid or cancelled invoice can no longer be edited."
 
@@ -913,7 +913,7 @@ msgid "Votre compte n'est rattaché à aucune clinique."
 msgstr "Your account is not linked to any clinic."
 
 #: appointments/api/views.py:109
-#: billing/api/views.py:88
+#: billing/api/views.py:89
 #: patients/api/views.py:71
 #: payments/api/views.py:77
 #: prescriptions/api/views.py:64
@@ -1000,6 +1000,6 @@ msgstr "Your subscription is due in 1 day — %(clinic)s"
 msgid "Élément introuvable."
 msgstr "Item not found."
 
-#: billing/models.py:15
+#: billing/models.py:16
 msgid "Émise"
 msgstr "Issued"

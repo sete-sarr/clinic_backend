@@ -32,7 +32,7 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
     return log
 
 
-PLATFORM_SIGNATURE = gettext_lazy("L'équipe Clinic Management")
+PLATFORM_SIGNATURE = gettext_lazy("L'équipe proCli")
 _AUTOMATED_NOTICE = gettext_lazy("Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement.")
 
 
