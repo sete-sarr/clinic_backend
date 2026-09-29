@@ -5,8 +5,11 @@ SURSTOCK) ; en attendant cette décision produit, les destinataires retenus ici 
 et l'administrateur de clinique de l'établissement concerné, sur le canal In-App uniquement (pas
 d'email/SMS pour l'instant — à revoir avec la table faisant autorité)."""
 
+from django.utils import translation
+from django.utils.translation import gettext as _
+
 from communication.models import NotificationLog
-from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
+from communication.services import PLATFORM_SIGNATURE, compose_email, language_for_user, send_notification
 
 
 def _stock_recipients(clinic):
@@ -14,8 +17,16 @@ def _stock_recipients(clinic):
     return [{"user": user, "email": user.email} for user in users if user.email]
 
 
-def _dispatch(*, clinic, notification_type, subject, body):
+def _dispatch(*, clinic, notification_type, build):
+    """`build()` renvoie (sujet, paragraphe) ; il est appelé dans la langue de chaque destinataire
+    (docs/i18n.md §2)."""
     for entry in _stock_recipients(clinic):
+        with translation.override(language_for_user(entry["user"])):
+            subject, body = build()
+            email_body = compose_email(
+                paragraphs=[body, _("Vous pouvez consulter le stock depuis l'écran « Pharmacie ».")],
+                signature=PLATFORM_SIGNATURE,
+            )
         send_notification(
             clinic=clinic,
             recipient_user=entry["user"],
@@ -23,10 +34,7 @@ def _dispatch(*, clinic, notification_type, subject, body):
             notification_type=notification_type,
             recipient_address=entry["email"],
             subject=subject,
-            body=compose_email(
-                paragraphs=[body, "Vous pouvez consulter le stock depuis l'écran « Pharmacie »."],
-                signature=PLATFORM_SIGNATURE,
-            ),
+            body=email_body,
         )
 
 
@@ -37,18 +45,21 @@ def send_low_stock_alert(*, medication_id):
         medication = Medication.objects.select_related("clinic").get(pk=medication_id)
     except Medication.DoesNotExist:
         return
-    subject = f"Alerte stock bas : {medication.name} — {medication.clinic.name}"
-    body = (
-        f"Le stock de {medication.name} est de {medication.current_stock} {medication.unit}, en dessous "
-        f"du seuil minimal fixé à {medication.min_threshold} {medication.unit}. Nous vous recommandons "
-        f"de prévoir un réapprovisionnement."
-    )
-    _dispatch(
-        clinic=medication.clinic,
-        notification_type=NotificationLog.NotificationType.STOCK_LOW,
-        subject=subject,
-        body=body,
-    )
+    values = {
+        "name": medication.name, "clinic": medication.clinic.name, "stock": medication.current_stock,
+        "unit": medication.unit, "threshold": medication.min_threshold,
+    }
+
+    def build():
+        return (
+            _("Alerte stock bas : %(name)s — %(clinic)s") % values,
+            _(
+                "Le stock de %(name)s est de %(stock)s %(unit)s, en dessous du seuil minimal fixé à "
+                "%(threshold)s %(unit)s. Nous vous recommandons de prévoir un réapprovisionnement."
+            ) % values,
+        )
+
+    _dispatch(clinic=medication.clinic, notification_type=NotificationLog.NotificationType.STOCK_LOW, build=build)
 
 
 def send_overstock_alert(*, medication_id):
@@ -58,15 +69,18 @@ def send_overstock_alert(*, medication_id):
         medication = Medication.objects.select_related("clinic").get(pk=medication_id)
     except Medication.DoesNotExist:
         return
-    subject = f"Alerte surstock : {medication.name} — {medication.clinic.name}"
-    body = (
-        f"Le stock de {medication.name} est de {medication.current_stock} {medication.unit}, au-dessus "
-        f"du seuil maximal fixé à {medication.max_threshold} {medication.unit}. Nous vous recommandons "
-        f"de suspendre les commandes de ce médicament."
-    )
-    _dispatch(
-        clinic=medication.clinic,
-        notification_type=NotificationLog.NotificationType.STOCK_OVERSTOCK,
-        subject=subject,
-        body=body,
-    )
+    values = {
+        "name": medication.name, "clinic": medication.clinic.name, "stock": medication.current_stock,
+        "unit": medication.unit, "threshold": medication.max_threshold,
+    }
+
+    def build():
+        return (
+            _("Alerte surstock : %(name)s — %(clinic)s") % values,
+            _(
+                "Le stock de %(name)s est de %(stock)s %(unit)s, au-dessus du seuil maximal fixé à "
+                "%(threshold)s %(unit)s. Nous vous recommandons de suspendre les commandes de ce médicament."
+            ) % values,
+        )
+
+    _dispatch(clinic=medication.clinic, notification_type=NotificationLog.NotificationType.STOCK_OVERSTOCK, build=build)

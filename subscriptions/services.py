@@ -302,29 +302,37 @@ def handle_stripe_event(*, event_type: str, event_id: str, payload: dict) -> Non
 
 
 def _notify_license_expired(*, clinic: Clinic, trial_ended: bool = False) -> None:
-    from communication.models import NotificationLog
-    from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
+    from django.utils import translation
 
-    if trial_ended:
-        subject = f"Fin de votre mois d'essai gratuit — {clinic.name}"
-        paragraphs = [
-            f"Le mois d'essai gratuit de {clinic.name} est arrivé à son terme. Nous espérons que la "
-            "plateforme a répondu à vos attentes.",
-            "La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
-            "formule. Vos données restent intégralement conservées et consultables.",
-            "Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement ».",
-        ]
-    else:
-        subject = f"Suspension de votre abonnement — {clinic.name}"
-        paragraphs = [
-            f"Nous vous informons que l'abonnement de {clinic.name} est suspendu.",
-            "La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données "
-            "restent intégralement conservées et consultables.",
-            "Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement ».",
-        ]
-    body = compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
+    from communication.models import NotificationLog
+    from communication.services import PLATFORM_SIGNATURE, compose_email, language_for_user, send_notification
+
+    def build():
+        values = {"clinic": clinic.name}
+        if trial_ended:
+            subject = _("Fin de votre mois d'essai gratuit — %(clinic)s") % values
+            paragraphs = [
+                _("Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la "
+                  "plateforme a répondu à vos attentes.") % values,
+                _("La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
+                  "formule. Vos données restent intégralement conservées et consultables."),
+                _("Pour réactiver votre compte, choisissez une formule depuis l'écran « Abonnement »."),
+            ]
+        else:
+            subject = _("Suspension de votre abonnement — %(clinic)s") % values
+            paragraphs = [
+                _("Nous vous informons que l'abonnement de %(clinic)s est suspendu.") % values,
+                _("La création de nouveaux enregistrements est bloquée jusqu'à sa réactivation. Vos données "
+                  "restent intégralement conservées et consultables."),
+                _("Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement »."),
+            ]
+        return subject, compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
+
     for admin_user in clinic.users.filter(groups__name="clinic_admin"):
         if admin_user.email:
+            # Langue de chaque administrateur (docs/i18n.md §2).
+            with translation.override(language_for_user(admin_user)):
+                subject, body = build()
             send_notification(
                 clinic=clinic, recipient_user=admin_user, channel=NotificationLog.Channel.EMAIL,
                 notification_type=NotificationLog.NotificationType.LICENSE_EXPIRED,

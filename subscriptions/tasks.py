@@ -3,7 +3,16 @@ from django.utils import timezone
 
 from clinics.models import Clinic
 from communication.models import NotificationLog
-from communication.services import PLATFORM_SIGNATURE, compose_email, send_notification
+from django.utils import translation
+from django.utils.translation import gettext as _
+
+from communication.services import (
+    PLATFORM_SIGNATURE,
+    compose_email,
+    format_message_date,
+    language_for_user,
+    send_notification,
+)
 
 # business/notification-rules.md "SUBSCRIPTION EXPIRING" : 30/15/7/1 jours avant current_period_end.
 _THRESHOLDS = [
@@ -40,18 +49,28 @@ def _notify_expiring(*, clinic, days_left):
     # docs/known-issues.md pour appointments/notifications.py : nom de rôle -> tous les
     # utilisateurs correspondants dans la clinique, ce qui peut donner zéro ou plusieurs résultats.
     admins = clinic.users.filter(groups__name="clinic_admin")
-    subject = f"Échéance de votre abonnement dans {days_left} jour{'s' if days_left != 1 else ''} — {clinic.name}"
-    body = compose_email(
-        paragraphs=[
-            f"L'abonnement de {clinic.name} arrive à échéance le {clinic.current_period_end.date():%d/%m/%Y} "
-            "et sera renouvelé automatiquement.",
-            "Afin d'éviter toute interruption de service, nous vous invitons à vérifier que votre moyen "
-            "de paiement est à jour depuis l'écran « Abonnement ».",
-        ],
-        signature=PLATFORM_SIGNATURE,
-    )
+
+    def build():
+        values = {"clinic": clinic.name, "days": days_left, "date": format_message_date(clinic.current_period_end.date())}
+        if days_left == 1:
+            subject = _("Échéance de votre abonnement dans 1 jour — %(clinic)s") % values
+        else:
+            subject = _("Échéance de votre abonnement dans %(days)s jours — %(clinic)s") % values
+        body = compose_email(
+            paragraphs=[
+                _("L'abonnement de %(clinic)s arrive à échéance le %(date)s et sera renouvelé automatiquement.") % values,
+                _("Afin d'éviter toute interruption de service, nous vous invitons à vérifier que votre moyen "
+                  "de paiement est à jour depuis l'écran « Abonnement »."),
+            ],
+            signature=PLATFORM_SIGNATURE,
+        )
+        return subject, body
+
     for admin_user in admins:
         if admin_user.email:
+            # Langue de chaque administrateur (docs/i18n.md §2).
+            with translation.override(language_for_user(admin_user)):
+                subject, body = build()
             send_notification(
                 clinic=clinic, recipient_user=admin_user, channel=NotificationLog.Channel.EMAIL,
                 notification_type=NotificationLog.NotificationType.SUBSCRIPTION_EXPIRING,
