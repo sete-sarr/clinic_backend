@@ -74,6 +74,9 @@ MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Langue de la réponse d'après l'en-tête Accept-Language envoyé par le frontend (docs/i18n.md) ;
+    # sans en-tête reconnu : LANGUAGE_CODE. Placé après les sessions, avant CommonMiddleware.
+    "django.middleware.locale.LocaleMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -141,6 +144,10 @@ AUTH_PASSWORD_VALIDATORS = [
 # Français : messages d'erreur intégrés de Django/DRF/SimpleJWT (« Ce champ est obligatoire. »...)
 # et dates des PDF (« 27 septembre 2026 »). Le séparateur décimal reste "." (backend/formats/fr).
 LANGUAGE_CODE = "fr"
+# Plateforme bilingue (docs/i18n.md) : messages source en français, catalogue anglais dans
+# locale/en/LC_MESSAGES/django.po (compilé par `manage.py compile_translations`).
+LANGUAGES = [("fr", "Français"), ("en", "English")]
+LOCALE_PATHS = [BASE_DIR / "locale"]
 FORMAT_MODULE_PATH = ["backend.formats"]
 TIME_ZONE = "UTC"
 USE_I18N = True

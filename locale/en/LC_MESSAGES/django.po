@@ -1,0 +1,384 @@
+# Traductions anglaises du backend — messages source (msgid) en français.
+# Terminologie : docs/i18n.md §5. Après modification : python manage.py compile_translations
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: en\n"
+
+#: accounts/api/serializers.py:48
+msgid "Adresse e-mail ou mot de passe incorrect."
+msgstr "Incorrect email address or password."
+
+#: subscriptions/services.py:148
+msgid "Aucun abonnement en cours : choisissez une formule pour souscrire."
+msgstr "No active subscription: choose a plan to subscribe."
+
+#: subscriptions/providers/stripe_provider.py:80
+msgid "Aucun abonnement payant n'est encore associé à cette clinique : choisissez d'abord une formule."
+msgstr "This clinic has no paid subscription yet: choose a plan first."
+
+#: accounts/services.py:55
+msgid "Aucun dossier patient correspondant n'a été trouvé."
+msgstr "No matching patient record was found."
+
+#: appointments/api/views.py:71
+msgid "Aucun profil patient n'est associé à ce compte."
+msgstr "No patient profile is linked to this account."
+
+#: accounts/services.py:63
+msgid "Aucune adresse e-mail n'est enregistrée pour ce patient. Contactez votre clinique pour en ajouter une avant d'activer votre espace patient."
+msgstr "No email address is on file for this patient. Please contact your clinic to add one before activating your patient portal."
+
+#: subscriptions/services.py:152
+msgid "C'est déjà votre formule actuelle."
+msgstr "This is already your current plan."
+
+#: appointments/api/views.py:74
+#: doctors/api/serializers.py:48
+msgid "Ce champ est obligatoire."
+msgstr "This field is required."
+
+#: communication/services.py:125
+msgid "Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau."
+msgstr "This code has expired or does not exist. Please request a new one."
+
+#: consultations/api/views.py:41
+#: prescriptions/api/views.py:45
+msgid "Ce compte n'a pas de profil médecin dans cette clinique."
+msgstr "This account has no doctor profile in this clinic."
+
+#: departments/services.py:22
+msgid "Ce département a des médecins actifs et ne peut pas être archivé. Réaffectez-les ou désactivez-les d'abord."
+msgstr "This department has active doctors and cannot be archived. Reassign or deactivate them first."
+
+#: appointments/services.py:45
+msgid "Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure."
+msgstr "This doctor or patient already has an appointment at this date and time."
+
+#: accounts/api/serializers.py:131
+#: accounts/api/serializers.py:166
+#: doctors/api/serializers.py:31
+msgid "Ce nom d'utilisateur est déjà pris."
+msgstr "This username is already taken."
+
+#: consultations/services.py:17
+msgid "Ce rendez-vous a déjà une consultation. Enregistrez la nouvelle comme consultation de suivi."
+msgstr "This appointment already has a consultation. Record the new one as a follow-up visit."
+
+#: pharmacy/services.py:142
+msgid "Cet ajustement rendrait négative la quantité restante du lot."
+msgstr "This adjustment would make the batch's remaining quantity negative."
+
+#: prescriptions/services/__init__.py:25
+msgid "Cette consultation a déjà une ordonnance."
+msgstr "This consultation already has a prescription."
+
+#: subscriptions/services.py:144
+#: subscriptions/services.py:103
+msgid "Cette formule n'est pas disponible à la souscription."
+msgstr "This plan is not available for subscription."
+
+#: accounts/services.py:141
+msgid "Changement de rôle non pris en charge."
+msgstr "Unsupported role change."
+
+#: billing/services/__init__.py:28
+msgid "Chaque ligne de facture doit avoir une quantité et un prix unitaire."
+msgstr "Every invoice line needs a quantity and a unit price."
+
+#: communication/services.py:135
+msgid "Code incorrect."
+msgstr "Incorrect code."
+
+#: accounts/api/views.py:157
+msgid "Compte activé. Vous pouvez maintenant vous connecter."
+msgstr "Account activated. You can now log in."
+
+#: prescriptions/services/__init__.py:21
+msgid "Consultation invalide."
+msgstr "Invalid consultation."
+
+#: subscriptions/services.py:146
+#: subscriptions/services.py:106
+msgid "Cycle de facturation invalide."
+msgstr "Invalid billing cycle."
+
+#: doctors/api/serializers.py:77
+#: doctors/services.py:16
+msgid "Département invalide."
+msgstr "Invalid department."
+
+#: payments/services/__init__.py:17
+msgid "Facture invalide."
+msgstr "Invalid invoice."
+
+#: appointments/services.py:122
+msgid "Impossible d'annuler ce rendez-vous : il est déjà %(status)s."
+msgstr "This appointment cannot be cancelled: it is already %(status)s."
+
+#: appointments/services.py:157
+msgid "Impossible d'enregistrer l'arrivée : ce rendez-vous est déjà %(status)s."
+msgstr "Unable to check in: this appointment is already %(status)s."
+
+#: accounts/services.py:172
+msgid "Impossible de désactiver le dernier administrateur actif de la clinique."
+msgstr "The clinic's last active administrator cannot be deactivated."
+
+#: appointments/services.py:77
+msgid "Impossible de modifier ce rendez-vous : il est déjà %(status)s."
+msgstr "This appointment cannot be changed: it is already %(status)s."
+
+#: appointments/services.py:35
+msgid "Impossible de programmer un rendez-vous dans le passé."
+msgstr "An appointment cannot be scheduled in the past."
+
+#: common/permissions.py:50
+msgid "L'abonnement de cette clinique est suspendu. Aucune création ni modification ne peut être enregistrée tant que l'abonnement n'est pas réactivé."
+msgstr "This clinic's subscription is suspended. No records can be created or changed until the subscription is reactivated."
+
+#: appointments/services.py:154
+msgid "L'arrivée du patient a déjà été enregistrée pour ce rendez-vous."
+msgstr "The patient has already been checked in for this appointment."
+
+#: appointments/pdf.py:28
+msgid "L'arrivée du patient n'a pas encore été enregistrée pour ce rendez-vous."
+msgstr "The patient has not been checked in for this appointment yet."
+
+#: appointments/services.py:160
+msgid "L'arrivée ne peut être enregistrée que pour un rendez-vous prévu aujourd'hui."
+msgstr "Check-in is only possible for an appointment scheduled today."
+
+#: clinics/api/serializers.py:17
+msgid "L'image ne doit pas dépasser 2 Mo."
+msgstr "The image must not exceed 2 MB."
+
+#: patients/services/__init__.py:57
+msgid "La date de naissance ne peut pas être dans le futur."
+msgstr "The date of birth cannot be in the future."
+
+#: payments/services/__init__.py:21
+msgid "La date du paiement ne peut pas être antérieure à la date de la facture."
+msgstr "The payment date cannot be earlier than the invoice date."
+
+#: pharmacy/api/views.py:79
+msgid "La quantité d'ajustement doit être un nombre entier."
+msgstr "The adjustment quantity must be a whole number."
+
+#: pharmacy/services.py:139
+msgid "La quantité d'ajustement ne peut pas être nulle."
+msgstr "The adjustment quantity cannot be zero."
+
+#: appointments/services.py:62
+msgid "Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
+msgstr "This doctor's department is not active and cannot accept new appointments."
+
+#: clinics/api/views.py:77
+msgid "Le guide d'utilisation n'est pas disponible."
+msgstr "The user guide is not available."
+
+#: payments/services/__init__.py:19
+msgid "Le montant du paiement doit être positif."
+msgstr "The payment amount must be positive."
+
+#: consultations/services.py:60
+msgid "Le motif de consultation, le diagnostic et le plan de traitement sont obligatoires pour terminer une consultation."
+msgstr "The chief complaint, diagnosis and treatment plan are required to complete a consultation."
+
+#: consultations/services.py:23
+#: prescriptions/services/__init__.py:13
+msgid "Le médecin est obligatoire."
+msgstr "A doctor is required."
+
+#: payments/services/__init__.py:24
+msgid "Le paiement de %(amount)s dépasse le solde restant dû de %(balance)s sur cette facture."
+msgstr "The payment of %(amount)s exceeds the balance due of %(balance)s on this invoice."
+
+#: subscriptions/providers/stripe_provider.py:21
+msgid "Le paiement en ligne est momentanément indisponible. Réessayez plus tard."
+msgstr "Online payment is temporarily unavailable. Please try again later."
+
+#: accounts/services.py:143
+msgid "Le rôle d'un médecin ne peut pas être modifié depuis cet écran."
+msgstr "A doctor's role cannot be changed from this screen."
+
+#: pharmacy/api/serializers.py:60
+msgid "Le seuil maximal doit être supérieur ou égal au seuil minimal."
+msgstr "The maximum threshold must be greater than or equal to the minimum threshold."
+
+#: appointments/services.py:55
+#: appointments/services.py:89
+#: billing/services/__init__.py:50
+#: billing/services/__init__.py:82
+#: consultations/services.py:29
+#: consultations/services.py:48
+#: prescriptions/services/__init__.py:19
+#: prescriptions/services/__init__.py:46
+msgid "Médecin invalide."
+msgstr "Invalid doctor."
+
+#: billing/services/__init__.py:33
+msgid "Médicament invalide."
+msgstr "Invalid medication."
+
+#: appointments/services.py:53
+#: appointments/services.py:87
+#: billing/services/__init__.py:48
+#: billing/services/__init__.py:80
+#: consultations/services.py:27
+#: consultations/services.py:46
+#: prescriptions/services/__init__.py:17
+#: prescriptions/services/__init__.py:44
+msgid "Patient invalide."
+msgstr "Invalid patient."
+
+#: consultations/services.py:31
+#: consultations/services.py:50
+msgid "Rendez-vous invalide."
+msgstr "Invalid appointment."
+
+#: billing/api/views.py:73
+msgid "Seul l'administrateur de la clinique peut annuler une facture."
+msgstr "Only the clinic administrator can cancel an invoice."
+
+#: payments/api/views.py:62
+msgid "Seul l'administrateur de la clinique peut approuver un remboursement."
+msgstr "Only the clinic administrator can approve a refund."
+
+#: payments/services/__init__.py:45
+msgid "Seul un paiement validé peut être remboursé."
+msgstr "Only a completed payment can be refunded."
+
+#: billing/services/__init__.py:118
+msgid "Seule une facture en brouillon peut être émise."
+msgstr "Only a draft invoice can be issued."
+
+#: clinics/api/serializers.py:23
+msgid "Seuls les formats PNG et JPEG sont acceptés."
+msgstr "Only PNG and JPEG formats are accepted."
+
+#: accounts/api/views.py:131
+msgid "Si les informations correspondent, un code de vérification vous a été envoyé."
+msgstr "If the details match, a verification code has been sent to you."
+
+#: subscriptions/api/views.py:24
+msgid "Signature invalide."
+msgstr "Invalid signature."
+
+#: pharmacy/services.py:187
+msgid "Stock insuffisant pour %(name)s : il manque %(missing)s %(unit)s."
+msgstr "Insufficient stock for %(name)s: %(missing)s %(unit)s missing."
+
+#: communication/services.py:66
+msgid "Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."
+msgstr "A code was sent recently. Please wait before requesting a new one."
+
+#: departments/api/serializers.py:32
+msgid "Un département archivé est en lecture seule. Restaurez-le avant de le modifier."
+msgstr "An archived department is read-only. Restore it before editing."
+
+#: departments/services.py:49
+#: departments/services.py:58
+msgid "Un département archivé est en lecture seule. Restaurez-le d'abord."
+msgstr "An archived department is read-only. Restore it first."
+
+#: appointments/api/views.py:65
+msgid "Un médecin ne peut créer des rendez-vous qu'à son propre nom."
+msgstr "A doctor can only create appointments under their own name."
+
+#: pharmacy/api/serializers.py:51
+msgid "Un médicament portant ce nom existe déjà dans cette clinique."
+msgstr "A medication with this name already exists in this clinic."
+
+#: subscriptions/services.py:130
+#: subscriptions/services.py:150
+msgid "Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."
+msgstr "A subscription payment is outstanding: settle it from “Manage subscription”."
+
+#: patients/services/__init__.py:23
+msgid "Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique."
+msgstr "A patient with the same name, date of birth and phone number already exists in this clinic."
+
+#: appointments/services.py:127
+msgid "Un rendez-vous ne peut être annulé que plus de %(hours)s h à l'avance."
+msgstr "An appointment can only be cancelled more than %(hours)s hours in advance."
+
+#: accounts/api/serializers.py:90
+#: accounts/api/serializers.py:137
+#: accounts/services.py:67
+#: doctors/api/serializers.py:38
+msgid "Un utilisateur utilise déjà cette adresse e-mail."
+msgstr "This email address is already in use."
+
+#: accounts/api/serializers.py:85
+msgid "Une clinique portant ce nom existe déjà."
+msgstr "A clinic with this name already exists."
+
+#: consultations/services.py:41
+msgid "Une consultation validée est en lecture seule et ne peut plus être modifiée."
+msgstr "A finalized consultation is read-only and can no longer be edited."
+
+#: billing/services/__init__.py:52
+#: billing/services/__init__.py:91
+msgid "Une facture doit contenir au moins une ligne."
+msgstr "An invoice must contain at least one line."
+
+#: billing/services/__init__.py:131
+msgid "Une facture payée ne peut pas être annulée."
+msgstr "A paid invoice cannot be cancelled."
+
+#: billing/services/__init__.py:75
+msgid "Une facture payée ou annulée ne peut plus être modifiée."
+msgstr "A paid or cancelled invoice can no longer be edited."
+
+#: prescriptions/services/__init__.py:23
+#: prescriptions/services/__init__.py:54
+msgid "Une ordonnance doit contenir au moins une ligne de médicament."
+msgstr "A prescription must contain at least one medication line."
+
+#: prescriptions/services/__init__.py:39
+msgid "Une ordonnance validée ou annulée ne peut plus être modifiée."
+msgstr "A finalized or cancelled prescription can no longer be edited."
+
+#: subscriptions/services.py:129
+msgid "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
+msgstr "Your clinic already has an active subscription: change plans instead of subscribing again."
+
+#: reports/api/views.py:23
+msgid "Votre compte n'est rattaché à aucune clinique."
+msgstr "Your account is not linked to any clinic."
+
+#: appointments/api/views.py:109
+#: billing/api/views.py:88
+#: patients/api/views.py:71
+#: payments/api/views.py:77
+#: prescriptions/api/views.py:64
+msgid "Vous n'êtes pas autorisé(e) à accéder à ce document."
+msgstr "You are not allowed to access this document."
+
+#: reports/api/views.py:36
+msgid "Vous n'êtes pas autorisé(e) à accéder à ce rapport."
+msgstr "You are not allowed to access this report."
+
+#: accounts/services.py:164
+msgid "Vous ne pouvez pas désactiver votre propre compte."
+msgstr "You cannot deactivate your own account."
+
+#: appointments/services.py:23
+msgid "annulé"
+msgstr "cancelled"
+
+#: appointments/services.py:21
+msgid "confirmé"
+msgstr "confirmed"
+
+#: appointments/services.py:20
+msgid "en attente"
+msgstr "pending"
+
+#: appointments/services.py:24
+msgid "marqué absent"
+msgstr "marked as a no-show"
+
+#: appointments/services.py:22
+msgid "terminé"
+msgstr "completed"

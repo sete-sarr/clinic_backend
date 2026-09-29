@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from common.models import SequenceCounter
 
@@ -24,12 +25,12 @@ def _compute_totals(*, lines, vat_rate, clinic):
         quantity = line["quantity"]
         unit_price = line["unit_price"]
         if quantity is None or unit_price is None:
-            raise ValidationError("Chaque ligne de facture doit avoir une quantité et un prix unitaire.")
+            raise ValidationError(_("Chaque ligne de facture doit avoir une quantité et un prix unitaire."))
         medication = line.get("medication")
         if medication and medication.clinic_id != clinic.id:
             # Même logique volontairement générique que pour patient/doctor ci-dessus : pas
             # d'oracle d'existence inter-tenant (isolation multi-tenant, docs/security.md).
-            raise ValidationError("Médicament invalide.")
+            raise ValidationError(_("Médicament invalide."))
         line_total = (Decimal(quantity) * Decimal(unit_price)).quantize(Decimal("0.01"))
         subtotal += line_total
         computed_lines.append({**line, "line_total": line_total})
@@ -44,11 +45,11 @@ def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_
     if patient.clinic_id != clinic.id:
         # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
         # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-        raise ValidationError("Patient invalide.")
+        raise ValidationError(_("Patient invalide."))
     if doctor and doctor.clinic_id != clinic.id:
-        raise ValidationError("Médecin invalide.")
+        raise ValidationError(_("Médecin invalide."))
     if not lines:
-        raise ValidationError("Une facture doit contenir au moins une ligne.")
+        raise ValidationError(_("Une facture doit contenir au moins une ligne."))
 
     computed_lines, subtotal, vat_amount, total_amount = _compute_totals(lines=lines, vat_rate=vat_rate, clinic=clinic)
 
@@ -71,14 +72,14 @@ def create_invoice(*, clinic, patient, lines, doctor=None, vat_rate=DEFAULT_VAT_
 @transaction.atomic
 def update_invoice(*, invoice, lines=None, actor=None, **fields):
     if invoice.status in LOCKED_STATUSES:
-        raise ValidationError("Une facture payée ou annulée ne peut plus être modifiée.")
+        raise ValidationError(_("Une facture payée ou annulée ne peut plus être modifiée."))
 
     if "patient" in fields and fields["patient"].clinic_id != invoice.clinic_id:
         # Volontairement générique (audit de sécurité, 2026-09-02) : ne confirme pas si l'ID
         # soumis existe dans une autre clinique, afin d'éviter un oracle d'existence inter-tenant.
-        raise ValidationError("Patient invalide.")
+        raise ValidationError(_("Patient invalide."))
     if "doctor" in fields and fields["doctor"] and fields["doctor"].clinic_id != invoice.clinic_id:
-        raise ValidationError("Médecin invalide.")
+        raise ValidationError(_("Médecin invalide."))
 
     vat_rate = fields.get("vat_rate", invoice.vat_rate)
 
@@ -87,7 +88,7 @@ def update_invoice(*, invoice, lines=None, actor=None, **fields):
 
     if lines is not None:
         if not lines:
-            raise ValidationError("Une facture doit contenir au moins une ligne.")
+            raise ValidationError(_("Une facture doit contenir au moins une ligne."))
         computed_lines, subtotal, vat_amount, total_amount = _compute_totals(
             lines=lines, vat_rate=vat_rate, clinic=invoice.clinic
         )
@@ -114,7 +115,7 @@ def update_invoice(*, invoice, lines=None, actor=None, **fields):
 @transaction.atomic
 def issue_invoice(*, invoice, actor=None):
     if invoice.status != Invoice.Status.DRAFT:
-        raise ValidationError("Seule une facture en brouillon peut être émise.")
+        raise ValidationError(_("Seule une facture en brouillon peut être émise."))
     invoice.status = Invoice.Status.ISSUED
     invoice.save(update_fields=["status"])
 
@@ -127,7 +128,7 @@ def issue_invoice(*, invoice, actor=None):
 @transaction.atomic
 def cancel_invoice(*, invoice, actor=None):
     if invoice.status == Invoice.Status.PAID:
-        raise ValidationError("Une facture payée ne peut pas être annulée.")
+        raise ValidationError(_("Une facture payée ne peut pas être annulée."))
     invoice.status = Invoice.Status.CANCELLED
     invoice.save(update_fields=["status"])
 

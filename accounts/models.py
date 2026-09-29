@@ -30,6 +30,11 @@ class User(AbstractUser):
     clinic = models.ForeignKey(
         "clinics.Clinic", on_delete=models.PROTECT, null=True, blank=True, related_name="users"
     )
+    # Préférence de langue de l'utilisateur (docs/i18n.md §2) : "" = suit la langue de sa clinique.
+    # Mêmes codes que settings.LANGUAGES et Clinic.Locale.
+    language = models.CharField(
+        max_length=2, blank=True, default="", choices=[("fr", "Français"), ("en", "English")]
+    )
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["username"]
@@ -41,3 +46,11 @@ class User(AbstractUser):
 
     def __str__(self):
         return self.get_username()
+
+    @property
+    def effective_language(self):
+        """Langue à utiliser pour cet utilisateur (écrans, e-mails) : sa préférence, sinon celle
+        de sa clinique, sinon la langue par défaut de la plateforme."""
+        from django.conf import settings
+
+        return self.language or getattr(self.clinic, "locale", "") or settings.LANGUAGE_CODE

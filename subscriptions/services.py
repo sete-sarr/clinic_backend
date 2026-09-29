@@ -1,4 +1,5 @@
 from django.db import transaction
+from django.utils.translation import gettext as _
 
 from clinics.models import Clinic
 from common.audit import record_audit
@@ -99,10 +100,10 @@ def start_checkout(*, clinic: Clinic, plan_tier: str, billing_cycle: str, succes
 
     if plan_tier not in SUBSCRIBABLE_TIERS:
         return CheckoutSessionResult(
-            success=False, provider_name="", error_message="Cette formule n'est pas disponible à la souscription."
+            success=False, provider_name="", error_message=_("Cette formule n'est pas disponible à la souscription.")
         )
     if billing_cycle not in Clinic.BillingCycle.values:
-        return CheckoutSessionResult(success=False, provider_name="", error_message="Cycle de facturation invalide.")
+        return CheckoutSessionResult(success=False, provider_name="", error_message=_("Cycle de facturation invalide."))
     # Un abonnement Stripe existe déjà : une nouvelle Checkout Session en créerait un second (double
     # prélèvement). Le changement de formule passe par change_subscribed_plan, le règlement d'un
     # impayé par le portail client.
@@ -125,8 +126,8 @@ def _existing_subscription_error(clinic: Clinic) -> str:
     if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
         return ""
     if clinic.subscription_status == Clinic.SubscriptionStatus.ACTIVE:
-        return "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
-    return "Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."
+        return _("Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle.")
+    return _("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement ».")
 
 
 def change_subscribed_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str, actor):
@@ -140,15 +141,15 @@ def change_subscribed_plan(*, clinic: Clinic, plan_tier: str, billing_cycle: str
         return PlanChangeResult(success=False, provider_name="", error_message=message)
 
     if plan_tier not in SUBSCRIBABLE_TIERS:
-        return _failure("Cette formule n'est pas disponible à la souscription.")
+        return _failure(_("Cette formule n'est pas disponible à la souscription."))
     if billing_cycle not in Clinic.BillingCycle.values:
-        return _failure("Cycle de facturation invalide.")
+        return _failure(_("Cycle de facturation invalide."))
     if not clinic.stripe_subscription_id or clinic.subscription_status not in _LIVE_SUBSCRIPTION_STATUSES:
-        return _failure("Aucun abonnement en cours : choisissez une formule pour souscrire.")
+        return _failure(_("Aucun abonnement en cours : choisissez une formule pour souscrire."))
     if clinic.subscription_status != Clinic.SubscriptionStatus.ACTIVE:
-        return _failure("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement ».")
+        return _failure(_("Un paiement de votre abonnement est en attente : réglez-le depuis « Gérer l'abonnement »."))
     if (plan_tier, billing_cycle) == (clinic.plan_tier, clinic.billing_cycle):
-        return _failure("C'est déjà votre formule actuelle.")
+        return _failure(_("C'est déjà votre formule actuelle."))
 
     result = get_payment_provider().change_subscription_plan(
         clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle

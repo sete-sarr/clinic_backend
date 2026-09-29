@@ -3,6 +3,7 @@ from datetime import date
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from common.models import SequenceCounter
 
@@ -19,7 +20,7 @@ def _check_duplicate(*, clinic, first_name, last_name, date_of_birth, phone):
     ).exclude(phone="").filter(phone=phone)
     if duplicate.exists():
         raise ValidationError(
-            "Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique."
+            _("Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique.")
         )
 
 
@@ -53,4 +54,4 @@ def create_patient(*, clinic, **fields):
 
 def validate_date_of_birth(value: date):
     if value > timezone.now().date():
-        raise ValidationError("La date de naissance ne peut pas être dans le futur.")
+        raise ValidationError(_("La date de naissance ne peut pas être dans le futur."))
