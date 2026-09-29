@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import check_password, make_password
 from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.translation import gettext as _
 
 from .models import NotificationLog, OtpCode
 
@@ -62,7 +63,7 @@ def generate_and_send_otp(*, principal, purpose):
         **filter_kwargs, consumed_at__isnull=True, created_at__gte=cooldown_cutoff
     ).exists()
     if already_sent_recently:
-        raise ValidationError("Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau.")
+        raise ValidationError(_("Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."))
 
     code = _generate_code()
     clinic = getattr(principal, "clinic", None)
@@ -121,7 +122,7 @@ def verify_otp(*, principal, code, purpose):
 
     otp = OtpCode.objects.filter(**filter_kwargs, consumed_at__isnull=True).order_by("-created_at").first()
     if not otp or otp.expires_at < timezone.now():
-        raise ValidationError("Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau.")
+        raise ValidationError(_("Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau."))
 
     if not check_password(code, otp.code_hash):
         otp.attempts += 1
@@ -131,7 +132,7 @@ def verify_otp(*, principal, code, purpose):
             # business/communication-policy.md).
             otp.consumed_at = timezone.now()
         otp.save(update_fields=["attempts", "consumed_at"])
-        raise ValidationError("Incorrect code.")
+        raise ValidationError(_("Code incorrect."))
 
     otp.consumed_at = timezone.now()
     otp.save(update_fields=["consumed_at"])

@@ -1,3 +1,4 @@
+from django.utils.translation import gettext_lazy
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
 STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin", "pharmacist"]
@@ -46,8 +47,8 @@ class SubscriptionActivePermission(BasePermission):
     IsSameClinic — it must never be used as the sole permission on a tenant-scoped view."""
 
     message = (
-        "L'abonnement de cette clinique est suspendu. Aucune création ni modification ne peut être "
-        "enregistrée tant que l'abonnement n'est pas réactivé."
+        gettext_lazy("L'abonnement de cette clinique est suspendu. Aucune création ni modification ne peut être "
+        "enregistrée tant que l'abonnement n'est pas réactivé.")
     )
 
     _BLOCKED_STATUSES = {"suspended", "cancelled"}

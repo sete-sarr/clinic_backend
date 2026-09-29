@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from django.http import FileResponse, Http404
+from django.utils.translation import gettext as _
 from rest_framework import generics, mixins, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -73,7 +74,7 @@ class UserGuideDownloadView(APIView):
 
     def get(self, request):
         if not USER_GUIDE_PATH.is_file():
-            raise Http404("Le guide d'utilisation n'est pas disponible.")
+            raise Http404(_("Le guide d'utilisation n'est pas disponible."))
         return FileResponse(
             USER_GUIDE_PATH.open("rb"),
             as_attachment=True,

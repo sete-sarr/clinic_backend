@@ -1,6 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext as _
 from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied
@@ -58,7 +59,7 @@ class PaymentViewSet(
     @action(detail=True, methods=["post"], url_path="refund")
     def refund(self, request, pk=None):
         if not in_role(request.user, "clinic_admin"):
-            raise PermissionDenied("Seul l'administrateur de la clinique peut approuver un remboursement.")
+            raise PermissionDenied(_("Seul l'administrateur de la clinique peut approuver un remboursement."))
         payment = self.get_object()
         try:
             payment = refund_payment(payment=payment)
@@ -73,7 +74,7 @@ class PaymentViewSet(
         try:
             pdf_bytes = render_receipt_pdf(payment=payment, user=request.user)
         except PermissionError:
-            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
+            return Response({"code": 403, "message": _("Vous n'êtes pas autorisé(e) à accéder à ce document."), "field": None}, status=403)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="receipt-{payment.id}.pdf"'

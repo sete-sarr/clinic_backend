@@ -116,3 +116,28 @@ class ClinicRegistrationTests(APITestCase):
         sixth_payload = {**self.payload, "clinic_name": "Clinic 6", "username": "admin6", "email": "admin6@example.com"}
         response = self.client.post(reverse("clinic-registration"), sixth_payload)
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+
+class ClinicRegistrationLanguageTests(APITestCase):
+    """La langue de la clinique (patients, documents) est celle de l'inscription (docs/i18n.md §2)."""
+
+    def _register(self, **headers):
+        cache.clear()  # l'inscription est soumise à ScopedRateThrottle
+        return self.client.post(
+            reverse("clinic-registration"),
+            {
+                "clinic_name": "Sunrise Clinic", "username": "owner", "email": "owner@example.com",
+                "first_name": "Ada", "last_name": "Owner", "password": "Str0ng-Passw0rd!",
+            },
+            format="json", **headers,
+        )
+
+    def test_english_registration_creates_an_english_clinic(self):
+        response = self._register(HTTP_ACCEPT_LANGUAGE="en")
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(Clinic.objects.get(name="Sunrise Clinic").locale, "en")
+
+    def test_registration_defaults_to_french(self):
+        response = self._register()
+        self.assertEqual(response.status_code, 201, response.data)
+        self.assertEqual(Clinic.objects.get(name="Sunrise Clinic").locale, "fr")

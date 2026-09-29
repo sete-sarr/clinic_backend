@@ -1,4 +1,5 @@
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from clinics.models import Clinic
@@ -13,13 +14,13 @@ ALLOWED_LOGO_FORMATS = {"PNG", "JPEG"}
 
 def validate_logo_size(value):
     if value.size > MAX_LOGO_SIZE_BYTES:
-        raise ValidationError("L'image ne doit pas dépasser 2 Mo.")
+        raise ValidationError(_("L'image ne doit pas dépasser 2 Mo."))
 
 
 def validate_logo_format(value):
     image_format = getattr(getattr(value, "image", None), "format", None)
     if image_format not in ALLOWED_LOGO_FORMATS:
-        raise ValidationError("Seuls les formats PNG et JPEG sont acceptés.")
+        raise ValidationError(_("Seuls les formats PNG et JPEG sont acceptés."))
 
 
 class ClinicSerializer(serializers.ModelSerializer):

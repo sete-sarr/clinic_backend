@@ -1,5 +1,6 @@
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils.translation import gettext as _
 from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
@@ -67,7 +68,7 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
                 patient=patient, user=request.user, date_from=date_from, date_to=date_to
             )
         except PermissionError:
-            return Response({"code": 403, "message": "Vous n'êtes pas autorisé(e) à accéder à ce document.", "field": None}, status=403)
+            return Response({"code": 403, "message": _("Vous n'êtes pas autorisé(e) à accéder à ce document."), "field": None}, status=403)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="statement-{patient.patient_number}.pdf"'
