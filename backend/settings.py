@@ -225,6 +225,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:4200",
     "http://127.0.0.1:4200",
    "https://clinic-frontend-yrxm.vercel.app",
+    # Application de bureau proCli (Tauri v2 sous Windows) : la webview sert l'interface depuis cette
+    # origine. Authentification par JWT en en-tête, donc aucun CSRF_TRUSTED_ORIGINS nécessaire.
+    "http://tauri.localhost",
 
 ]
 
