@@ -1,4 +1,4 @@
-{% load i18n %}<!doctype html>
+{% load i18n clinic_logos %}<!doctype html>
 {% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="utf-8" />
@@ -190,11 +190,13 @@
 
   <div class="doc-header">
     <div class="clinic-identity">
-      {% if clinic.logo_print %}
-        <img class="clinic-logo" src="{{ clinic.logo_print.path }}" alt="{{ clinic.name }}" />
-      {% else %}
-        <div class="clinic-logo-fallback">{{ clinic.name|slice:":1" }}</div>
-      {% endif %}
+      {% with logo=clinic|clinic_print_logo %}
+        {% if logo %}
+          <img class="clinic-logo" src="{{ logo }}" alt="{{ clinic.name }}" />
+        {% else %}
+          <div class="clinic-logo-fallback">{{ clinic.name|slice:":1" }}</div>
+        {% endif %}
+      {% endwith %}
       <div>
         <div class="clinic-name">{{ clinic.name }}</div>
         <div class="clinic-meta">

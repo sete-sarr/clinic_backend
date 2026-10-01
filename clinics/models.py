@@ -6,10 +6,8 @@ from common.models import TimeStampedModel
 
 
 def clinic_logo_upload_path(instance, filename):
-    # Chemin scopé par tenant (isolation multi-tenant de CLAUDE.md) — évite les collisions de noms
-    # de fichiers entre cliniques. instance.pk existe toujours ici : les lignes Clinic sont
-    # provisionnées une seule fois à l'onboarding du tenant, cet upload_to n'est jamais atteint
-    # que via un PATCH sur une clinique déjà existante.
+    # Conservé uniquement pour les anciennes migrations (0003) : les logos ne sont plus des fichiers
+    # mais des ClinicLogo stockés en base (voir plus bas).
     return f"clinic_logos/{instance.pk}/{filename}"
 
 
@@ -46,10 +44,6 @@ class Clinic(TimeStampedModel):
     # Devise de facturation des patients, choisie par le clinic_admin (docs/i18n.md §8). Copiée sur
     # chaque facture à sa création : la changer n'affecte que les factures suivantes.
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
-    logo_light = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
-    logo_dark = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
-    logo_print = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
-    favicon = models.ImageField(upload_to=clinic_logo_upload_path, blank=True, null=True)
 
     # Facturation de l'abonnement à la plateforme (business/subscription-billing-policy.md) — la
     # clinique payant pour son propre usage de la plateforme, entièrement distinct de
@@ -83,3 +77,30 @@ class Clinic(TimeStampedModel):
 
     def __str__(self):
         return self.name
+
+
+class ClinicLogo(models.Model):
+    """Logo d'une clinique, stocké en base (PNG/JPEG, 2 Mo max — clinics/api/serializers.py).
+
+    Les fichiers téléversés ne survivaient pas en production : le disque de l'hébergeur est effacé à
+    chaque redéploiement et /media/ n'y est pas servi. Modèle séparé de Clinic pour ne jamais
+    charger ces octets lors des nombreuses lectures de la clinique. Diffusion : URL signée
+    (clinics/services.py) ; PDF : data URI."""
+
+    class Kind(models.TextChoices):
+        LIGHT = "light"
+        DARK = "dark"
+        PRINT = "print"
+        FAVICON = "favicon"
+
+    clinic = models.ForeignKey(Clinic, on_delete=models.CASCADE, related_name="logos")
+    kind = models.CharField(max_length=16, choices=Kind.choices)
+    content = models.BinaryField()
+    content_type = models.CharField(max_length=32)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [models.UniqueConstraint(fields=["clinic", "kind"], name="unique_logo_kind_per_clinic")]
+
+    def __str__(self):
+        return f"{self.clinic_id}:{self.kind}"

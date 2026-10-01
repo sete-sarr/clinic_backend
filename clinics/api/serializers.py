@@ -1,8 +1,10 @@
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from clinics.models import Clinic
+from clinics.services import LOGO_FIELDS, logo_url, logos_without_content, update_clinic_logos
 
 MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
 # design-system/ : les logos sont limités à PNG/JPG/JPEG. ImageField rejette déjà tout ce qui
@@ -23,19 +25,19 @@ def validate_logo_format(value):
         raise ValidationError(_("Seuls les formats PNG et JPEG sont acceptés."))
 
 
+def _logo_field():
+    # Écriture seule : un fichier PNG/JPEG (ou null pour retirer le logo). En lecture, le champ de
+    # même nom contient l'URL signée du logo (to_representation) — contrat inchangé pour le frontend.
+    return serializers.ImageField(
+        required=False, allow_null=True, write_only=True, validators=[validate_logo_size, validate_logo_format]
+    )
+
+
 class ClinicSerializer(serializers.ModelSerializer):
-    logo_light = serializers.ImageField(
-        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
-    )
-    logo_dark = serializers.ImageField(
-        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
-    )
-    logo_print = serializers.ImageField(
-        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
-    )
-    favicon = serializers.ImageField(
-        required=False, allow_null=True, validators=[validate_logo_size, validate_logo_format]
-    )
+    logo_light = _logo_field()
+    logo_dark = _logo_field()
+    logo_print = _logo_field()
+    favicon = _logo_field()
 
     class Meta:
         model = Clinic
@@ -57,6 +59,24 @@ class ClinicSerializer(serializers.ModelSerializer):
             "id", "created_at", "updated_at",
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
         ]
+
+    def update(self, instance, validated_data):
+        # Logos stockés en base (clinics/services.py) : retirés des données du modèle Clinic.
+        logo_changes = {field: validated_data.pop(field) for field in LOGO_FIELDS if field in validated_data}
+        with transaction.atomic():
+            instance = super().update(instance, validated_data)
+            if logo_changes:
+                update_clinic_logos(clinic=instance, changes=logo_changes)
+        return instance
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        logos = logos_without_content(instance)
+        request = self.context.get("request")
+        for field, kind in LOGO_FIELDS.items():
+            logo = logos.get(kind)
+            data[field] = logo_url(logo=logo, request=request) if logo else None
+        return data
 
 
 class ClinicPublicSerializer(serializers.ModelSerializer):
