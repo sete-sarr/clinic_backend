@@ -36,7 +36,8 @@ urlpatterns = [
     path("api/v1/subscriptions/", include("subscriptions.api.urls")),
 ]
 
-# Diffusion des médias réservée au dev (logos/favicons de clinique téléversés). En production, la
-# diffusion des médias relève de l'infrastructure (nginx/S3/CDN), hors du périmètre de cette app.
+# Diffusion des médias réservée au dev. Les logos de clinique ne sont plus des fichiers mais des
+# ClinicLogo stockés en base et servis par URL signée (clinics/services.py) : rien de ce que
+# l'application affiche ne dépend de /media/ en production.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

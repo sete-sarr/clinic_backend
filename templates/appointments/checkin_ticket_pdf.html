@@ -1,4 +1,4 @@
-{% load i18n %}<!doctype html>
+{% load i18n clinic_logos %}<!doctype html>
 {% get_current_language as LANGUAGE_CODE %}<html lang="{{ LANGUAGE_CODE }}">
 <head>
 <meta charset="utf-8" />
@@ -45,11 +45,13 @@
 </head>
 <body>
   <div class="clinic-identity">
-    {% if appointment.clinic.logo_print %}
-      <img class="clinic-logo" src="{{ appointment.clinic.logo_print.path }}" alt="{{ appointment.clinic.name }}" />
-    {% else %}
-      <div class="clinic-logo-fallback">{{ appointment.clinic.name|slice:":1" }}</div>
-    {% endif %}
+    {% with logo=appointment.clinic|clinic_print_logo %}
+      {% if logo %}
+        <img class="clinic-logo" src="{{ logo }}" alt="{{ appointment.clinic.name }}" />
+      {% else %}
+        <div class="clinic-logo-fallback">{{ appointment.clinic.name|slice:":1" }}</div>
+      {% endif %}
+    {% endwith %}
     <div>
       <div class="clinic-name">{{ appointment.clinic.name }}</div>
       <div class="clinic-sub">{% translate "Ticket de passage" %}</div>

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from django.http import FileResponse, Http404
+from django.http import FileResponse, Http404, HttpResponse
 from django.utils.translation import get_language
 from django.utils.translation import gettext as _
 from rest_framework import generics, mixins, viewsets
@@ -9,6 +9,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.views import APIView
 
 from clinics.models import Clinic
+from clinics.services import logo_from_token
 from common.audit import record_audit
 from common.models import AuditLog
 from common.permissions import IsClinicAdmin
@@ -58,6 +59,24 @@ class ClinicPublicListView(generics.ListAPIView):
     queryset = Clinic.objects.filter(is_active=True)
     filter_backends = [SearchFilter]
     search_fields = ["name"]
+
+
+class ClinicLogoView(APIView):
+    """Logo d'une clinique à partir de son URL signée (clinics/services.py::logo_url), renvoyée
+    uniquement aux utilisateurs authentifiés de la clinique par ClinicSerializer. Sans
+    authentification (une balise <img> n'envoie pas le JWT) : c'est la signature qui protège,
+    pas l'identifiant de la clinique. L'URL change à chaque nouveau logo, d'où le cache long."""
+
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        logo = logo_from_token(token)
+        if logo is None:
+            raise Http404
+        response = HttpResponse(bytes(logo.content), content_type=logo.content_type)
+        response["Cache-Control"] = "public, max-age=31536000, immutable"
+        return response
 
 
 # Copies publiées des guides de guide-utilisateur/ (source HTML dans ce dossier), une par langue de
