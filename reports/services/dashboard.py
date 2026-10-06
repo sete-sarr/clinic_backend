@@ -12,7 +12,7 @@ création, docs/i18n.md §8 — additionner deux devises n'aurait pas de sens)."
 from datetime import date, timedelta
 from decimal import Decimal
 
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Sum
 from django.db.models.functions import TruncMonth
 
 from appointments.models import Appointment
