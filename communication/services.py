@@ -9,7 +9,7 @@ from django.utils import timezone, translation
 from django.utils.dateformat import format as date_format, time_format
 from django.utils.translation import gettext as _, gettext_lazy
 
-from .models import NotificationLog, OtpCode
+from .models import InAppNotification, NotificationLog, OtpCode
 
 
 def send_notification(*, clinic, recipient_user, channel, notification_type, recipient_address, subject, body):
@@ -30,6 +30,27 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
 
     transaction.on_commit(lambda: deliver_notification.delay(log.id))
     return log
+
+
+def notify_in_app(*, clinic, recipients, category, priority, compose, link=""):
+    """Point d'entrée unique des notifications dans l'application (cloche de l'en-tête).
+    `compose()` renvoie (titre, message) ; il est appelé dans la langue de chaque destinataire
+    (docs/i18n.md §2). Les notifications ne sont créées qu'une fois la transaction validée, pour ne
+    jamais annoncer une opération annulée. Destinataires inactifs ou en double ignorés."""
+    unique = {user.pk: user for user in recipients if user is not None and user.is_active}
+    rows = []
+    for user in unique.values():
+        with translation.override(language_for_user(user)):
+            title, body = compose()
+        rows.append(
+            InAppNotification(
+                clinic=clinic, recipient=user, category=category, priority=priority,
+                title=str(title)[:200], body=str(body), link=link,
+            )
+        )
+    if rows:
+        transaction.on_commit(lambda: InAppNotification.objects.bulk_create(rows))
+    return rows
 
 
 PLATFORM_SIGNATURE = gettext_lazy("L'équipe proCli")

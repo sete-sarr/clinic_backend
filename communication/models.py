@@ -107,3 +107,46 @@ class OtpCode(TimeStampedModel):
     def __str__(self):
         principal = self.user or self.patient
         return f"OTP({self.purpose}) for {principal}"
+
+
+class InAppNotification(models.Model):
+    """Notification affichée dans l'application (cloche de l'en-tête, page « Notifications »),
+    docs/communication-architecture.md § NOTIFICATIONS IN-APP. Créée uniquement par
+    communication.services.notify_in_app, déjà rédigée dans la langue du destinataire. Aucun
+    fournisseur externe : la livraison est l'enregistrement lui-même."""
+
+    class Category(models.TextChoices):
+        APPOINTMENT = "appointment"
+        LABORATORY = "laboratory"
+        HOSPITALIZATION = "hospitalization"
+        PHARMACY = "pharmacy"
+        BILLING = "billing"
+        SYSTEM = "system"
+
+    class Priority(models.TextChoices):
+        LOW = "low"
+        MEDIUM = "medium"
+        HIGH = "high"
+        CRITICAL = "critical"
+
+    clinic = models.ForeignKey("clinics.Clinic", on_delete=models.CASCADE, related_name="in_app_notifications")
+    recipient = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="in_app_notifications"
+    )
+    category = models.CharField(max_length=20, choices=Category.choices)
+    priority = models.CharField(max_length=10, choices=Priority.choices, default=Priority.MEDIUM)
+    title = models.CharField(max_length=200)
+    body = models.TextField(blank=True)
+    # Chemin de l'écran concerné dans l'application (ex. "/appointments?patientNumber=…").
+    link = models.CharField(max_length=300, blank=True)
+    read_at = models.DateTimeField(null=True, blank=True)
+    archived_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["recipient", "archived_at", "read_at"])]
+
+    def __str__(self):
+        return f"{self.recipient_id}: {self.title}"
+

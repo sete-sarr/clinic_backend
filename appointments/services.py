@@ -164,4 +164,8 @@ def check_in_appointment(*, appointment):
     appointment.checked_in_at = timezone.now()
     appointment.ticket_number = f"CHK-{year}-{sequence:05d}"
     appointment.save(update_fields=["checked_in_at", "ticket_number", "updated_at"])
+
+    from .notifications import notify_doctor_of_check_in
+
+    notify_doctor_of_check_in(appointment=appointment)
     return appointment

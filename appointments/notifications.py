@@ -18,13 +18,14 @@ from dataclasses import dataclass
 from django.utils import translation
 from django.utils.translation import gettext as _
 
-from communication.models import NotificationLog
+from communication.models import InAppNotification, NotificationLog
 from communication.services import (
     compose_email,
     format_message_date,
     format_message_time,
     language_for_clinic,
     language_for_user,
+    notify_in_app,
     send_notification,
 )
 from subscriptions.catalog import APPOINTMENT_REMINDERS, APPOINTMENT_SMS, has_feature
@@ -279,3 +280,24 @@ def send_appointment_reminder_notifications(*, appointment_id):
 
     _dispatch(appointment=appointment, notification_type=NotificationLog.NotificationType.APPOINTMENT_REMINDER,
               build_patient=patient, build_staff=staff, include_secretaries=False)
+
+
+def notify_doctor_of_check_in(*, appointment):
+    """Arrivée d'un patient à l'accueil → notification in-app au médecin du rendez-vous
+    (business/notification-rules.md § CANAL IN-APP), dans la langue du médecin."""
+
+    def compose():
+        return (
+            _("Patient arrivé : %(patient)s") % {"patient": _patient_name(appointment)},
+            _("Ticket %(ticket)s — rendez-vous %(when)s.")
+            % {"ticket": appointment.ticket_number, "when": _when(appointment)},
+        )
+
+    notify_in_app(
+        clinic=appointment.clinic,
+        recipients=[appointment.doctor.user],
+        category=InAppNotification.Category.APPOINTMENT,
+        priority=InAppNotification.Priority.MEDIUM,
+        compose=compose,
+        link="/appointments?checkedIn=true",
+    )

@@ -5,11 +5,11 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Language: en\n"
 
-#: appointments/notifications.py:80
+#: appointments/notifications.py:81
 msgid "%(clinic)s : %(message)s"
 msgstr "%(clinic)s: %(message)s"
 
-#: communication/services.py:134
+#: communication/services.py:155
 msgid "%(sender)s : votre code de vérification est %(code)s (valable %(minutes)s min). Ne le communiquez à personne."
 msgstr "%(sender)s: your verification code is %(code)s (valid for %(minutes)s min). Do not share it with anyone."
 
@@ -33,7 +33,7 @@ msgstr "Low stock alert: %(name)s — %(clinic)s"
 msgid "Alerte surstock : %(name)s — %(clinic)s"
 msgstr "Overstock alert: %(name)s — %(clinic)s"
 
-#: appointments/notifications.py:219
+#: appointments/notifications.py:220
 msgid "Annulation de votre rendez-vous"
 msgstr "Your appointment has been cancelled"
 
@@ -46,7 +46,7 @@ msgstr "Cancelled"
 msgid "Annulée"
 msgstr "Cancelled"
 
-#: templates/appointments/checkin_ticket_pdf.html:86
+#: templates/appointments/checkin_ticket_pdf.html:88
 msgid "Arrivée enregistrée"
 msgstr "Checked in at"
 
@@ -94,7 +94,7 @@ msgstr "No invoices for this period."
 msgid "Aucune ligne sur cette facture."
 msgstr "No items on this invoice."
 
-#: communication/services.py:72
+#: communication/services.py:93
 msgid "Bonjour,"
 msgstr "Hello,"
 
@@ -117,11 +117,11 @@ msgstr "Card"
 msgid "Ce champ est obligatoire."
 msgstr "This field is required."
 
-#: communication/services.py:167
+#: communication/services.py:188
 msgid "Ce code a expiré ou n'existe pas. Veuillez en demander un nouveau."
 msgstr "This code has expired or does not exist. Please request a new one."
 
-#: communication/services.py:126
+#: communication/services.py:147
 msgid "Ce code est valable %(minutes)s minutes. Ne le communiquez à personne : nos équipes ne vous le demanderont jamais."
 msgstr "This code is valid for %(minutes)s minutes. Do not share it with anyone: our staff will never ask you for it."
 
@@ -134,7 +134,7 @@ msgstr "This account has no doctor profile in this clinic."
 msgid "Ce département a des médecins actifs et ne peut pas être archivé. Réaffectez-les ou désactivez-les d'abord."
 msgstr "This department has active doctors and cannot be archived. Reassign or deactivate them first."
 
-#: communication/services.py:36
+#: communication/services.py:57
 msgid "Ce message vous est adressé automatiquement ; merci de ne pas y répondre directement."
 msgstr "This is an automated message; please do not reply to it directly."
 
@@ -173,7 +173,7 @@ msgstr "Unsupported role change."
 msgid "Chaque ligne de facture doit avoir une quantité et un prix unitaire."
 msgstr "Every invoice line needs a quantity and a unit price."
 
-#: communication/services.py:177
+#: communication/services.py:198
 msgid "Code incorrect."
 msgstr "Incorrect code."
 
@@ -181,7 +181,7 @@ msgstr "Incorrect code."
 msgid "Compte activé. Vous pouvez maintenant vous connecter."
 msgstr "Account activated. You can now log in."
 
-#: appointments/notifications.py:151
+#: appointments/notifications.py:152
 msgid "Confirmation de votre rendez-vous"
 msgstr "Appointment confirmation"
 
@@ -198,7 +198,7 @@ msgstr "Invalid consultation."
 msgid "Consultations"
 msgstr "Consultations"
 
-#: communication/services.py:74
+#: communication/services.py:95
 msgid "Cordialement,"
 msgstr "Kind regards,"
 
@@ -223,7 +223,7 @@ msgstr "Date:"
 msgid "Date d'émission :"
 msgstr "Issue date:"
 
-#: templates/appointments/checkin_ticket_pdf.html:82
+#: templates/appointments/checkin_ticket_pdf.html:84
 msgid "Date du rendez-vous"
 msgstr "Appointment date"
 
@@ -251,7 +251,7 @@ msgstr "Confidential medical document — generated for %(clinic)s. Any unauthor
 msgid "Dosage"
 msgstr "Dosage"
 
-#: templates/appointments/checkin_ticket_pdf.html:79
+#: templates/appointments/checkin_ticket_pdf.html:81
 #: templates/billing/invoice_pdf.html:37
 #: templates/prescriptions/prescription_pdf.html:33
 #: templates/prescriptions/prescription_pdf.html:82
@@ -260,7 +260,7 @@ msgstr "Dosage"
 msgid "Dr"
 msgstr "Dr."
 
-#: appointments/notifications.py:60
+#: appointments/notifications.py:61
 msgid "Dr %(name)s"
 msgstr "Dr. %(name)s"
 
@@ -268,7 +268,7 @@ msgstr "Dr. %(name)s"
 msgid "Durée"
 msgstr "Duration"
 
-#: templates/appointments/checkin_ticket_pdf.html:72
+#: templates/appointments/checkin_ticket_pdf.html:74
 msgid "Département"
 msgstr "Department"
 
@@ -282,7 +282,7 @@ msgstr "Invalid department."
 msgid "En attente"
 msgstr "Pending"
 
-#: appointments/notifications.py:155
+#: appointments/notifications.py:156
 msgid "En cas d'empêchement, nous vous remercions de bien vouloir %(contact)s le plus tôt possible."
 msgstr "If you are unable to attend, please %(contact)s as soon as possible."
 
@@ -370,11 +370,11 @@ msgstr "The patient has not been checked in for this appointment yet."
 msgid "L'arrivée ne peut être enregistrée que pour un rendez-vous prévu aujourd'hui."
 msgstr "Check-in is only possible for an appointment scheduled today."
 
-#: clinics/api/serializers.py:17
+#: clinics/api/serializers.py:19
 msgid "L'image ne doit pas dépasser 2 Mo."
 msgstr "The image must not exceed 2 MB."
 
-#: communication/services.py:35
+#: communication/services.py:56
 msgid "L'équipe proCli"
 msgstr "The proCli team"
 
@@ -406,7 +406,7 @@ msgstr "The adjustment quantity cannot be zero."
 msgid "Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
 msgstr "This doctor's department is not active and cannot accept new appointments."
 
-#: clinics/api/views.py:87
+#: clinics/api/views.py:106
 msgid "Le guide d'utilisation n'est pas disponible."
 msgstr "The user guide is not available."
 
@@ -435,11 +435,11 @@ msgstr "The payment of %(amount)s exceeds the balance due of %(balance)s on this
 msgid "Le paiement en ligne est momentanément indisponible. Réessayez plus tard."
 msgstr "Online payment is temporarily unavailable. Please try again later."
 
-#: appointments/notifications.py:201
+#: appointments/notifications.py:202
 msgid "Le rendez-vous de %(patient)s avec le %(doctor)s a été déplacé %(when)s."
 msgstr "The appointment of %(patient)s with %(doctor)s has been moved to %(when)s."
 
-#: appointments/notifications.py:235
+#: appointments/notifications.py:236
 msgid "Le rendez-vous de %(patient)s avec le %(doctor)s, prévu %(when)s, a été annulé."
 msgstr "The appointment of %(patient)s with %(doctor)s, scheduled %(when)s, has been cancelled."
 
@@ -459,7 +459,7 @@ msgstr "The stock of %(name)s is %(stock)s %(unit)s, above the maximum threshold
 msgid "Le stock de %(name)s est de %(stock)s %(unit)s, en dessous du seuil minimal fixé à %(threshold)s %(unit)s. Nous vous recommandons de prévoir un réapprovisionnement."
 msgstr "The stock of %(name)s is %(stock)s %(unit)s, below the minimum threshold of %(threshold)s %(unit)s. We recommend planning a restock."
 
-#: templates/pdf/base_document.html:225
+#: templates/pdf/base_document.html:227
 msgid "Merci pour votre confiance. Pour toute question, n'hésitez pas à nous contacter."
 msgstr "Thank you for your trust. If you have any questions, please do not hesitate to contact us."
 
@@ -475,7 +475,7 @@ msgstr "Method"
 msgid "Mode de paiement"
 msgstr "Payment method"
 
-#: appointments/notifications.py:185
+#: appointments/notifications.py:186
 msgid "Modification de votre rendez-vous"
 msgstr "Your appointment has been changed"
 
@@ -488,7 +488,7 @@ msgstr "Amount"
 msgid "Montant reçu"
 msgstr "Amount received"
 
-#: templates/appointments/checkin_ticket_pdf.html:78
+#: templates/appointments/checkin_ticket_pdf.html:80
 #: templates/billing/invoice_pdf.html:37
 #: templates/reports/activity_report_pdf.html:44
 #: templates/reports/activity_report_pdf.html:64
@@ -518,7 +518,7 @@ msgstr "Medication"
 msgid "Médicament invalide."
 msgstr "Invalid medication."
 
-#: templates/pdf/base_document.html:224
+#: templates/pdf/base_document.html:226
 #: templates/prescriptions/prescription_pdf.html:76
 msgid "Notes"
 msgstr "Notes"
@@ -527,7 +527,7 @@ msgstr "Notes"
 msgid "Notes du médecin"
 msgstr "Doctor's notes"
 
-#: appointments/notifications.py:153
+#: appointments/notifications.py:154
 msgid "Nous vous confirmons l'enregistrement de votre rendez-vous avec le %(doctor)s %(when)s."
 msgstr "We confirm your appointment with %(doctor)s %(when)s."
 
@@ -535,23 +535,23 @@ msgstr "We confirm your appointment with %(doctor)s %(when)s."
 msgid "Nous vous informons que l'abonnement de %(clinic)s est suspendu."
 msgstr "Please note that the %(clinic)s subscription is suspended."
 
-#: appointments/notifications.py:187
+#: appointments/notifications.py:188
 msgid "Nous vous informons que votre rendez-vous avec le %(doctor)s a été modifié. Il aura désormais lieu %(when)s."
 msgstr "Please note that your appointment with %(doctor)s has been changed. It will now take place %(when)s."
 
-#: appointments/notifications.py:221
+#: appointments/notifications.py:222
 msgid "Nous vous informons que votre rendez-vous avec le %(doctor)s, prévu %(when)s, a été annulé."
 msgstr "Please note that your appointment with %(doctor)s, scheduled %(when)s, has been cancelled."
 
-#: appointments/notifications.py:261
+#: appointments/notifications.py:262
 msgid "Nous vous rappelons votre rendez-vous de demain avec le %(doctor)s, %(when)s."
 msgstr "This is a reminder of your appointment tomorrow with %(doctor)s, %(when)s."
 
-#: appointments/notifications.py:263
+#: appointments/notifications.py:264
 msgid "Nous vous remercions de vous présenter quelques minutes en avance. En cas d'empêchement, merci de bien vouloir %(contact)s."
 msgstr "Please arrive a few minutes early. If you are unable to attend, please %(contact)s."
 
-#: appointments/notifications.py:165
+#: appointments/notifications.py:166
 msgid "Nouveau rendez-vous"
 msgstr "New appointment"
 
@@ -559,11 +559,11 @@ msgstr "New appointment"
 msgid "Numéro"
 msgstr "Number"
 
-#: templates/appointments/checkin_ticket_pdf.html:60
+#: templates/appointments/checkin_ticket_pdf.html:62
 msgid "N° de ticket"
 msgstr "Ticket no."
 
-#: templates/appointments/checkin_ticket_pdf.html:68
+#: templates/appointments/checkin_ticket_pdf.html:70
 msgid "N° patient"
 msgstr "Patient ID"
 
@@ -591,7 +591,7 @@ msgstr "Partially paid"
 msgid "Paiements"
 msgstr "Payments"
 
-#: templates/appointments/checkin_ticket_pdf.html:64
+#: templates/appointments/checkin_ticket_pdf.html:66
 #: templates/billing/invoice_pdf.html:31
 #: templates/patients/statement_pdf.html:17
 #: templates/payments/receipt_pdf.html:27
@@ -600,6 +600,10 @@ msgstr "Payments"
 #: templates/reports/activity_report_pdf.html:64
 msgid "Patient"
 msgstr "Patient"
+
+#: appointments/notifications.py:291
+msgid "Patient arrivé : %(patient)s"
+msgstr "Patient arrived: %(patient)s"
 
 #: appointments/services.py:53
 #: appointments/services.py:87
@@ -616,11 +620,11 @@ msgstr "Invalid patient."
 msgid "Payée"
 msgstr "Paid"
 
-#: appointments/notifications.py:223
+#: appointments/notifications.py:224
 msgid "Pour convenir d'un nouveau rendez-vous, nous vous invitons à %(contact)s."
 msgstr "To arrange a new appointment, please %(contact)s."
 
-#: appointments/notifications.py:275
+#: appointments/notifications.py:276
 msgid "Pour rappel, vous recevez %(patient)s demain, %(when)s."
 msgstr "Reminder: you are seeing %(patient)s tomorrow, %(when)s."
 
@@ -661,11 +665,11 @@ msgstr "STATEMENT"
 msgid "REÇU"
 msgstr "RECEIPT"
 
-#: appointments/notifications.py:273
+#: appointments/notifications.py:274
 msgid "Rappel : rendez-vous de demain"
 msgstr "Reminder: tomorrow's appointment"
 
-#: appointments/notifications.py:259
+#: appointments/notifications.py:260
 msgid "Rappel de votre rendez-vous de demain"
 msgstr "Reminder: your appointment tomorrow"
 
@@ -688,7 +692,7 @@ msgstr "Refunded"
 msgid "Rendez-vous"
 msgstr "Appointments"
 
-#: appointments/notifications.py:233
+#: appointments/notifications.py:234
 msgid "Rendez-vous annulé"
 msgstr "Appointment cancelled"
 
@@ -697,7 +701,7 @@ msgstr "Appointment cancelled"
 msgid "Rendez-vous invalide."
 msgstr "Invalid appointment."
 
-#: appointments/notifications.py:199
+#: appointments/notifications.py:200
 msgid "Rendez-vous modifié"
 msgstr "Appointment changed"
 
@@ -715,7 +719,7 @@ msgstr "Cashier's Office"
 msgid "Service Facturation"
 msgstr "Billing Department"
 
-#: templates/pdf/base_document.html:231
+#: templates/pdf/base_document.html:233
 msgid "Service administratif"
 msgstr "Administration"
 
@@ -735,11 +739,11 @@ msgstr "Only a completed payment can be refunded."
 msgid "Seule une facture en brouillon peut être émise."
 msgstr "Only a draft invoice can be issued."
 
-#: clinics/api/serializers.py:23
+#: clinics/api/serializers.py:25
 msgid "Seuls les formats PNG et JPEG sont acceptés."
 msgstr "Only PNG and JPEG formats are accepted."
 
-#: appointments/notifications.py:189
+#: appointments/notifications.py:190
 msgid "Si cette nouvelle date ne vous convient pas, nous vous invitons à %(contact)s."
 msgstr "If this new date does not suit you, please %(contact)s."
 
@@ -747,7 +751,7 @@ msgstr "If this new date does not suit you, please %(contact)s."
 msgid "Si les informations correspondent, un code de vérification vous a été envoyé."
 msgstr "If the details match, a verification code has been sent to you."
 
-#: communication/services.py:130
+#: communication/services.py:151
 msgid "Si vous n'êtes pas à l'origine de cette demande, vous pouvez ignorer ce message."
 msgstr "If you did not make this request, you can ignore this message."
 
@@ -795,8 +799,12 @@ msgstr "Completed"
 msgid "Terminée"
 msgstr "Completed"
 
+#: appointments/notifications.py:292
+msgid "Ticket %(ticket)s — rendez-vous %(when)s."
+msgstr "Ticket %(ticket)s — appointment %(when)s."
+
 #: templates/appointments/checkin_ticket_pdf.html:5
-#: templates/appointments/checkin_ticket_pdf.html:55
+#: templates/appointments/checkin_ticket_pdf.html:57
 msgid "Ticket de passage"
 msgstr "Check-in slip"
 
@@ -812,7 +820,7 @@ msgstr "Invoice total"
 msgid "Total à payer"
 msgstr "Total due"
 
-#: communication/services.py:101
+#: communication/services.py:122
 msgid "Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."
 msgstr "A code was sent recently. Please wait before requesting a new one."
 
@@ -842,7 +850,7 @@ msgstr "A subscription payment is outstanding: settle it from “Manage subscrip
 msgid "Un patient avec les mêmes nom, date de naissance et numéro de téléphone existe déjà dans cette clinique."
 msgstr "A patient with the same name, date of birth and phone number already exists in this clinic."
 
-#: appointments/notifications.py:167
+#: appointments/notifications.py:168
 msgid "Un rendez-vous a été enregistré pour %(patient)s avec le %(doctor)s %(when)s."
 msgstr "An appointment has been booked for %(patient)s with %(doctor)s %(when)s."
 
@@ -896,7 +904,7 @@ msgstr "Completed"
 msgid "Validée"
 msgstr "Finalized"
 
-#: communication/services.py:125
+#: communication/services.py:146
 msgid "Voici votre code de vérification : %(code)s"
 msgstr "Your verification code is: %(code)s"
 
@@ -904,11 +912,12 @@ msgstr "Your verification code is: %(code)s"
 msgid "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
 msgstr "Your clinic already has an active subscription: change plans instead of subscribing again."
 
-#: communication/services.py:122
+#: communication/services.py:143
 msgid "Votre code de vérification — %(sender)s"
 msgstr "Your verification code — %(sender)s"
 
-#: reports/api/views.py:23
+#: reports/api/views.py:24
+#: reports/api/views.py:52
 msgid "Votre compte n'est rattaché à aucune clinique."
 msgstr "Your account is not linked to any clinic."
 
@@ -920,7 +929,8 @@ msgstr "Your account is not linked to any clinic."
 msgid "Vous n'êtes pas autorisé(e) à accéder à ce document."
 msgstr "You are not allowed to access this document."
 
-#: reports/api/views.py:36
+#: reports/api/views.py:54
+#: reports/api/views.py:37
 msgid "Vous n'êtes pas autorisé(e) à accéder à ce rapport."
 msgstr "You are not allowed to access this report."
 
@@ -940,15 +950,15 @@ msgstr "cancelled"
 msgid "confirmé"
 msgstr "confirmed"
 
-#: appointments/notifications.py:72
+#: appointments/notifications.py:73
 msgid "contacter la clinique"
 msgstr "contact the clinic"
 
-#: appointments/notifications.py:71
+#: appointments/notifications.py:72
 msgid "contacter la clinique au %(phone)s"
 msgstr "contact the clinic on %(phone)s"
 
-#: templates/appointments/checkin_ticket_pdf.html:91
+#: templates/appointments/checkin_ticket_pdf.html:93
 msgid "document généré automatiquement"
 msgstr "automatically generated document"
 
@@ -960,7 +970,7 @@ msgstr "pending"
 msgid "historique complet"
 msgstr "full history"
 
-#: appointments/notifications.py:52
+#: appointments/notifications.py:53
 msgid "le %(date)s à %(time)s"
 msgstr "on %(date)s at %(time)s"
 
@@ -968,7 +978,7 @@ msgstr "on %(date)s at %(time)s"
 msgid "marqué absent"
 msgstr "marked as a no-show"
 
-#: appointments/notifications.py:266
+#: appointments/notifications.py:267
 msgid "rappel de votre rendez-vous demain avec le %(doctor)s, %(when)s. En cas d'empêchement, merci de nous prévenir."
 msgstr "reminder of your appointment tomorrow with %(doctor)s, %(when)s. If you cannot attend, please let us know."
 
@@ -976,15 +986,15 @@ msgstr "reminder of your appointment tomorrow with %(doctor)s, %(when)s. If you 
 msgid "terminé"
 msgstr "completed"
 
-#: appointments/notifications.py:192
+#: appointments/notifications.py:193
 msgid "votre rendez-vous avec le %(doctor)s a été déplacé %(when)s. Pour toute question, merci de nous contacter."
 msgstr "your appointment with %(doctor)s has been moved to %(when)s. For any questions, please contact us."
 
-#: appointments/notifications.py:158
+#: appointments/notifications.py:159
 msgid "votre rendez-vous avec le %(doctor)s est confirmé %(when)s. En cas d'empêchement, merci de nous prévenir."
 msgstr "your appointment with %(doctor)s is confirmed %(when)s. If you cannot attend, please let us know."
 
-#: appointments/notifications.py:226
+#: appointments/notifications.py:227
 msgid "votre rendez-vous avec le %(doctor)s prévu %(when)s est annulé. Contactez-nous pour en fixer un nouveau."
 msgstr "your appointment with %(doctor)s scheduled %(when)s is cancelled. Contact us to book a new one."
 

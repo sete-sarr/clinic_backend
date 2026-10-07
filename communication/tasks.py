@@ -1,7 +1,9 @@
+from datetime import timedelta
+
 from celery import shared_task
 from django.utils import timezone
 
-from .models import NotificationLog
+from .models import InAppNotification, NotificationLog
 from .providers.email_provider import get_email_provider
 from .providers.sms_provider import get_sms_provider
 
@@ -41,3 +43,16 @@ def deliver_notification(self, notification_log_id):
     log.save(update_fields=["status", "provider_name", "error_message", "retry_count"])
     # Backoff exponentiel (docs/communication-architecture.md : nouvelle tentative avec backoff exponentiel).
     raise self.retry(countdown=2**self.request.retries * 30)
+
+
+# Notifications archivées conservées 90 jours, puis supprimées (business/notification-rules.md
+# § CANAL IN-APP).
+ARCHIVED_IN_APP_RETENTION_DAYS = 90
+
+
+@shared_task
+def purge_archived_in_app_notifications():
+    limit = timezone.now() - timedelta(days=ARCHIVED_IN_APP_RETENTION_DAYS)
+    deleted, _ = InAppNotification.objects.filter(archived_at__lt=limit).delete()
+    return deleted
+
