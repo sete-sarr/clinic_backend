@@ -35,6 +35,7 @@ urlpatterns = [
     path("api/v1/reports/", include("reports.api.urls")),
     path("api/v1/subscriptions/", include("subscriptions.api.urls")),
     path("api/v1/notifications/", include("communication.api.urls")),
+    path("api/v1/laboratory/", include("laboratory.api.urls")),
 ]
 
 # Diffusion des médias réservée au dev. Les logos de clinique ne sont plus des fichiers mais des

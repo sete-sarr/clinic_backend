@@ -1,0 +1,93 @@
+{% extends "pdf/base_document.html" %}
+{% load i18n %}
+
+{% block doc_title %}{% translate "Résultats d'examens" %} {{ order.number }}{% endblock %}
+
+{% block doc_title_label %}{% translate "RÉSULTATS D'EXAMENS" %}{% endblock %}
+
+{% block doc_number %}<div class="doc-number">{{ order.number }}</div>{% endblock %}
+
+{% block doc_meta %}
+<div class="doc-meta-row"><strong>{% translate "Demande du :" %}</strong> {{ order.created_at|date }}</div>
+{% if order.collected_at %}<div class="doc-meta-row"><strong>{% translate "Prélèvement :" %}</strong> {{ order.collected_at|date }}</div>{% endif %}
+<div class="doc-meta-row"><strong>{% translate "Validation :" %}</strong> {{ order.validated_at|date }}</div>
+{% endblock %}
+
+{% block doc_status %}<span class="status-badge status-success">{{ order.get_status_display }}</span>{% endblock %}
+
+{% block extra_style %}
+<style>
+  .abnormal { color: var(--color-error); font-weight: 700; }
+  .flag { display: inline-block; margin-left: 6px; padding: 1px 6px; border-radius: 999px; font-size: 8.5px; background: #FEE2E2; color: #7F1D1D; }
+  .result-comment { display: block; font-size: 9px; color: var(--color-text-secondary); margin-top: 2px; }
+</style>
+{% endblock %}
+
+{% block info_cards %}
+<div class="info-cards">
+  <div class="info-card">
+    <div class="info-card-title">{% translate "Patient" %}</div>
+    <div class="primary-line">{{ order.patient.first_name }} {{ order.patient.last_name }}</div>
+    <div class="secondary-line">{{ order.patient.patient_number }}{% if order.patient.date_of_birth %} &middot; {{ order.patient.date_of_birth|date }}{% endif %}</div>
+  </div>
+  <div class="info-card">
+    <div class="info-card-title">{% translate "Médecin prescripteur" %}</div>
+    <div class="primary-line">{% translate "Dr" %} {{ order.doctor.user.get_full_name }}</div>
+    {% if order.doctor.department %}<div class="secondary-line">{{ order.doctor.department.name }}</div>{% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<table class="doc-table">
+  <thead>
+    <tr>
+      <th>{% translate "Examen" %}</th>
+      <th>{% translate "Résultat" %}</th>
+      <th>{% translate "Unité" %}</th>
+      <th>{% translate "Valeurs de référence" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item, result in items %}
+    <tr>
+      <td>{{ item.test_name }} <span class="muted">({{ item.test_code }})</span></td>
+      <td>
+        {% if result and result.value %}
+          <span class="{% if result.is_abnormal %}abnormal{% endif %}">{{ result.value }}</span>
+          {% if result.is_abnormal %}<span class="flag">{% translate "Hors norme" %}</span>{% endif %}
+        {% elif result and result.attachment %}
+          <span class="muted">{% translate "Voir le document joint" %}</span>
+        {% else %}&mdash;{% endif %}
+        {% if result.comment %}<span class="result-comment">{{ result.comment }}</span>{% endif %}
+        {% if result.correction_reason %}<span class="result-comment">{% translate "Résultat corrigé :" %} {{ result.correction_reason }}</span>{% endif %}
+      </td>
+      <td>{{ item.unit|default:"&mdash;" }}</td>
+      <td>
+        {% if item.reference_min is not None and item.reference_max is not None %}{{ item.reference_min|floatformat:"-3" }} – {{ item.reference_max|floatformat:"-3" }}
+        {% elif item.reference_min is not None %}&ge; {{ item.reference_min|floatformat:"-3" }}
+        {% elif item.reference_max is not None %}&le; {{ item.reference_max|floatformat:"-3" }}
+        {% else %}&mdash;{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block notes %}
+<div class="notes-card">
+  <div class="notes-title">{% translate "Validation médicale" %}</div>
+  {% blocktranslate with date=order.validated_at|date name=order.validated_by.get_full_name %}Résultats validés le {{ date }} par Dr {{ name }}.{% endblocktranslate %}
+</div>
+{% endblock %}
+
+{% block signature_role %}{% translate "Dr" %} {{ order.doctor.user.get_full_name }}{% endblock %}
+
+{% block confidentiality %}
+<div class="confidential-banner">
+  {% blocktranslate with clinic=clinic.name %}Document médical confidentiel — généré pour {{ clinic }}. Toute diffusion non autorisée est interdite.{% endblocktranslate %}
+</div>
+{% endblock %}
+
+{% block footer_confidentiality %}{% translate "Résultats d'examens confidentiels" %} — {{ clinic.name }}{% endblock %}

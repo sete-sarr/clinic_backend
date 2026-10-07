@@ -26,7 +26,11 @@ def deliver_notification(self, notification_log_id):
         return
 
     provider = _resolve_provider(log.channel)
-    result = provider.send(recipient=log.recipient_address, subject=log.subject, body=log.body)
+    # Un SMS n'a pas d'objet (SmsProvider.send, providers/base.py) : ne le transmettre qu'à l'e-mail.
+    if log.channel == NotificationLog.Channel.EMAIL:
+        result = provider.send(recipient=log.recipient_address, subject=log.subject, body=log.body)
+    else:
+        result = provider.send(recipient=log.recipient_address, body=log.body)
 
     if result.success:
         log.status = NotificationLog.Status.SENT

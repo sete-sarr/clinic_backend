@@ -142,3 +142,21 @@ class CheckInNotifiesDoctorTests(APITestCase):
         self.assertIn("Grace Hopper", notification.title)
         self.assertIn(response.data["ticket_number"], notification.body)
         self.assertEqual(notification.link, "/appointments?checkedIn=true")
+
+
+class SmsDeliveryTests(APITestCase):
+    """Régression : deliver_notification passait `subject` au fournisseur SMS, qui ne l'accepte pas
+    (SmsProvider.send) — chaque SMS échouait."""
+
+    def test_sms_is_delivered_without_subject(self):
+        from communication.models import NotificationLog
+        from communication.tasks import deliver_notification
+
+        log = NotificationLog.objects.create(
+            clinic=create_clinic("Clinic A"), channel=NotificationLog.Channel.SMS,
+            notification_type=NotificationLog.NotificationType.LAB_RESULT_AVAILABLE,
+            recipient_address="770000000", subject="Objet", body="Message",
+        )
+        deliver_notification(log.id)
+        log.refresh_from_db()
+        self.assertEqual(log.status, NotificationLog.Status.SENT)

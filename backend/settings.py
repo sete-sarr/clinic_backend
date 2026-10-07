@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "communication",
     "reports",
     "subscriptions",
+    "laboratory",
 ]
 
 AUTH_USER_MODEL = "accounts.User"

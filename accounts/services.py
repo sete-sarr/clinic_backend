@@ -117,7 +117,7 @@ def register_clinic(
 # volontairement exclu — il possède son propre modèle de profil (doctors.models.Doctor) et reste
 # géré par le endpoint/create_doctor propre à l'app doctors. "patient" est exclu — créé via le
 # flux séparé patients + activation OTP, pas en tant que membre du personnel.
-STAFF_ROLES_ASSIGNABLE = ["secretary", "accountant", "clinic_admin", "pharmacist"]
+STAFF_ROLES_ASSIGNABLE = ["secretary", "accountant", "clinic_admin", "pharmacist", "lab_technician"]
 
 
 @transaction.atomic

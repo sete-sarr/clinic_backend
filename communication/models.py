@@ -29,6 +29,7 @@ class NotificationLog(TimeStampedModel):
         LICENSE_EXPIRED = "license_expired", "License expired"
         STOCK_LOW = "stock_low", "Low stock"
         STOCK_OVERSTOCK = "stock_overstock", "Overstock"
+        LAB_RESULT_AVAILABLE = "lab_result_available", "Lab result available"
 
     class Status(models.TextChoices):
         PENDING = "pending", "Pending"

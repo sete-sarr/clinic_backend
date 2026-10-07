@@ -9,6 +9,22 @@ msgstr ""
 msgid "%(clinic)s : %(message)s"
 msgstr "%(clinic)s: %(message)s"
 
+#: laboratory/notifications.py:92
+msgid "%(clinic)s : vos résultats d'examens sont disponibles dans votre espace patient."
+msgstr "%(clinic)s: your lab results are available in your patient portal."
+
+#: laboratory/notifications.py:35
+msgid "%(number)s — %(count)s examen(s) à prélever."
+msgstr "%(number)s — %(count)s test(s) to collect."
+
+#: laboratory/notifications.py:50
+msgid "%(number)s — %(tests)s."
+msgstr "%(number)s — %(tests)s."
+
+#: laboratory/notifications.py:63
+msgid "%(number)s — tous les résultats ont été saisis."
+msgstr "%(number)s — all results have been entered."
+
 #: communication/services.py:155
 msgid "%(sender)s : votre code de vérification est %(code)s (valable %(minutes)s min). Ne le communiquez à personne."
 msgstr "%(sender)s: your verification code is %(code)s (valid for %(minutes)s min). Do not share it with anyone."
@@ -38,6 +54,7 @@ msgid "Annulation de votre rendez-vous"
 msgstr "Your appointment has been cancelled"
 
 #: appointments/models.py:12
+#: laboratory/models.py:56
 msgid "Annulé"
 msgstr "Cancelled"
 
@@ -126,6 +143,7 @@ msgid "Ce code est valable %(minutes)s minutes. Ne le communiquez à personne : 
 msgstr "This code is valid for %(minutes)s minutes. Do not share it with anyone: our staff will never ask you for it."
 
 #: consultations/api/views.py:41
+#: laboratory/api/views.py:120
 #: prescriptions/api/views.py:45
 msgid "Ce compte n'a pas de profil médecin dans cette clinique."
 msgstr "This account has no doctor profile in this clinic."
@@ -169,6 +187,10 @@ msgstr "This plan is not available for subscription."
 msgid "Changement de rôle non pris en charge."
 msgstr "Unsupported role change."
 
+#: laboratory/services.py:229
+msgid "Chaque examen demandé doit avoir un résultat (valeur ou PDF) avant de terminer."
+msgstr "Every requested test must have a result (value or PDF) before completing."
+
 #: billing/services/__init__.py:28
 msgid "Chaque ligne de facture doit avoir une quantité et un prix unitaire."
 msgstr "Every invoice line needs a quantity and a unit price."
@@ -189,6 +211,7 @@ msgstr "Appointment confirmation"
 msgid "Confirmé"
 msgstr "Confirmed"
 
+#: laboratory/services.py:102
 #: prescriptions/services/__init__.py:21
 msgid "Consultation invalide."
 msgstr "Invalid consultation."
@@ -227,6 +250,14 @@ msgstr "Issue date:"
 msgid "Date du rendez-vous"
 msgstr "Appointment date"
 
+#: templates/laboratory/lab_results_pdf.html:11
+msgid "Demande du :"
+msgstr "Requested on:"
+
+#: laboratory/models.py:51
+msgid "Demandé"
+msgstr "Requested"
+
 #: templates/billing/invoice_pdf.html:46
 msgid "Description"
 msgstr "Description"
@@ -243,6 +274,7 @@ msgstr "Document"
 msgid "Document confidentiel"
 msgstr "Confidential document"
 
+#: templates/laboratory/lab_results_pdf.html:89
 #: templates/prescriptions/prescription_pdf.html:86
 msgid "Document médical confidentiel — généré pour %(clinic)s. Toute diffusion non autorisée est interdite."
 msgstr "Confidential medical document — generated for %(clinic)s. Any unauthorized distribution is prohibited."
@@ -253,6 +285,8 @@ msgstr "Dosage"
 
 #: templates/appointments/checkin_ticket_pdf.html:81
 #: templates/billing/invoice_pdf.html:37
+#: templates/laboratory/lab_results_pdf.html:35
+#: templates/laboratory/lab_results_pdf.html:85
 #: templates/prescriptions/prescription_pdf.html:33
 #: templates/prescriptions/prescription_pdf.html:82
 #: templates/reports/activity_report_pdf.html:51
@@ -286,9 +320,26 @@ msgstr "Pending"
 msgid "En cas d'empêchement, nous vous remercions de bien vouloir %(contact)s le plus tôt possible."
 msgstr "If you are unable to attend, please %(contact)s as soon as possible."
 
+#: laboratory/models.py:53
+msgid "En traitement"
+msgstr "In progress"
+
 #: payments/models.py:10
 msgid "Espèces"
 msgstr "Cash"
+
+#: templates/laboratory/lab_results_pdf.html:45
+msgid "Examen"
+msgstr "Test"
+
+#: laboratory/services.py:257
+msgid "Examen de laboratoire : %(name)s (%(code)s)"
+msgstr "Lab test: %(name)s (%(code)s)"
+
+#: laboratory/services.py:108
+#: laboratory/services.py:163
+msgid "Examen invalide."
+msgstr "Invalid lab test."
 
 #: templates/billing/invoice_pdf.html:6
 msgid "FACTURE"
@@ -320,6 +371,10 @@ msgstr "Frequency"
 #: templates/reports/activity_report_pdf.html:44
 msgid "Heure"
 msgstr "Time"
+
+#: templates/laboratory/lab_results_pdf.html:58
+msgid "Hors norme"
+msgstr "Out of range"
 
 #: appointments/services.py:122
 msgid "Impossible d'annuler ce rendez-vous : il est déjà %(status)s."
@@ -402,9 +457,29 @@ msgstr "The adjustment quantity must be a whole number."
 msgid "La quantité d'ajustement ne peut pas être nulle."
 msgstr "The adjustment quantity cannot be zero."
 
+#: laboratory/services.py:297
+msgid "La valeur corrigée est obligatoire."
+msgstr "The corrected value is required."
+
+#: laboratory/api/serializers.py:30
+msgid "La valeur maximale doit être supérieure ou égale à la valeur minimale."
+msgstr "The upper limit must be greater than or equal to the lower limit."
+
+#: laboratory/api/serializers.py:22
+msgid "Le code est obligatoire."
+msgstr "The code is required."
+
+#: laboratory/api/views.py:196
+msgid "Le compte rendu n'est disponible qu'après validation des résultats."
+msgstr "The report is only available once the results have been validated."
+
 #: appointments/services.py:62
 msgid "Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
 msgstr "This doctor's department is not active and cannot accept new appointments."
+
+#: laboratory/services.py:208
+msgid "Le fichier ne doit pas dépasser 5 Mo."
+msgstr "The file must not exceed 5 MB."
 
 #: clinics/api/views.py:106
 msgid "Le guide d'utilisation n'est pas disponible."
@@ -421,6 +496,10 @@ msgstr "The payment amount must be positive."
 #: consultations/services.py:60
 msgid "Le motif de consultation, le diagnostic et le plan de traitement sont obligatoires pour terminer une consultation."
 msgstr "The chief complaint, diagnosis and treatment plan are required to complete a consultation."
+
+#: laboratory/services.py:294
+msgid "Le motif de la correction est obligatoire."
+msgstr "A reason for the correction is required."
 
 #: consultations/services.py:23
 #: prescriptions/services/__init__.py:13
@@ -458,6 +537,15 @@ msgstr "The stock of %(name)s is %(stock)s %(unit)s, above the maximum threshold
 #: pharmacy/notifications.py:56
 msgid "Le stock de %(name)s est de %(stock)s %(unit)s, en dessous du seuil minimal fixé à %(threshold)s %(unit)s. Nous vous recommandons de prévoir un réapprovisionnement."
 msgstr "The stock of %(name)s is %(stock)s %(unit)s, below the minimum threshold of %(threshold)s %(unit)s. We recommend planning a restock."
+
+#: laboratory/notifications.py:86
+msgid "Les résultats de vos examens de laboratoire (%(number)s) ont été validés par votre médecin."
+msgstr "The results of your lab tests (%(number)s) have been validated by your doctor."
+
+#: laboratory/services.py:173
+#: laboratory/services.py:203
+msgid "Les résultats ne peuvent être saisis que pendant le traitement."
+msgstr "Results can only be entered while the order is in progress."
 
 #: templates/pdf/base_document.html:227
 msgid "Merci pour votre confiance. Pour toute question, n'hésitez pas à nous contacter."
@@ -501,11 +589,13 @@ msgstr "Doctor"
 #: billing/services/__init__.py:83
 #: consultations/services.py:29
 #: consultations/services.py:48
+#: laboratory/services.py:100
 #: prescriptions/services/__init__.py:19
 #: prescriptions/services/__init__.py:46
 msgid "Médecin invalide."
 msgstr "Invalid doctor."
 
+#: templates/laboratory/lab_results_pdf.html:34
 #: templates/prescriptions/prescription_pdf.html:32
 msgid "Médecin prescripteur"
 msgstr "Prescribing doctor"
@@ -555,6 +645,10 @@ msgstr "Please arrive a few minutes early. If you are unable to attend, please %
 msgid "Nouveau rendez-vous"
 msgstr "New appointment"
 
+#: laboratory/notifications.py:34
+msgid "Nouvelle demande d'examens : %(patient)s"
+msgstr "New lab order: %(patient)s"
+
 #: templates/patients/statement_pdf.html:28
 msgid "Numéro"
 msgstr "Number"
@@ -593,6 +687,7 @@ msgstr "Payments"
 
 #: templates/appointments/checkin_ticket_pdf.html:66
 #: templates/billing/invoice_pdf.html:31
+#: templates/laboratory/lab_results_pdf.html:29
 #: templates/patients/statement_pdf.html:17
 #: templates/payments/receipt_pdf.html:27
 #: templates/prescriptions/prescription_pdf.html:27
@@ -611,6 +706,7 @@ msgstr "Patient arrived: %(patient)s"
 #: billing/services/__init__.py:81
 #: consultations/services.py:27
 #: consultations/services.py:46
+#: laboratory/services.py:98
 #: prescriptions/services/__init__.py:17
 #: prescriptions/services/__init__.py:44
 msgid "Patient invalide."
@@ -639,6 +735,14 @@ msgstr "To resolve this, go to the “Subscription” screen."
 #: templates/billing/invoice_pdf.html:46
 msgid "Prix unitaire"
 msgstr "Unit price"
+
+#: laboratory/models.py:52
+msgid "Prélevé"
+msgstr "Sample collected"
+
+#: templates/laboratory/lab_results_pdf.html:12
+msgid "Prélèvement :"
+msgstr "Collected:"
 
 #: templates/patients/statement_pdf.html:10
 #: templates/reports/activity_report_pdf.html:9
@@ -710,6 +814,38 @@ msgstr "Appointment changed"
 msgid "Reçu de paiement"
 msgstr "Payment receipt"
 
+#: templates/laboratory/lab_results_pdf.html:6
+msgid "RÉSULTATS D'EXAMENS"
+msgstr "LAB RESULTS"
+
+#: templates/laboratory/lab_results_pdf.html:46
+msgid "Résultat"
+msgstr "Result"
+
+#: templates/laboratory/lab_results_pdf.html:63
+msgid "Résultat corrigé :"
+msgstr "Corrected result:"
+
+#: laboratory/notifications.py:49
+msgid "Résultat hors norme : %(patient)s"
+msgstr "Out-of-range result: %(patient)s"
+
+#: templates/laboratory/lab_results_pdf.html:4
+msgid "Résultats d'examens"
+msgstr "Lab results"
+
+#: templates/laboratory/lab_results_pdf.html:93
+msgid "Résultats d'examens confidentiels"
+msgstr "Confidential lab results"
+
+#: templates/laboratory/lab_results_pdf.html:81
+msgid "Résultats validés le %(date)s par Dr %(name)s."
+msgstr "Results validated on %(date)s by Dr %(name)s."
+
+#: laboratory/notifications.py:62
+msgid "Résultats à valider : %(patient)s"
+msgstr "Results to validate: %(patient)s"
+
 #: templates/payments/receipt_pdf.html:49
 msgid "Service Caisse"
 msgstr "Cashier's Office"
@@ -731,13 +867,45 @@ msgstr "Only the clinic administrator can cancel an invoice."
 msgid "Seul l'administrateur de la clinique peut approuver un remboursement."
 msgstr "Only the clinic administrator can approve a refund."
 
+#: laboratory/services.py:248
+msgid "Seul le médecin prescripteur peut valider ces résultats."
+msgstr "Only the ordering doctor can validate these results."
+
 #: payments/services/__init__.py:49
 msgid "Seul un paiement validé peut être remboursé."
 msgstr "Only a completed payment can be refunded."
 
+#: laboratory/services.py:291
+msgid "Seul un résultat validé se corrige par ce moyen."
+msgstr "Only a validated result can be corrected this way."
+
+#: laboratory/services.py:142
+msgid "Seule une demande au statut « Demandé » peut être prélevée."
+msgstr "Only a “Requested” order can be collected."
+
+#: laboratory/services.py:227
+msgid "Seule une demande en traitement peut être terminée."
+msgstr "Only an order in progress can be completed."
+
+#: laboratory/services.py:279
+msgid "Seule une demande non encore prélevée peut être annulée."
+msgstr "Only an order whose sample has not been collected can be cancelled."
+
+#: laboratory/services.py:153
+msgid "Seule une demande prélevée peut passer en traitement."
+msgstr "Only a collected order can be started."
+
+#: laboratory/services.py:246
+msgid "Seule une demande terminée peut être validée."
+msgstr "Only a completed order can be validated."
+
 #: billing/services/__init__.py:119
 msgid "Seule une facture en brouillon peut être émise."
 msgstr "Only a draft invoice can be issued."
+
+#: laboratory/services.py:210
+msgid "Seuls les fichiers PDF sont acceptés."
+msgstr "Only PDF files are accepted."
 
 #: clinics/api/serializers.py:25
 msgid "Seuls les formats PNG et JPEG sont acceptés."
@@ -792,6 +960,7 @@ msgid "TVA"
 msgstr "VAT"
 
 #: appointments/models.py:11
+#: laboratory/models.py:54
 msgid "Terminé"
 msgstr "Completed"
 
@@ -833,6 +1002,10 @@ msgstr "An archived department is read-only. Restore it before editing."
 msgid "Un département archivé est en lecture seule. Restaurez-le d'abord."
 msgstr "An archived department is read-only. Restore it first."
 
+#: laboratory/services.py:61
+msgid "Un examen avec ce code existe déjà dans la clinique."
+msgstr "A lab test with this code already exists in the clinic."
+
 #: appointments/api/views.py:65
 msgid "Un médecin ne peut créer des rendez-vous qu'à son propre nom."
 msgstr "A doctor can only create appointments under their own name."
@@ -840,6 +1013,10 @@ msgstr "A doctor can only create appointments under their own name."
 #: pharmacy/api/serializers.py:51
 msgid "Un médicament portant ce nom existe déjà dans cette clinique."
 msgstr "A medication with this name already exists in this clinic."
+
+#: laboratory/services.py:106
+msgid "Un même examen ne peut pas être demandé deux fois."
+msgstr "The same lab test cannot be ordered twice."
 
 #: subscriptions/services.py:130
 #: subscriptions/services.py:150
@@ -873,6 +1050,10 @@ msgstr "A clinic with this name already exists."
 msgid "Une consultation validée est en lecture seule et ne peut plus être modifiée."
 msgstr "A finalized consultation is read-only and can no longer be edited."
 
+#: laboratory/services.py:104
+msgid "Une demande doit contenir au moins un examen."
+msgstr "An order must contain at least one lab test."
+
 #: billing/services/__init__.py:52
 #: billing/services/__init__.py:92
 msgid "Une facture doit contenir au moins une ligne."
@@ -895,6 +1076,23 @@ msgstr "A prescription must contain at least one medication line."
 msgid "Une ordonnance validée ou annulée ne peut plus être modifiée."
 msgstr "A finalized or cancelled prescription can no longer be edited."
 
+#: templates/laboratory/lab_results_pdf.html:47
+msgid "Unité"
+msgstr "Unit"
+
+#: templates/laboratory/lab_results_pdf.html:48
+msgid "Valeurs de référence"
+msgstr "Reference range"
+
+#: templates/laboratory/lab_results_pdf.html:13
+msgid "Validation :"
+msgstr "Validated:"
+
+#: templates/laboratory/lab_results_pdf.html:80
+msgid "Validation médicale"
+msgstr "Medical validation"
+
+#: laboratory/models.py:55
 #: payments/models.py:16
 msgid "Validé"
 msgstr "Completed"
@@ -907,6 +1105,14 @@ msgstr "Finalized"
 #: communication/services.py:146
 msgid "Voici votre code de vérification : %(code)s"
 msgstr "Your verification code is: %(code)s"
+
+#: templates/laboratory/lab_results_pdf.html:60
+msgid "Voir le document joint"
+msgstr "See attached document"
+
+#: laboratory/notifications.py:83
+msgid "Vos résultats d'examens sont disponibles — %(clinic)s"
+msgstr "Your lab results are available — %(clinic)s"
 
 #: subscriptions/services.py:129
 msgid "Votre clinique a déjà un abonnement en cours : changez de formule au lieu d'en souscrire une nouvelle."
@@ -941,6 +1147,10 @@ msgstr "You cannot deactivate your own account."
 #: pharmacy/notifications.py:27
 msgid "Vous pouvez consulter le stock depuis l'écran « Pharmacie »."
 msgstr "You can check the stock from the “Pharmacy” screen."
+
+#: laboratory/notifications.py:88
+msgid "Vous pouvez les consulter depuis votre espace patient, rubrique « Mes résultats »."
+msgstr "You can view them in your patient portal, under “My results”."
 
 #: appointments/services.py:23
 msgid "annulé"
