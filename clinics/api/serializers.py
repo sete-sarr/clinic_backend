@@ -4,6 +4,7 @@ from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from clinics.models import Clinic
+from common.permissions import in_role
 from clinics.services import LOGO_FIELDS, logo_url, logos_without_content, update_clinic_logos
 
 MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
@@ -45,6 +46,7 @@ class ClinicSerializer(serializers.ModelSerializer):
             "id", "name", "address", "phone", "email", "is_active", "created_at", "updated_at",
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
             "locale", "currency", "logo_light", "logo_dark", "logo_print", "favicon",
+            "inpatient_billing_mode", "inpatient_nightly_rate",
         ]
         # Les champs d'abonnement sont en lecture seule ici : leur mutation ne se fait que via le
         # webhook Stripe ou les appels subscriptions.services.change_subscription_status/change_plan
@@ -59,6 +61,21 @@ class ClinicSerializer(serializers.ModelSerializer):
             "id", "created_at", "updated_at",
             "subscription_status", "plan_tier", "billing_cycle", "trial_ends_at", "current_period_end",
         ]
+
+    def validate_inpatient_nightly_rate(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError(_("Le forfait de nuitée doit être strictement positif."))
+        return value
+
+    def validate(self, attrs):
+        # business/validation-rules.md § VALIDATION HOSPITALISATION : en mode forfait, le forfait est requis.
+        mode = attrs.get("inpatient_billing_mode", getattr(self.instance, "inpatient_billing_mode", None))
+        rate = attrs.get("inpatient_nightly_rate", getattr(self.instance, "inpatient_nightly_rate", None))
+        if mode == Clinic.InpatientBillingMode.FLAT and "inpatient_billing_mode" in attrs and rate is None:
+            raise serializers.ValidationError(
+                {"inpatient_nightly_rate": _("Indiquez le forfait de nuitée pour le mode « forfait unique ».")}
+            )
+        return attrs
 
     def update(self, instance, validated_data):
         # Logos stockés en base (clinics/services.py) : retirés des données du modèle Clinic.
@@ -76,6 +93,11 @@ class ClinicSerializer(serializers.ModelSerializer):
         for field, kind in LOGO_FIELDS.items():
             logo = logos.get(kind)
             data[field] = logo_url(logo=logo, request=request) if logo else None
+        # Tarifs de nuitée : donnée financière, jamais montrée à l'infirmier ni au reste du personnel
+        # clinique (business/access-policy.md) — seulement à l'administrateur et à la comptabilité.
+        user = getattr(request, "user", None)
+        if not (user and (user.is_superuser or in_role(user, "clinic_admin", "accountant"))):
+            data.pop("inpatient_nightly_rate", None)
         return data
 
 

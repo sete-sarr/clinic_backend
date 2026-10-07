@@ -1,0 +1,73 @@
+{% extends "pdf/base_document.html" %}
+{% load i18n %}
+
+{% block doc_title %}{% translate "Résumé de séjour" %} {{ admission.number }}{% endblock %}
+
+{% block doc_title_label %}{% translate "RÉSUMÉ DE SÉJOUR" %}{% endblock %}
+
+{% block doc_number %}<div class="doc-number">{{ admission.number }}</div>{% endblock %}
+
+{% block doc_meta %}
+<div class="doc-meta-row"><strong>{% translate "Admission :" %}</strong> {{ admission.admitted_at|date:"SHORT_DATETIME_FORMAT" }}</div>
+<div class="doc-meta-row"><strong>{% translate "Sortie :" %}</strong> {{ admission.discharged_at|date:"SHORT_DATETIME_FORMAT" }}</div>
+<div class="doc-meta-row"><strong>{% translate "Nuitées :" %}</strong> {{ admission.nights }}</div>
+{% endblock %}
+
+{% block doc_status %}<span class="status-badge status-neutral">{{ admission.get_status_display }}</span>{% endblock %}
+
+{% block info_cards %}
+<div class="info-cards">
+  <div class="info-card">
+    <div class="info-card-title">{% translate "Patient" %}</div>
+    <div class="primary-line">{{ admission.patient.first_name }} {{ admission.patient.last_name }}</div>
+    <div class="secondary-line">{{ admission.patient.patient_number }}{% if admission.patient.date_of_birth %} &middot; {{ admission.patient.date_of_birth|date }}{% endif %}</div>
+  </div>
+  <div class="info-card">
+    <div class="info-card-title">{% translate "Médecin référent" %}</div>
+    <div class="primary-line">{% translate "Dr" %} {{ admission.doctor.user.get_full_name }}</div>
+    <div class="secondary-line">{{ admission.department.name }}</div>
+  </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h2 class="section-title">{% translate "Motif d'hospitalisation" %}</h2>
+<p>{{ admission.reason|linebreaksbr }}</p>
+
+<h2 class="section-title">{% translate "Lits occupés" %}</h2>
+<table class="doc-table">
+  <thead>
+    <tr>
+      <th>{% translate "Date" %}</th>
+      <th>{% translate "Chambre / lit" %}</th>
+      <th>{% translate "Motif du transfert" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for transfer in transfers %}
+    <tr>
+      <td>{{ transfer.transferred_at|date:"SHORT_DATETIME_FORMAT" }}</td>
+      <td>{{ transfer.to_bed.room.number }} — {{ transfer.to_bed.label }}</td>
+      <td>{{ transfer.reason|default:"&mdash;" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
+
+{% block notes %}
+<div class="notes-card">
+  <div class="notes-title">{% translate "Synthèse de sortie" %}</div>
+  {{ admission.discharge_summary|default:"—"|linebreaksbr }}
+</div>
+{% endblock %}
+
+{% block signature_role %}{% translate "Dr" %} {{ admission.doctor.user.get_full_name }}{% endblock %}
+
+{% block confidentiality %}
+<div class="confidential-banner">
+  {% blocktranslate with clinic=clinic.name %}Document médical confidentiel — généré pour {{ clinic }}. Toute diffusion non autorisée est interdite.{% endblocktranslate %}
+</div>
+{% endblock %}
+
+{% block footer_confidentiality %}{% translate "Résumé de séjour confidentiel" %} — {{ clinic.name }}{% endblock %}

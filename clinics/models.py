@@ -45,6 +45,19 @@ class Clinic(TimeStampedModel):
     # chaque facture à sa création : la changer n'affecte que les factures suivantes.
     currency = models.CharField(max_length=3, choices=CURRENCY_CHOICES, default=DEFAULT_CURRENCY)
 
+    # Tarification des nuitées d'hospitalisation (docs/hospitalization.md §3), choisie par le
+    # clinic_admin dans Paramètres : forfait unique (inpatient_nightly_rate) ou tarif du type de la
+    # chambre occupée (hospitalization.RoomType.nightly_rate). Appliquée aux sorties suivantes
+    # uniquement : le tarif est figé sur la ligne de facture à la sortie.
+    class InpatientBillingMode(models.TextChoices):
+        FLAT = "flat", "Flat rate"
+        PER_ROOM_TYPE = "per_room_type", "Per room type"
+
+    inpatient_billing_mode = models.CharField(
+        max_length=16, choices=InpatientBillingMode.choices, default=InpatientBillingMode.FLAT
+    )
+    inpatient_nightly_rate = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
     # Facturation de l'abonnement à la plateforme (business/subscription-billing-policy.md) — la
     # clinique payant pour son propre usage de la plateforme, entièrement distinct de
     # backend/billing/ (la clinique facturant ses patients). Aucun montant en dollars n'est stocké

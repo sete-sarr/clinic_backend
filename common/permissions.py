@@ -1,7 +1,7 @@
 from django.utils.translation import gettext_lazy
 from rest_framework.permissions import SAFE_METHODS, BasePermission
 
-STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin", "pharmacist", "lab_technician"]
+STAFF_ROLES = ["doctor", "secretary", "accountant", "clinic_admin", "pharmacist", "lab_technician", "nurse"]
 
 
 def in_role(user, *role_names):
