@@ -49,6 +49,10 @@ msgstr "%(sender)s: your verification code is %(code)s (valid for %(minutes)s mi
 msgid "Absence"
 msgstr "No-show"
 
+#: visitors/models.py:15
+msgid "Accompagnant"
+msgstr "Companion"
+
 #: hospitalization/models.py:71
 msgid "Admis"
 msgstr "Admitted"
@@ -140,6 +144,10 @@ msgstr "No invoices for this period."
 msgid "Aucune ligne sur cette facture."
 msgstr "No items on this invoice."
 
+#: visitors/models.py:18
+msgid "Autre"
+msgstr "Other"
+
 #: communication/services.py:93
 msgid "Bonjour,"
 msgstr "Hello,"
@@ -212,6 +220,10 @@ msgstr "This username is already taken."
 msgid "Ce patient est déjà hospitalisé."
 msgstr "This patient is already admitted."
 
+#: visitors/services.py:31
+msgid "Ce patient n'est pas hospitalisé dans la clinique."
+msgstr "This patient is not admitted in the clinic."
+
 #: consultations/services.py:17
 msgid "Ce rendez-vous a déjà une consultation. Enregistrez la nouvelle comme consultation de suivi."
 msgstr "This appointment already has a consultation. Record the new one as a follow-up visit."
@@ -236,6 +248,10 @@ msgstr "This consultation already has a prescription."
 #: subscriptions/services.py:103
 msgid "Cette formule n'est pas disponible à la souscription."
 msgstr "This plan is not available for subscription."
+
+#: visitors/services.py:47
+msgid "Cette personne est déjà enregistrée comme présente."
+msgstr "This person is already checked in."
 
 #: templates/hospitalization/stay_summary_pdf.html:42
 msgid "Chambre / lit"
@@ -430,6 +446,10 @@ msgstr "Invoices"
 msgid "Fin de votre mois d'essai gratuit — %(clinic)s"
 msgstr "Your free trial month has ended — %(clinic)s"
 
+#: visitors/models.py:16
+msgid "Fournisseur"
+msgstr "Supplier"
+
 #: templates/prescriptions/prescription_pdf.html:45
 msgid "Fréquence"
 msgstr "Frequency"
@@ -469,6 +489,10 @@ msgstr "An appointment cannot be scheduled in the past."
 #: clinics/api/serializers.py:76
 msgid "Indiquez le forfait de nuitée pour le mode « forfait unique »."
 msgstr "Enter the nightly rate for the “flat rate” mode."
+
+#: visitors/services.py:27
+msgid "Indiquez une seule personne visitée."
+msgstr "Enter only one person being visited."
 
 #: templates/billing/invoice_pdf.html:36
 #: templates/payments/receipt_pdf.html:32
@@ -539,6 +563,10 @@ msgstr "The adjustment quantity must be a whole number."
 msgid "La quantité d'ajustement ne peut pas être nulle."
 msgstr "The adjustment quantity cannot be zero."
 
+#: visitors/services.py:73
+msgid "La sortie de ce visiteur est déjà enregistrée."
+msgstr "This visitor has already been checked out."
+
 #: laboratory/services.py:297
 msgid "La valeur corrigée est obligatoire."
 msgstr "The corrected value is required."
@@ -595,10 +623,22 @@ msgstr "The chief complaint, diagnosis and treatment plan are required to comple
 msgid "Le motif de la correction est obligatoire."
 msgstr "A reason for the correction is required."
 
+#: visitors/services.py:58
+msgid "Le motif de la visite est obligatoire."
+msgstr "The purpose of the visit is required."
+
 #: consultations/services.py:23
 #: prescriptions/services/__init__.py:13
 msgid "Le médecin est obligatoire."
 msgstr "A doctor is required."
+
+#: visitors/services.py:56
+msgid "Le nom du visiteur est obligatoire."
+msgstr "The visitor's name is required."
+
+#: visitors/services.py:90
+msgid "Le nom du visiteur et le motif sont obligatoires."
+msgstr "The visitor's name and purpose are required."
 
 #: payments/services/__init__.py:25
 msgid "Le paiement de %(amount)s dépasse le solde restant dû de %(balance)s sur cette facture."
@@ -668,6 +708,10 @@ msgstr "Invalid bed."
 #: templates/hospitalization/stay_summary_pdf.html:37
 msgid "Lits occupés"
 msgstr "Beds occupied"
+
+#: visitors/services.py:35
+msgid "Membre du personnel invalide."
+msgstr "Invalid staff member."
 
 #: templates/pdf/base_document.html:227
 msgid "Merci pour votre confiance. Pour toute question, n'hésitez pas à nous contacter."
@@ -888,6 +932,10 @@ msgstr "To reactivate your account, choose a plan from the “Subscription” sc
 #: subscriptions/services.py:327
 msgid "Pour régulariser votre situation, rendez-vous sur l'écran « Abonnement »."
 msgstr "To resolve this, go to the “Subscription” screen."
+
+#: visitors/models.py:17
+msgid "Prestataire"
+msgstr "Contractor"
 
 #: templates/billing/invoice_pdf.html:46
 msgid "Prix unitaire"
@@ -1305,6 +1353,10 @@ msgstr "A prescription must contain at least one medication line."
 msgid "Une ordonnance validée ou annulée ne peut plus être modifiée."
 msgstr "A finalized or cancelled prescription can no longer be edited."
 
+#: visitors/services.py:85
+msgid "Une visite ne peut être corrigée que le jour même."
+msgstr "A visit can only be corrected on the same day."
+
 #: templates/laboratory/lab_results_pdf.html:47
 msgid "Unité"
 msgstr "Unit"
@@ -1334,6 +1386,10 @@ msgstr "Completed"
 #: prescriptions/models.py:10
 msgid "Validée"
 msgstr "Finalized"
+
+#: visitors/models.py:14
+msgid "Visite à un patient"
+msgstr "Patient visit"
 
 #: communication/services.py:146
 msgid "Voici votre code de vérification : %(code)s"
