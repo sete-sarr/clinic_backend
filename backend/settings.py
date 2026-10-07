@@ -228,6 +228,9 @@ SIMPLE_JWT = {
 # authentification par JWT en en-tête, donc aucun CSRF_TRUSTED_ORIGINS nécessaire pour elle).
 FRONTEND_ORIGINS = [
     "https://app.procli.org",
+    # Adresse Render du site statique procli-app (frontend/render.yaml), utilisable avant et en
+    # secours du domaine personnalisé.
+    "https://procli-app.onrender.com",
     "https://clinic-frontend-yrxm.vercel.app",
 ]
 CORS_ALLOWED_ORIGINS = env.list(
