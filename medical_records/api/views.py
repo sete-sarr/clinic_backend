@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from common.audit import record_audit
 from common.models import AuditLog
 from common.permissions import IsSameClinic, SubscriptionActivePermission, in_role
+from hospitalization.services import admitted_patient_ids, is_nurse_only
 from medical_records.models import MedicalRecord
 from medical_records.permissions import CanAccessMedicalRecord
 
@@ -45,6 +46,8 @@ class MedicalRecordViewSet(
         if in_role(user, "patient") and not in_role(user, "doctor"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()
+        if is_nurse_only(user):
+            return qs.filter(patient_id__in=admitted_patient_ids(user.clinic_id))
         return qs
 
     def retrieve(self, request, *args, **kwargs):

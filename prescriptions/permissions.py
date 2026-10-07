@@ -11,7 +11,8 @@ class CanManagePrescriptions(BasePermission):
         if not user.is_authenticated:
             return False
         if request.method in SAFE_METHODS:
-            return in_role(user, "doctor", "clinic_admin", "patient")
+            # nurse : prescriptions en cours des patients hospitalisés (PrescriptionViewSet.get_queryset).
+            return in_role(user, "doctor", "clinic_admin", "patient", "nurse")
         return in_role(user, "doctor", "clinic_admin")
 
     def has_object_permission(self, request, view, obj):
@@ -22,4 +23,8 @@ class CanManagePrescriptions(BasePermission):
             return getattr(obj.doctor, "user_id", None) == user.id
         if request.method in SAFE_METHODS and in_role(user, "patient"):
             return getattr(obj.patient, "user_id", None) == user.id
+        if request.method in SAFE_METHODS and in_role(user, "nurse"):
+            from hospitalization.services import admitted_patient_ids
+
+            return obj.status == "validated" and admitted_patient_ids(obj.clinic_id).filter(patient_id=obj.patient_id).exists()
         return False

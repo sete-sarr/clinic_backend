@@ -10,6 +10,7 @@ from common.audit import record_audit
 from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
+from hospitalization.services import admitted_patient_ids, is_nurse_only
 from prescriptions.models import Prescription
 from prescriptions.permissions import CanManagePrescriptions
 from prescriptions.services.pdf import render_prescription_pdf
@@ -34,6 +35,8 @@ class PrescriptionViewSet(TenantScopedModelViewSet):
         if in_role(user, "patient") and not in_role(user, "doctor", "clinic_admin"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()
+        if is_nurse_only(user):
+            return qs.filter(patient_id__in=admitted_patient_ids(user.clinic_id), status=Prescription.Status.VALIDATED)
         return qs
 
     def perform_create(self, serializer):

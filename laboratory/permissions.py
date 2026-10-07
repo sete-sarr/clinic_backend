@@ -17,9 +17,9 @@ class CanManageLabTests(BasePermission):
 # LABORATOIRE). La lecture est ouverte à ces rôles ; le périmètre (ses demandes, ses résultats
 # validés…) est appliqué par le queryset.
 ORDER_ACTION_ROLES = {
-    "list": ("doctor", "lab_technician", "clinic_admin", "patient"),
-    "retrieve": ("doctor", "lab_technician", "clinic_admin", "patient"),
-    "attachment": ("doctor", "lab_technician", "clinic_admin", "patient"),
+    "list": ("doctor", "lab_technician", "clinic_admin", "patient", "nurse"),
+    "retrieve": ("doctor", "lab_technician", "clinic_admin", "patient", "nurse"),
+    "attachment": ("doctor", "lab_technician", "clinic_admin", "patient", "nurse"),
     "pdf": ("doctor", "clinic_admin", "patient"),
     "create": ("doctor",),
     "collect": ("lab_technician",),

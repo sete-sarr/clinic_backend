@@ -14,6 +14,7 @@ from common.audit import record_audit
 from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedMixin, TenantScopedModelViewSet
+from hospitalization.services import admitted_patient_ids
 from laboratory import services
 from laboratory.models import LabOrder, LabResult, LabResultFile, LabTest
 from laboratory.pdf import render_lab_results_pdf
@@ -106,6 +107,9 @@ class LabOrderViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.RetrieveM
         patient_profile = getattr(user, "patient_profile", None)
         if patient_profile and in_role(user, "patient"):
             scope |= Q(patient=patient_profile, status=LabOrder.Status.VALIDATED)
+        if in_role(user, "nurse"):
+            # Résultats validés des patients hospitalisés (access-policy.md § INFIRMIER).
+            scope |= Q(patient_id__in=admitted_patient_ids(user.clinic_id), status=LabOrder.Status.VALIDATED)
         return qs.filter(scope)
 
     def retrieve(self, request, *args, **kwargs):

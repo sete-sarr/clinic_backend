@@ -33,6 +33,23 @@ VITAL_RANGES = {
 }
 
 
+# ---------------------------------------------------------------- périmètre infirmier
+
+
+def admitted_patient_ids(clinic_id):
+    """Patients actuellement hospitalisés (séjour Admis) : périmètre de lecture de l'infirmier sur le
+    dossier médical, les prescriptions en cours et les résultats validés (access-policy.md §
+    INFIRMIER). Sous-requête à passer à `patient_id__in`."""
+    return Admission.objects.filter(clinic_id=clinic_id, status=Admission.Status.ADMITTED).values("patient_id")
+
+
+def is_nurse_only(user):
+    """Infirmier sans rôle plus large (médecin, administrateur) : son périmètre est restreint."""
+    from common.permissions import in_role
+
+    return in_role(user, "nurse") and not user.is_superuser and not in_role(user, "doctor", "clinic_admin")
+
+
 # ---------------------------------------------------------------- lits
 
 
