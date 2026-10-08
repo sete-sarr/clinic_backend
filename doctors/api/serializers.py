@@ -3,14 +3,15 @@ from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from accounts.models import User
+from common.photos import PhotoUrlMixin
 from doctors.models import Doctor
 from doctors.services import create_doctor
 
 
-class DoctorUserSerializer(serializers.ModelSerializer):
+class DoctorUserSerializer(PhotoUrlMixin, serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name"]
+        fields = ["id", "username", "email", "first_name", "last_name", "photo"]
         read_only_fields = ["id"]
 
 

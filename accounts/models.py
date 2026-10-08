@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser, UnicodeUsernameValidator
 from django.db import models
 
+from common.models import PhotoBase
+
 
 class User(AbstractUser):
     """
@@ -54,3 +56,16 @@ class User(AbstractUser):
         from django.conf import settings
 
         return self.language or getattr(self.clinic, "locale", "") or settings.LANGUAGE_CODE
+
+
+class UserPhoto(PhotoBase):
+    """Photo de profil d'un membre du personnel ou d'un médecin (common/photos.py). Modifiable par
+    la personne elle-même ou par l'administrateur de sa clinique."""
+
+    owner_field = "user"
+    photo_kind = "u"
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True, related_name="photo")
+
+    def __str__(self):
+        return f"photo:{self.user_id}"

@@ -8,9 +8,10 @@ from accounts.services import STAFF_ROLES_ASSIGNABLE
 from clinics.models import Clinic
 from common.audit import record_audit
 from common.models import AuditLog
+from common.photos import PhotoUrlMixin
 
 
-class UserSerializer(serializers.ModelSerializer):
+class UserSerializer(PhotoUrlMixin, serializers.ModelSerializer):
     roles = serializers.SerializerMethodField()
     doctor_id = serializers.SerializerMethodField()
     # Devise de la clinique (docs/i18n.md §8), pour les montants saisis avant d'exister côté API
@@ -24,7 +25,7 @@ class UserSerializer(serializers.ModelSerializer):
         # connexion si elle est renseignée (docs/i18n.md §2).
         fields = [
             "id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id", "language",
-            "clinic_currency",
+            "clinic_currency", "photo",
         ]
         read_only_fields = ["language"]
 
@@ -65,7 +66,7 @@ class TokenObtainPairSerializer(BaseTokenObtainPairSerializer):
         data = super().validate(attrs)
         # business/access-policy.md "AUDIT POLICY" : l'authentification est un événement journalisé.
         record_audit(user=self.user, action=AuditLog.Action.LOGIN, obj=self.user)
-        data["user"] = UserSerializer(self.user).data
+        data["user"] = UserSerializer(self.user, context=self.context).data
         return data
 
 
@@ -105,7 +106,7 @@ class PatientActivationRequestSerializer(serializers.Serializer):
     date_of_birth = serializers.DateField()
 
 
-class StaffListSerializer(serializers.ModelSerializer):
+class StaffListSerializer(PhotoUrlMixin, serializers.ModelSerializer):
     """Représentation en lecture pour l'écran de gestion du personnel. Contrairement à
     UserSerializer.roles (pluriel, utilisé par /me/), role est une valeur unique — un membre du
     personnel géré via cet écran possède exactement un rôle parmi STAFF_ROLES_ASSIGNABLE (ou
@@ -115,7 +116,7 @@ class StaffListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "username", "email", "first_name", "last_name", "role", "is_active", "date_joined"]
+        fields = ["id", "username", "email", "first_name", "last_name", "role", "is_active", "date_joined", "photo"]
 
     def get_role(self, obj):
         return obj.groups.values_list("name", flat=True).first()

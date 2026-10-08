@@ -1,11 +1,14 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
+from django.utils.translation import gettext as _
 from rest_framework import serializers
+
+from common.photos import PhotoUploadSerializer, PhotoUrlMixin
 
 from patients.models import Patient
 from patients.services import create_patient, validate_date_of_birth
 
 
-class PatientSerializer(serializers.ModelSerializer):
+class PatientSerializer(PhotoUrlMixin, serializers.ModelSerializer):
     class Meta:
         model = Patient
         fields = [
@@ -23,6 +26,7 @@ class PatientSerializer(serializers.ModelSerializer):
             "is_active",
             "created_at",
             "updated_at",
+            "photo",
         ]
         read_only_fields = ["id", "clinic", "patient_number", "is_active", "created_at", "updated_at"]
         # national_id participe à une UniqueConstraint composite (unique_national_id_per_clinic_when_set),
@@ -40,3 +44,15 @@ class PatientSerializer(serializers.ModelSerializer):
             return create_patient(clinic=clinic, **validated_data)
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages) from exc
+
+
+class PatientPhotoUploadSerializer(PhotoUploadSerializer):
+    """business/access-policy.md : la photo d'un patient n'est enregistrée qu'avec son consentement,
+    confirmé par la personne qui la téléverse."""
+
+    consent = serializers.BooleanField()
+
+    def validate_consent(self, value):
+        if not value:
+            raise serializers.ValidationError(_("Le consentement du patient est obligatoire pour enregistrer sa photo."))
+        return value

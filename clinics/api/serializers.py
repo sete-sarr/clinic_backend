@@ -1,36 +1,18 @@
-from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
 from clinics.models import Clinic
+from common.images import validate_image_format, validate_image_size
 from common.permissions import in_role
 from clinics.services import LOGO_FIELDS, logo_url, logos_without_content, update_clinic_logos
-
-MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024  # 2MB
-# design-system/ : les logos sont limités à PNG/JPG/JPEG. ImageField rejette déjà tout ce qui
-# n'est pas une véritable image décodable par Pillow (audit de sécurité, 2026-09-02) — ceci
-# restreint davantage aux formats spécifiques autorisés par le design system, plutôt qu'à tout
-# format raster valide.
-ALLOWED_LOGO_FORMATS = {"PNG", "JPEG"}
-
-
-def validate_logo_size(value):
-    if value.size > MAX_LOGO_SIZE_BYTES:
-        raise ValidationError(_("L'image ne doit pas dépasser 2 Mo."))
-
-
-def validate_logo_format(value):
-    image_format = getattr(getattr(value, "image", None), "format", None)
-    if image_format not in ALLOWED_LOGO_FORMATS:
-        raise ValidationError(_("Seuls les formats PNG et JPEG sont acceptés."))
 
 
 def _logo_field():
     # Écriture seule : un fichier PNG/JPEG (ou null pour retirer le logo). En lecture, le champ de
     # même nom contient l'URL signée du logo (to_representation) — contrat inchangé pour le frontend.
     return serializers.ImageField(
-        required=False, allow_null=True, write_only=True, validators=[validate_logo_size, validate_logo_format]
+        required=False, allow_null=True, write_only=True, validators=[validate_image_size, validate_image_format]
     )
 
 

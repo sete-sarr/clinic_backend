@@ -22,6 +22,25 @@ class SoftDeleteModel(models.Model):
         abstract = True
 
 
+class PhotoBase(models.Model):
+    """Photo de profil stockée en base (common/photos.py) : le disque de l'hébergeur est effacé à
+    chaque redéploiement. Table séparée de son propriétaire pour ne jamais charger ces octets lors
+    des lectures de listes. Contenu toujours ré-encodé en JPEG carré, sans métadonnées EXIF.
+
+    Les sous-classes déclarent leur propriétaire (OneToOneField primary_key=True,
+    related_name="photo"), `owner_field` (nom de ce champ) et `photo_kind` (préfixe court, unique,
+    inclus dans les URL signées)."""
+
+    owner_field: str
+    photo_kind: str
+
+    content = models.BinaryField()
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
 class SequenceCounter(models.Model):
     """Reusable per-clinic/per-year sequence generator (patient numbers, invoice numbers...)."""
 

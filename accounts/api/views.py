@@ -12,8 +12,9 @@ from rest_framework_simplejwt.exceptions import TokenError
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView as BaseTokenObtainPairView
 
-from accounts.models import User
+from accounts.models import User, UserPhoto
 from accounts.services import (
+    STAFF_ROLES_ASSIGNABLE,
     activate_patient_account,
     create_staff_member,
     deactivate_staff_member,
@@ -25,7 +26,8 @@ from accounts.services import (
 from clinics.models import Clinic
 from common.audit import record_audit
 from common.models import AuditLog
-from common.permissions import IsClinicAdmin, IsSameClinic, SubscriptionActivePermission
+from common.permissions import IsClinicAdmin, IsSameClinic, SubscriptionActivePermission, in_role
+from common.photos import PhotoUploadSerializer, owner_photo_url, remove_photo, set_photo
 from common.viewsets import TenantScopedMixin
 
 from .serializers import (
@@ -51,18 +53,54 @@ class TokenObtainPairView(BaseTokenObtainPairView):
     throttle_scope = "login"
 
 
+# Rôles du personnel (médecin compris) autorisés à changer leur propre photo.
+STAFF_PHOTO_ROLES = ("doctor", *STAFF_ROLES_ASSIGNABLE)
+
+
+def user_photo_response(request, user):
+    """POST : ajoute ou remplace la photo de `user` ; DELETE : la retire (common/photos.py)."""
+    if request.method == "DELETE":
+        remove_photo(model=UserPhoto, owner=user, actor=request.user)
+    else:
+        serializer = PhotoUploadSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        set_photo(model=UserPhoto, owner=user, uploaded_file=serializer.validated_data["photo"], actor=request.user)
+    return Response({"photo": owner_photo_url(user, request)})
+
+
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        return Response(UserSerializer(request.user).data)
+        return Response(UserSerializer(request.user, context={"request": request}).data)
 
     def patch(self, request):
         """Préférence de langue de l'utilisateur connecté (docs/i18n.md §2)."""
         serializer = MePreferencesSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(UserSerializer(request.user).data)
+        return Response(UserSerializer(request.user, context={"request": request}).data)
+
+
+class MePhotoView(APIView):
+    """Photo de profil de l'utilisateur connecté (décision produit du 2026-10-08 : chaque membre du
+    personnel, médecin compris, peut changer la sienne). Un patient n'a pas de photo de compte :
+    la photo d'un patient est celle de son dossier, enregistrée avec son consentement par
+    l'accueil (patients/api/views.py)."""
+
+    permission_classes = [IsAuthenticated]
+
+    def _check_staff(self, request):
+        if not request.user.clinic_id or not in_role(request.user, *STAFF_PHOTO_ROLES):
+            self.permission_denied(request)
+
+    def post(self, request):
+        self._check_staff(request)
+        return user_photo_response(request, request.user)
+
+    def delete(self, request):
+        self._check_staff(request)
+        return user_photo_response(request, request.user)
 
 
 class LogoutView(APIView):
@@ -111,7 +149,7 @@ class ClinicRegistrationView(APIView):
             {
                 "access": str(token.access_token),
                 "refresh": str(token),
-                "user": UserSerializer(user).data,
+                "user": UserSerializer(user, context={"request": request}).data,
             },
             status=status.HTTP_201_CREATED,
         )
@@ -183,7 +221,13 @@ class StaffViewSet(
     """
 
     permission_classes = [IsAuthenticated, IsSameClinic, IsClinicAdmin, SubscriptionActivePermission]
-    queryset = User.objects.exclude(groups__name="patient").prefetch_related("groups").order_by("last_name", "first_name", "id")
+    queryset = (
+        User.objects.exclude(groups__name="patient")
+        .select_related("photo")
+        .defer("photo__content")
+        .prefetch_related("groups")
+        .order_by("last_name", "first_name", "id")
+    )
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active"]
 
@@ -204,7 +248,7 @@ class StaffViewSet(
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
-        return Response(StaffListSerializer(user).data, status=status.HTTP_201_CREATED)
+        return Response(StaffListSerializer(user, context={"request": request}).data, status=status.HTTP_201_CREATED)
 
     def perform_update(self, serializer):
         user = serializer.save()
@@ -218,13 +262,13 @@ class StaffViewSet(
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
-        return Response(StaffListSerializer(user).data)
+        return Response(StaffListSerializer(user, context={"request": request}).data)
 
     @action(detail=True, methods=["post"])
     def reactivate(self, request, pk=None):
         user = self.get_object()
         reactivate_staff_member(user=user, actor=request.user)
-        return Response(StaffListSerializer(user).data)
+        return Response(StaffListSerializer(user, context={"request": request}).data)
 
     @action(detail=True, methods=["post"], url_path="role", url_name="role")
     def change_role(self, request, pk=None):
@@ -236,4 +280,9 @@ class StaffViewSet(
         except DjangoValidationError as exc:
             message = exc.messages[0] if hasattr(exc, "messages") else str(exc)
             return Response({"code": 400, "message": message, "field": None}, status=400)
-        return Response(StaffListSerializer(user).data)
+        return Response(StaffListSerializer(user, context={"request": request}).data)
+
+    @action(detail=True, methods=["post", "delete"])
+    def photo(self, request, pk=None):
+        """Photo d'un membre du personnel ou d'un médecin, gérée par l'administrateur."""
+        return user_photo_response(request, self.get_object())

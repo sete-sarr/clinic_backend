@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from .views import (
     ClinicRegistrationView,
+    MePhotoView,
     MeView,
     PatientActivationRequestView,
     PatientActivationVerifyView,
@@ -14,6 +15,7 @@ router.register("staff", StaffViewSet, basename="staff")
 
 urlpatterns = [
     path("me/", MeView.as_view(), name="me"),
+    path("me/photo/", MePhotoView.as_view(), name="me-photo"),
     path("clinics/register/", ClinicRegistrationView.as_view(), name="clinic-registration"),
     path("patient/activation/request/", PatientActivationRequestView.as_view(), name="patient-activation-request"),
     path("patient/activation/verify/", PatientActivationVerifyView.as_view(), name="patient-activation-verify"),

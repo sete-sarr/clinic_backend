@@ -1,4 +1,5 @@
 from django.http import HttpResponse
+from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.translation import gettext as _
 from rest_framework.decorators import action
@@ -9,18 +10,19 @@ from common.audit import record_audit
 from common.exports import CsvExportMixin
 from common.models import AuditLog
 from common.permissions import in_role
+from common.photos import owner_photo_url, remove_photo, set_photo
 from common.viewsets import TenantScopedModelViewSet
-from patients.models import Patient
-from patients.permissions import CanManagePatients
+from patients.models import Patient, PatientPhoto
+from patients.permissions import CanEditPatientPhoto, CanManagePatients
 from patients.services.pdf import render_patient_statement_pdf
 
-from .serializers import PatientSerializer
+from .serializers import PatientPhotoUploadSerializer, PatientSerializer
 
 
 class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
     serializer_class = PatientSerializer
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManagePatients]
-    queryset = Patient.objects.select_related("clinic").all()
+    queryset = Patient.objects.select_related("clinic", "photo").defer("photo__content")
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["is_active", "gender"]
     search_fields = ["patient_number", "first_name", "last_name", "phone", "national_id"]
@@ -73,3 +75,26 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         response["Content-Disposition"] = f'inline; filename="statement-{patient.patient_number}.pdf"'
         return response
+
+    @action(
+        detail=True,
+        methods=["post", "delete"],
+        permission_classes=TenantScopedModelViewSet.permission_classes + [CanEditPatientPhoto],
+    )
+    def photo(self, request, pk=None):
+        """POST : ajoute ou remplace la photo (consentement obligatoire) ; DELETE : la retire."""
+        patient = self.get_object()
+        if request.method == "DELETE":
+            remove_photo(model=PatientPhoto, owner=patient, actor=request.user)
+        else:
+            serializer = PatientPhotoUploadSerializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            set_photo(
+                model=PatientPhoto,
+                owner=patient,
+                uploaded_file=serializer.validated_data["photo"],
+                actor=request.user,
+                consented_at=timezone.now(),
+                consent_recorded_by=request.user,
+            )
+        return Response({"photo": owner_photo_url(patient, request)})

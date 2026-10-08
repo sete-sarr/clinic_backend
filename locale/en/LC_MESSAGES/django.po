@@ -65,7 +65,7 @@ msgstr "Admission:"
 msgid "Admission : %(patient)s"
 msgstr "Admission: %(patient)s"
 
-#: accounts/api/serializers.py:55
+#: accounts/api/serializers.py:56
 msgid "Adresse e-mail ou mot de passe incorrect."
 msgstr "Incorrect email address or password."
 
@@ -167,7 +167,7 @@ msgid "Carte"
 msgstr "Card"
 
 #: appointments/api/views.py:74
-#: doctors/api/serializers.py:48
+#: doctors/api/serializers.py:49
 msgid "Ce champ est obligatoire."
 msgstr "This field is required."
 
@@ -181,8 +181,8 @@ msgstr "This code is valid for %(minutes)s minutes. Do not share it with anyone:
 
 #: consultations/api/views.py:41
 #: hospitalization/api/views.py:168
-#: laboratory/api/views.py:120
-#: prescriptions/api/views.py:45
+#: laboratory/api/views.py:124
+#: prescriptions/api/views.py:48
 msgid "Ce compte n'a pas de profil médecin dans cette clinique."
 msgstr "This account has no doctor profile in this clinic."
 
@@ -194,11 +194,11 @@ msgstr "This department has active doctors and cannot be archived. Reassign or d
 msgid "Ce lit existe déjà dans la chambre."
 msgstr "This bed already exists in the room."
 
-#: hospitalization/services.py:63
+#: hospitalization/services.py:80
 msgid "Ce lit n'est pas hors service."
 msgstr "This bed is not out of service."
 
-#: hospitalization/services.py:102
+#: hospitalization/services.py:119
 msgid "Ce lit n'est pas libre."
 msgstr "This bed is not free."
 
@@ -210,13 +210,13 @@ msgstr "This is an automated message; please do not reply to it directly."
 msgid "Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure."
 msgstr "This doctor or patient already has an appointment at this date and time."
 
-#: accounts/api/serializers.py:138
-#: accounts/api/serializers.py:173
-#: doctors/api/serializers.py:31
+#: accounts/api/serializers.py:139
+#: accounts/api/serializers.py:174
+#: doctors/api/serializers.py:32
 msgid "Ce nom d'utilisateur est déjà pris."
 msgstr "This username is already taken."
 
-#: hospitalization/services.py:164
+#: hospitalization/services.py:181
 msgid "Ce patient est déjà hospitalisé."
 msgstr "This patient is already admitted."
 
@@ -273,7 +273,7 @@ msgstr "Every invoice line needs a quantity and a unit price."
 msgid "Code incorrect."
 msgstr "Incorrect code."
 
-#: accounts/api/views.py:163
+#: accounts/api/views.py:201
 msgid "Compte activé. Vous pouvez maintenant vous connecter."
 msgstr "Account activated. You can now log in."
 
@@ -384,7 +384,7 @@ msgstr "Duration"
 msgid "Département"
 msgstr "Department"
 
-#: doctors/api/serializers.py:77
+#: doctors/api/serializers.py:78
 #: doctors/services.py:16
 msgid "Département invalide."
 msgstr "Invalid department."
@@ -486,7 +486,7 @@ msgstr "This appointment cannot be changed: it is already %(status)s."
 msgid "Impossible de programmer un rendez-vous dans le passé."
 msgstr "An appointment cannot be scheduled in the past."
 
-#: clinics/api/serializers.py:76
+#: clinics/api/serializers.py:58
 msgid "Indiquez le forfait de nuitée pour le mode « forfait unique »."
 msgstr "Enter the nightly rate for the “flat rate” mode."
 
@@ -523,11 +523,11 @@ msgstr "The patient has not been checked in for this appointment yet."
 msgid "L'arrivée ne peut être enregistrée que pour un rendez-vous prévu aujourd'hui."
 msgstr "Check-in is only possible for an appointment scheduled today."
 
-#: hospitalization/services.py:313
+#: hospitalization/services.py:330
 msgid "L'heure de mesure doit se situer pendant l'hospitalisation."
 msgstr "The measurement time must fall within the stay."
 
-#: clinics/api/serializers.py:20
+#: common/images.py:16
 msgid "L'image ne doit pas dépasser 2 Mo."
 msgstr "The image must not exceed 2 MB."
 
@@ -551,7 +551,7 @@ msgstr "The date of birth cannot be in the future."
 msgid "La date du paiement ne peut pas être antérieure à la date de la facture."
 msgstr "The payment date cannot be earlier than the invoice date."
 
-#: hospitalization/services.py:323
+#: hospitalization/services.py:340
 msgid "La note de soins ne peut pas être vide."
 msgstr "The nursing note cannot be empty."
 
@@ -579,9 +579,13 @@ msgstr "The upper limit must be greater than or equal to the lower limit."
 msgid "Le code est obligatoire."
 msgstr "The code is required."
 
-#: laboratory/api/views.py:196
+#: laboratory/api/views.py:200
 msgid "Le compte rendu n'est disponible qu'après validation des résultats."
 msgstr "The report is only available once the results have been validated."
+
+#: patients/api/serializers.py:57
+msgid "Le consentement du patient est obligatoire pour enregistrer sa photo."
+msgstr "The patient's consent is required to save their photo."
 
 #: appointments/services.py:62
 msgid "Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
@@ -591,11 +595,11 @@ msgstr "This doctor's department is not active and cannot accept new appointment
 msgid "Le fichier ne doit pas dépasser 5 Mo."
 msgstr "The file must not exceed 5 MB."
 
-#: clinics/api/serializers.py:67
+#: clinics/api/serializers.py:49
 msgid "Le forfait de nuitée doit être strictement positif."
 msgstr "The nightly flat rate must be greater than zero."
 
-#: hospitalization/services.py:123
+#: hospitalization/services.py:140
 msgid "Le forfait de nuitée n'est pas configuré : l'administrateur doit le renseigner dans Paramètres."
 msgstr "The nightly flat rate is not configured: an administrator must set it in Settings."
 
@@ -611,7 +615,7 @@ msgstr "The free trial month for %(clinic)s has ended. We hope the platform has 
 msgid "Le montant du paiement doit être positif."
 msgstr "The payment amount must be positive."
 
-#: hospitalization/services.py:144
+#: hospitalization/services.py:161
 msgid "Le motif d'hospitalisation est obligatoire."
 msgstr "The reason for admission is required."
 
@@ -648,7 +652,7 @@ msgstr "The payment of %(amount)s exceeds the balance due of %(balance)s on this
 msgid "Le paiement en ligne est momentanément indisponible. Réessayez plus tard."
 msgstr "Online payment is temporarily unavailable. Please try again later."
 
-#: hospitalization/services.py:187
+#: hospitalization/services.py:204
 msgid "Le patient occupe déjà ce lit."
 msgstr "The patient already occupies this bed."
 
@@ -693,7 +697,7 @@ msgstr "The results of your lab tests (%(number)s) have been validated by your d
 msgid "Les résultats ne peuvent être saisis que pendant le traitement."
 msgstr "Results can only be entered while the order is in progress."
 
-#: hospitalization/services.py:297
+#: hospitalization/services.py:314
 msgid "Les soins ne peuvent être saisis que pendant l'hospitalisation."
 msgstr "Care can only be recorded during the stay."
 
@@ -701,7 +705,7 @@ msgstr "Care can only be recorded during the stay."
 msgid "Libre"
 msgstr "Free"
 
-#: hospitalization/services.py:100
+#: hospitalization/services.py:117
 msgid "Lit invalide."
 msgstr "Invalid bed."
 
@@ -763,7 +767,7 @@ msgstr "Doctor"
 #: billing/services/__init__.py:83
 #: consultations/services.py:29
 #: consultations/services.py:48
-#: hospitalization/services.py:140
+#: hospitalization/services.py:157
 #: laboratory/services.py:100
 #: prescriptions/services/__init__.py:19
 #: prescriptions/services/__init__.py:46
@@ -832,11 +836,11 @@ msgstr "New lab order: %(patient)s"
 msgid "Nuitées :"
 msgstr "Nights:"
 
-#: hospitalization/services.py:225
+#: hospitalization/services.py:242
 msgid "Nuitées d'hospitalisation"
 msgstr "Hospital nights"
 
-#: hospitalization/services.py:237
+#: hospitalization/services.py:254
 msgid "Nuitées d'hospitalisation — %(type)s"
 msgstr "Hospital nights — %(type)s"
 
@@ -902,7 +906,7 @@ msgstr "Patient arrived: %(patient)s"
 #: billing/services/__init__.py:81
 #: consultations/services.py:27
 #: consultations/services.py:46
-#: hospitalization/services.py:138
+#: hospitalization/services.py:155
 #: laboratory/services.py:98
 #: prescriptions/services/__init__.py:17
 #: prescriptions/services/__init__.py:44
@@ -1063,7 +1067,7 @@ msgstr "Stay summary"
 msgid "Résumé de séjour confidentiel"
 msgstr "Confidential stay summary"
 
-#: hospitalization/services.py:305
+#: hospitalization/services.py:322
 msgid "Saisissez au moins une constante."
 msgstr "Enter at least one vital sign."
 
@@ -1080,7 +1084,7 @@ msgstr "Billing Department"
 msgid "Service administratif"
 msgstr "Administration"
 
-#: hospitalization/services.py:142
+#: hospitalization/services.py:159
 msgid "Service invalide."
 msgstr "Invalid department."
 
@@ -1096,7 +1100,7 @@ msgstr "Only the clinic administrator can approve a refund."
 msgid "Seul le médecin prescripteur peut valider ces résultats."
 msgstr "Only the ordering doctor can validate these results."
 
-#: hospitalization/services.py:47
+#: hospitalization/services.py:64
 msgid "Seul un lit en nettoyage peut être marqué comme nettoyé."
 msgstr "Only a bed being cleaned can be marked as clean."
 
@@ -1104,11 +1108,11 @@ msgstr "Only a bed being cleaned can be marked as clean."
 msgid "Seul un paiement validé peut être remboursé."
 msgstr "Only a completed payment can be refunded."
 
-#: hospitalization/services.py:184
+#: hospitalization/services.py:201
 msgid "Seul un patient hospitalisé peut changer de lit."
 msgstr "Only an admitted patient can change beds."
 
-#: hospitalization/services.py:250
+#: hospitalization/services.py:267
 msgid "Seul un patient hospitalisé peut sortir."
 msgstr "Only an admitted patient can be discharged."
 
@@ -1116,11 +1120,11 @@ msgstr "Only an admitted patient can be discharged."
 msgid "Seul un résultat validé se corrige par ce moyen."
 msgstr "Only a validated result can be corrected this way."
 
-#: hospitalization/services.py:160
+#: hospitalization/services.py:177
 msgid "Seul un séjour planifié peut être admis."
 msgstr "Only a planned stay can be admitted."
 
-#: hospitalization/services.py:283
+#: hospitalization/services.py:300
 msgid "Seul un séjour planifié, non commencé, peut être annulé."
 msgstr "Only a planned stay that has not started can be cancelled."
 
@@ -1152,7 +1156,7 @@ msgstr "Only a draft invoice can be issued."
 msgid "Seuls les fichiers PDF sont acceptés."
 msgstr "Only PDF files are accepted."
 
-#: clinics/api/serializers.py:26
+#: common/images.py:22
 msgid "Seuls les formats PNG et JPEG sont acceptés."
 msgstr "Only PNG and JPEG formats are accepted."
 
@@ -1160,7 +1164,7 @@ msgstr "Only PNG and JPEG formats are accepted."
 msgid "Si cette nouvelle date ne vous convient pas, nous vous invitons à %(contact)s."
 msgstr "If this new date does not suit you, please %(contact)s."
 
-#: accounts/api/views.py:137
+#: accounts/api/views.py:175
 msgid "Si les informations correspondent, un code de vérification vous a été envoyé."
 msgstr "If the details match, a verification code has been sent to you."
 
@@ -1267,11 +1271,11 @@ msgstr "An archived department is read-only. Restore it first."
 msgid "Un examen avec ce code existe déjà dans la clinique."
 msgstr "A lab test with this code already exists in the clinic."
 
-#: hospitalization/services.py:71
+#: hospitalization/services.py:88
 msgid "Un lit occupé ne peut pas être archivé."
 msgstr "An occupied bed cannot be archived."
 
-#: hospitalization/services.py:55
+#: hospitalization/services.py:72
 msgid "Un lit occupé ne peut pas être mis hors service."
 msgstr "An occupied bed cannot be put out of service."
 
@@ -1304,14 +1308,14 @@ msgstr "An appointment has been booked for %(patient)s with %(doctor)s %(when)s.
 msgid "Un rendez-vous ne peut être annulé que plus de %(hours)s h à l'avance."
 msgstr "An appointment can only be cancelled more than %(hours)s hours in advance."
 
-#: accounts/api/serializers.py:97
-#: accounts/api/serializers.py:144
+#: accounts/api/serializers.py:98
+#: accounts/api/serializers.py:145
 #: accounts/services.py:67
-#: doctors/api/serializers.py:38
+#: doctors/api/serializers.py:39
 msgid "Un utilisateur utilise déjà cette adresse e-mail."
 msgstr "This email address is already in use."
 
-#: hospitalization/services.py:82
+#: hospitalization/services.py:99
 msgid "Une chambre dont un lit est occupé ne peut pas être archivée."
 msgstr "A room with an occupied bed cannot be archived."
 
@@ -1319,7 +1323,7 @@ msgstr "A room with an occupied bed cannot be archived."
 msgid "Une chambre porte déjà ce numéro."
 msgstr "A room already has this number."
 
-#: accounts/api/serializers.py:92
+#: accounts/api/serializers.py:93
 msgid "Une clinique portant ce nom existe déjà."
 msgstr "A clinic with this name already exists."
 
@@ -1361,7 +1365,7 @@ msgstr "A visit can only be corrected on the same day."
 msgid "Unité"
 msgstr "Unit"
 
-#: hospitalization/services.py:309
+#: hospitalization/services.py:326
 msgid "Valeur hors des bornes plausibles (%(low)s – %(high)s)."
 msgstr "Value outside plausible limits (%(low)s – %(high)s)."
 
@@ -1418,9 +1422,9 @@ msgstr "Your account is not linked to any clinic."
 
 #: appointments/api/views.py:109
 #: billing/api/views.py:89
-#: patients/api/views.py:71
+#: patients/api/views.py:73
 #: payments/api/views.py:77
-#: prescriptions/api/views.py:64
+#: prescriptions/api/views.py:67
 msgid "Vous n'êtes pas autorisé(e) à accéder à ce document."
 msgstr "You are not allowed to access this document."
 

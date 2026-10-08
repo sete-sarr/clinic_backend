@@ -2,7 +2,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q
 
-from common.models import SoftDeleteModel, TimeStampedModel
+from common.models import PhotoBase, SoftDeleteModel, TimeStampedModel
 
 
 class Patient(TimeStampedModel, SoftDeleteModel):
@@ -53,3 +53,20 @@ class Patient(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name} ({self.patient_number})"
+
+
+class PatientPhoto(PhotoBase):
+    """Photo d'un patient (common/photos.py), enregistrée par l'accueil ou l'administrateur
+    uniquement après le consentement du patient (RGPD), dont on garde la trace."""
+
+    owner_field = "patient"
+    photo_kind = "p"
+
+    patient = models.OneToOneField(Patient, on_delete=models.CASCADE, primary_key=True, related_name="photo")
+    consented_at = models.DateTimeField()
+    consent_recorded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+
+    def __str__(self):
+        return f"photo:{self.patient_id}"

@@ -10,6 +10,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 
 from accounts.api.views import LogoutView, TokenObtainPairView
 from common.api.search import GlobalSearchView
+from common.api.views import PhotoView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -20,6 +21,7 @@ urlpatterns = [
     path("api/v1/auth/logout/", LogoutView.as_view(), name="logout"),
     path("api/v1/search/", GlobalSearchView.as_view(), name="global-search"),
     path("api/v1/audit-log/", include("common.api.urls")),
+    path("api/v1/photos/<str:token>/", PhotoView.as_view(), name="photo"),
     path("api/v1/accounts/", include("accounts.api.urls")),
     path("api/v1/clinics/", include("clinics.api.urls")),
     path("api/v1/departments/", include("departments.api.urls")),

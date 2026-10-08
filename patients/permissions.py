@@ -21,3 +21,11 @@ class CanManagePatients(BasePermission):
         if request.method == "DELETE":
             return in_role(user, "clinic_admin")
         return in_role(user, "secretary", "clinic_admin")
+
+
+class CanEditPatientPhoto(BasePermission):
+    """Photo du patient : ajoutée ou retirée par ceux qui modifient sa fiche (accueil,
+    administrateur) — y compris le retrait, contrairement à la désactivation du patient."""
+
+    def has_permission(self, request, view):
+        return in_role(request.user, "secretary", "clinic_admin")
