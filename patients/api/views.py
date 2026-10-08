@@ -22,7 +22,7 @@ from .serializers import PatientPhotoUploadSerializer, PatientSerializer
 class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
     serializer_class = PatientSerializer
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManagePatients]
-    queryset = Patient.objects.select_related("clinic", "photo").defer("photo__content")
+    queryset = Patient.objects.select_related("clinic", "photo")
     filter_backends = [DjangoFilterBackend, SearchFilter]
     filterset_fields = ["is_active", "gender"]
     search_fields = ["patient_number", "first_name", "last_name", "phone", "national_id"]

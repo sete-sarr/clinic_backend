@@ -1,10 +1,12 @@
 """Photos de profil (common/photos.py) : personnel et médecins (UserPhoto), patients (PatientPhoto,
-avec consentement). Stockées en base, réduites, servies par URL signée qui expire."""
+avec consentement). Réduites, déposées dans le stockage des photos (bucket R2 en production, mémoire
+pendant les tests), servies par URL signée qui expire."""
 
 import io
 from datetime import date
 from unittest import mock
 
+from django.core.files.storage import storages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from PIL import Image
@@ -44,7 +46,10 @@ class StaffPhotoTests(APITestCase):
         response = self.client.post(reverse("me-photo"), {"photo": _upload()}, format="multipart")
         self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
 
-        stored = Image.open(io.BytesIO(bytes(UserPhoto.objects.get(user=self.nurse).content)))
+        photo = UserPhoto.objects.get(user=self.nurse)
+        self.assertRegex(photo.image.name, rf"^clinics/{self.clinic.id}/u/[0-9a-f]{{32}}\.jpg$")
+        with storages["photos"].open(photo.image.name) as stored_file:
+            stored = Image.open(io.BytesIO(stored_file.read()))
         self.assertEqual((stored.format, stored.size), ("JPEG", (photos.PHOTO_SIZE, photos.PHOTO_SIZE)))
 
         url = response.data["photo"]
@@ -74,9 +79,29 @@ class StaffPhotoTests(APITestCase):
     def test_removing_the_photo_deletes_it_and_retires_its_url(self):
         self.client.force_authenticate(self.nurse)
         url = self.client.post(reverse("me-photo"), {"photo": _upload()}, format="multipart").data["photo"]
-        response = self.client.delete(reverse("me-photo"))
+        name = UserPhoto.objects.get(user=self.nurse).image.name
+        with self.captureOnCommitCallbacks(execute=True):
+            response = self.client.delete(reverse("me-photo"))
         self.assertIsNone(response.data["photo"])
         self.assertFalse(UserPhoto.objects.exists())
+        self.assertFalse(storages["photos"].exists(name))
+        self.assertEqual(self.anonymous.get(url).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_replacing_the_photo_deletes_the_previous_object(self):
+        self.client.force_authenticate(self.nurse)
+        self.client.post(reverse("me-photo"), {"photo": _upload()}, format="multipart")
+        old_name = UserPhoto.objects.get(user=self.nurse).image.name
+        with self.captureOnCommitCallbacks(execute=True):
+            self.client.post(reverse("me-photo"), {"photo": _upload("JPEG")}, format="multipart")
+        new_name = UserPhoto.objects.get(user=self.nurse).image.name
+        self.assertNotEqual(old_name, new_name)
+        self.assertFalse(storages["photos"].exists(old_name))
+        self.assertTrue(storages["photos"].exists(new_name))
+
+    def test_missing_object_in_the_bucket_gives_404(self):
+        self.client.force_authenticate(self.nurse)
+        url = self.client.post(reverse("me-photo"), {"photo": _upload()}, format="multipart").data["photo"]
+        storages["photos"].delete(UserPhoto.objects.get(user=self.nurse).image.name)
         self.assertEqual(self.anonymous.get(url).status_code, status.HTTP_404_NOT_FOUND)
 
     def test_a_patient_account_has_no_account_photo(self):

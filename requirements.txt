@@ -12,5 +12,6 @@ weasyprint>=62.0
 django-environ>=0.11
 stripe>=11.0
 Pillow>=10.4
+django-storages[s3]>=1.14
 gunicorn>=23.0
 whitenoise>=6.7

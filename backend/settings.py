@@ -170,6 +170,35 @@ STORAGES = {
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
+# Photos de profil (common/photos.py) : bucket Cloudflare R2 (API compatible S3) dès que ses
+# identifiants sont configurés, car le disque de l'hébergeur est effacé à chaque redéploiement.
+# Sans identifiants (poste de développement), disque local ; tests : mémoire, jamais le bucket réel.
+R2_ACCOUNT_ID = env("R2_ACCOUNT_ID", default="")
+if "test" in sys.argv:
+    STORAGES["photos"] = {"BACKEND": "django.core.files.storage.InMemoryStorage"}
+elif R2_ACCOUNT_ID:
+    STORAGES["photos"] = {
+        "BACKEND": "storages.backends.s3.S3Storage",
+        "OPTIONS": {
+            "bucket_name": env("R2_BUCKET_NAME", default="procli-files"),
+            "endpoint_url": f"https://{R2_ACCOUNT_ID}.r2.cloudflarestorage.com",
+            "access_key": env("R2_ACCES_KEY_ID"),
+            "secret_key": env("R2_SECRET_ACCES_KEY"),
+            "region_name": "auto",
+            "signature_version": "s3v4",
+            "location": env("R2_PHOTOS_LOCATION", default="photos"),
+            # Objets privés : jamais d'URL publique, la diffusion passe par PhotoView.
+            "default_acl": None,
+            "querystring_auth": True,
+            "file_overwrite": False,
+        },
+    }
+else:
+    STORAGES["photos"] = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+        "OPTIONS": {"location": MEDIA_ROOT / "photos"},
+    }
+
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # --- REST Framework -------------------------------------------------------

@@ -12,7 +12,7 @@ from .serializers import DoctorSerializer
 class DoctorViewSet(TenantScopedModelViewSet):
     serializer_class = DoctorSerializer
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageDoctors]
-    queryset = Doctor.objects.select_related("user", "user__photo", "clinic", "department").defer("user__photo__content")
+    queryset = Doctor.objects.select_related("user", "user__photo", "clinic", "department")
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["department", "is_active"]
 

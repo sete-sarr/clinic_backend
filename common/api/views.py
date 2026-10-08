@@ -7,7 +7,7 @@ from rest_framework.views import APIView
 
 from common.models import AuditLog
 from common.permissions import IsClinicAdmin
-from common.photos import PHOTO_CONTENT_TYPE, photo_from_token
+from common.photos import PHOTO_CONTENT_TYPE, photo_from_token, read_photo
 from common.viewsets import TenantScopedMixin
 
 from .serializers import AuditLogSerializer
@@ -15,18 +15,19 @@ from .serializers import AuditLogSerializer
 
 class PhotoView(APIView):
     """Photo de profil à partir de son URL signée (common/photos.py::photo_url), renvoyée
-    uniquement aux utilisateurs autorisés à voir la fiche de la personne. Sans authentification
-    (une balise <img> n'envoie pas le JWT) : la signature, limitée dans le temps, protège. Cache
-    privé jusqu'à l'expiration de l'URL."""
+    uniquement aux utilisateurs autorisés à voir la fiche de la personne. L'image est lue dans le
+    bucket privé : celui-ci n'est jamais exposé. Sans authentification (une balise <img> n'envoie pas
+    le JWT) : la signature, limitée dans le temps, protège. Cache privé jusqu'à l'expiration de l'URL."""
 
     authentication_classes = []
     permission_classes = [AllowAny]
 
     def get(self, request, token):
         photo, remaining = photo_from_token(token)
-        if photo is None:
+        content = read_photo(photo) if photo is not None else None
+        if content is None:
             raise Http404
-        response = HttpResponse(bytes(photo.content), content_type=PHOTO_CONTENT_TYPE)
+        response = HttpResponse(content, content_type=PHOTO_CONTENT_TYPE)
         response["Cache-Control"] = f"private, max-age={remaining}"
         return response
 

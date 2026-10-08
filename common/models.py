@@ -1,3 +1,5 @@
+import uuid
+
 from django.conf import settings
 from django.db import models
 
@@ -22,10 +24,23 @@ class SoftDeleteModel(models.Model):
         abstract = True
 
 
+def photo_storage():
+    """Stockage des photos (settings.STORAGES["photos"]) : bucket Cloudflare R2 en production."""
+    from django.core.files.storage import storages
+
+    return storages["photos"]
+
+
+def photo_upload_to(instance, filename):
+    """Clé de l'objet : rangée par clinique, nom aléatoire (jamais l'identifiant de la personne)."""
+    clinic_id = getattr(instance, instance.owner_field).clinic_id
+    return f"clinics/{clinic_id}/{instance.photo_kind}/{uuid.uuid4().hex}.jpg"
+
+
 class PhotoBase(models.Model):
-    """Photo de profil stockée en base (common/photos.py) : le disque de l'hébergeur est effacé à
-    chaque redéploiement. Table séparée de son propriétaire pour ne jamais charger ces octets lors
-    des lectures de listes. Contenu toujours ré-encodé en JPEG carré, sans métadonnées EXIF.
+    """Photo de profil (common/photos.py). L'image, ré-encodée en JPEG carré sans métadonnées EXIF,
+    est un objet privé du bucket R2 : le disque de l'hébergeur est effacé à chaque redéploiement et la
+    base ne garde que sa clé.
 
     Les sous-classes déclarent leur propriétaire (OneToOneField primary_key=True,
     related_name="photo"), `owner_field` (nom de ce champ) et `photo_kind` (préfixe court, unique,
@@ -34,7 +49,7 @@ class PhotoBase(models.Model):
     owner_field: str
     photo_kind: str
 
-    content = models.BinaryField()
+    image = models.FileField(storage=photo_storage, upload_to=photo_upload_to, max_length=255)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

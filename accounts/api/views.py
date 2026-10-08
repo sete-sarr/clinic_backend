@@ -224,7 +224,6 @@ class StaffViewSet(
     queryset = (
         User.objects.exclude(groups__name="patient")
         .select_related("photo")
-        .defer("photo__content")
         .prefetch_related("groups")
         .order_by("last_name", "first_name", "id")
     )
