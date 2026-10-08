@@ -7,8 +7,22 @@ from django.db import models
 from common.models import SoftDeleteModel, TimeStampedModel
 
 
+class SaleUnit(models.TextChoices):
+    """Unité d'une quantité saisie (réception, ligne de facture) : le conditionnement (boîte…) ou
+    l'unité de base (comprimé…). Le stock, lui, est toujours compté en unités de base."""
+
+    PACK = "pack", "Conditionnement"
+    UNIT = "unit", "Unité"
+
+
 class Medication(TimeStampedModel, SoftDeleteModel):
     """Catalogue de médicaments par clinique (isolation tenant, docs/architecture.md).
+
+    Unités (décision produit du 2026-10-08) : tout le stock est compté en entiers dans l'unité de
+    base `unit`, la plus petite unité délivrée (comprimé, gélule, flacon…). Le conditionnement
+    (`pack_unit`, ex. boîte) n'est qu'un facteur de conversion, `units_per_pack`, utilisé à la
+    réception, à la vente et à l'affichage ; il vaut 1 pour un produit qui ne se détaille pas.
+
     `current_stock` est une valeur dénormalisée = somme de StockBatch.quantity_remaining pour ce
     médicament, recalculée à chaque mouvement (pharmacy/services.py) — jamais modifiée directement,
     pour rester la source rapide de lecture utilisée par la vérification de seuil sans agréger les
@@ -16,10 +30,20 @@ class Medication(TimeStampedModel, SoftDeleteModel):
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="medications")
     name = models.CharField(max_length=200)
-    unit = models.CharField(max_length=50, help_text="Ex. boîte, comprimé, flacon.")
+    unit = models.CharField(max_length=50, help_text="Unité de base. Ex. comprimé, gélule, flacon.")
+    # Prix de l'unité de base (vente au détail), saisi librement : il n'est pas forcément égal au
+    # prix du conditionnement divisé par units_per_pack.
     unit_price = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))]
     )
+    pack_unit = models.CharField(max_length=50, blank=True, help_text="Ex. boîte, plaquette.")
+    units_per_pack = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    pack_price = models.DecimalField(
+        max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))]
+    )
+    # Vente à l'unité de base d'un produit conditionné (ex. 3 comprimés d'une boîte de 50).
+    allow_unit_sale = models.BooleanField(default=True)
+    # En unités de base, comme les seuils ci-dessous.
     current_stock = models.PositiveIntegerField(default=0)
     # 0 = pas d'alerte de stock bas configurée pour ce médicament (valeur par défaut). max_threshold
     # est nullable pour la même raison ("pas de plafond configuré") sans avoir besoin d'une valeur
@@ -43,16 +67,27 @@ class Medication(TimeStampedModel, SoftDeleteModel):
                 ),
                 name="medication_max_threshold_gte_min_threshold",
             ),
+            models.CheckConstraint(condition=models.Q(units_per_pack__gte=1), name="medication_units_per_pack_gte_1"),
         ]
         indexes = [models.Index(fields=["clinic"])]
 
     def __str__(self):
         return self.name
 
+    @property
+    def is_packaged(self):
+        return self.units_per_pack > 1
+
+    def units_for(self, quantity, sale_unit):
+        """Quantité saisie dans `sale_unit` -> unités de base."""
+        return quantity * self.units_per_pack if sale_unit == SaleUnit.PACK else quantity
+
 
 class StockBatch(TimeStampedModel):
     """Un lot reçu à l'achat (business decision, session du 2026-09-16 : suivi de lot/péremption
-    dès la v1). `quantity_remaining` diminue au fil des dispensations (FEFO, voir
+    dès la v1). Quantités en unités de base ; `received_in` et `units_per_pack` gardent la saisie
+    d'origine (ex. 10 boîtes de 50), `unit_cost` étant le coût de cette unité saisie (information
+    d'achat, sans effet sur le stock). `quantity_remaining` diminue au fil des dispensations (FEFO, voir
     pharmacy/services.py::_dispense) et remonte en cas d'annulation/modification de facture."""
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="stock_batches")
@@ -62,6 +97,8 @@ class StockBatch(TimeStampedModel):
     received_date = models.DateField()
     quantity_received = models.PositiveIntegerField(validators=[MinValueValidator(1)])
     quantity_remaining = models.PositiveIntegerField()
+    received_in = models.CharField(max_length=10, choices=SaleUnit.choices, default=SaleUnit.UNIT)
+    units_per_pack = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     unit_cost = models.DecimalField(
         max_digits=12, decimal_places=2, default=Decimal("0.00"), validators=[MinValueValidator(Decimal("0.00"))]
     )

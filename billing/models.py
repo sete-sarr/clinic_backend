@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 
 from common.currency import CURRENCY_CHOICES, DEFAULT_CURRENCY
 from common.models import TimeStampedModel
+from pharmacy.models import SaleUnit
 
 DEFAULT_VAT_RATE = Decimal("0.18")
 
@@ -72,6 +73,11 @@ class InvoiceLine(models.Model):
     medication = models.ForeignKey(
         "pharmacy.Medication", on_delete=models.PROTECT, null=True, blank=True, related_name="invoice_lines"
     )
+    # Ligne médicament : vendue au conditionnement (boîte) ou à l'unité de base (comprimé).
+    # stock_quantity = quantité en unités de base, calculée et figée à l'enregistrement de la ligne
+    # (billing/services) — c'est elle que sync_invoice_stock retire du stock. 0 hors médicament.
+    sale_unit = models.CharField(max_length=10, choices=SaleUnit.choices, default=SaleUnit.UNIT)
+    stock_quantity = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["id"]

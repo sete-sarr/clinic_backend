@@ -2,13 +2,13 @@ from decimal import Decimal
 
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Max, Sum
+from django.db.models import F, Max, Sum
 from django.utils.translation import gettext as _
 
 from common.audit import record_audit
 from common.models import AuditLog
 
-from .models import Medication, StockBatch, StockMovement
+from .models import Medication, SaleUnit, StockBatch, StockMovement
 
 # Statuts de facture pour lesquels les lignes médicament sont considérées "dispensées" (stock
 # consommé). Décision produit (session du 2026-09-16) : la décrémentation a lieu à l'émission —
@@ -16,17 +16,34 @@ from .models import Medication, StockBatch, StockMovement
 DISPENSING_STATUSES = {"issued", "pending_payment", "paid"}
 
 
+def _normalize_packaging(medication):
+    """Sans conditionnement (1 unité par « boîte »), le conditionnement est l'unité elle-même."""
+    if medication.units_per_pack == 1:
+        medication.pack_price = medication.unit_price
+
+
 @transaction.atomic
 def create_medication(*, clinic, actor, **fields):
-    medication = Medication.objects.create(clinic=clinic, **fields)
+    medication = Medication(clinic=clinic, **fields)
+    _normalize_packaging(medication)
+    medication.save()
     record_audit(user=actor, action=AuditLog.Action.CREATE, obj=medication)
     return medication
 
 
 @transaction.atomic
 def update_medication(*, medication, actor, **fields):
+    new_units_per_pack = fields.get("units_per_pack", medication.units_per_pack)
+    if medication.units_per_pack == 1 and new_units_per_pack > 1 and medication.movements.exists():
+        # Le stock existant est compté dans l'unité actuelle (ex. en boîtes) : passer à 50 unités
+        # par boîte change l'unité de base elle-même, ce qui exige de convertir le stock.
+        raise ValidationError(
+            _("Ce médicament a déjà du stock compté par %(unit)s : utilisez « Détailler le stock » pour le convertir.")
+            % {"unit": medication.unit}
+        )
     for key, value in fields.items():
         setattr(medication, key, value)
+    _normalize_packaging(medication)
     medication.save()
     record_audit(user=actor, action=AuditLog.Action.UPDATE, obj=medication)
     # Les seuils ont pu changer sans qu'aucun mouvement de stock n'ait eu lieu — revérifier ici
@@ -101,11 +118,15 @@ def receive_stock_batch(
     batch_number,
     expiry_date,
     received_date,
-    quantity_received,
+    quantity,
+    received_in=SaleUnit.UNIT,
     unit_cost=Decimal("0.00"),
     supplier="",
 ):
-    """Achat / réception de stock — augmente le stock (demande initiale de la fonctionnalité)."""
+    """Achat / réception de stock — augmente le stock (demande initiale de la fonctionnalité).
+    `quantity` est saisie en conditionnements ou en unités (`received_in`) et convertie en unités
+    de base ; `unit_cost` est le coût de l'unité saisie."""
+    quantity_received = medication.units_for(quantity, received_in)
     batch = StockBatch.objects.create(
         clinic=medication.clinic,
         medication=medication,
@@ -114,6 +135,8 @@ def receive_stock_batch(
         received_date=received_date,
         quantity_received=quantity_received,
         quantity_remaining=quantity_received,
+        received_in=received_in,
+        units_per_pack=medication.units_per_pack,
         unit_cost=unit_cost,
         supplier=supplier,
         created_by=actor,
@@ -126,7 +149,12 @@ def receive_stock_batch(
         quantity_delta=quantity_received,
         created_by=actor,
     )
-    record_audit(user=actor, action=AuditLog.Action.CREATE, obj=batch, metadata={"quantity": quantity_received})
+    record_audit(
+        user=actor,
+        action=AuditLog.Action.CREATE,
+        obj=batch,
+        metadata={"quantity": quantity_received, "entered": quantity, "received_in": received_in},
+    )
     _recompute_current_stock(medication)
     return batch
 
@@ -235,7 +263,7 @@ def sync_invoice_stock(*, invoice, actor=None):
         for medication_id, total in (
             invoice.lines.filter(medication__isnull=False)
             .values("medication_id")
-            .annotate(total=Sum("quantity"))
+            .annotate(total=Sum("stock_quantity"))
             .values_list("medication_id", "total")
         ):
             desired_by_medication[medication_id] = total
@@ -261,3 +289,51 @@ def sync_invoice_stock(*, invoice, actor=None):
             _return_to_stock(medication=medication, quantity=-delta, invoice=invoice, actor=actor)
         if delta != 0:
             _recompute_current_stock(medication)
+
+
+@transaction.atomic
+def split_medication_packs(*, medication, actor, units_per_pack, unit, unit_price, allow_unit_sale=True):
+    """« Détailler le stock » : un médicament jusqu'ici compté par conditionnement (ex. en boîtes,
+    units_per_pack = 1) passe à une unité de base plus fine (ex. 50 comprimés par boîte).
+
+    Changement d'unité de mesure, pas mouvement de stock (décision produit du 2026-10-08) : toutes
+    les quantités de ce médicament sont multipliées par `units_per_pack` — lots, mouvements passés,
+    seuils et lignes de facture (marquées « au conditionnement ») —, ce qui garde le journal
+    cohérent : une facture annulée plus tard rend exactement ce qu'elle avait retiré."""
+    medication = Medication.objects.select_for_update().get(pk=medication.pk)
+    if medication.units_per_pack != 1:
+        raise ValidationError(_("Le stock de ce médicament est déjà détaillé."))
+    if units_per_pack < 2:
+        raise ValidationError(_("Un conditionnement doit contenir au moins 2 unités."))
+    factor = units_per_pack
+    from billing.models import InvoiceLine
+
+    StockBatch.objects.filter(medication=medication).update(
+        quantity_received=F("quantity_received") * factor,
+        quantity_remaining=F("quantity_remaining") * factor,
+        received_in=SaleUnit.PACK,
+        units_per_pack=factor,
+    )
+    StockMovement.objects.filter(medication=medication).update(quantity_delta=F("quantity_delta") * factor)
+    InvoiceLine.objects.filter(medication=medication).update(
+        stock_quantity=F("stock_quantity") * factor, sale_unit=SaleUnit.PACK
+    )
+    previous_unit = medication.unit
+    medication.pack_unit = previous_unit
+    medication.pack_price = medication.unit_price
+    medication.unit = unit
+    medication.unit_price = unit_price
+    medication.units_per_pack = factor
+    medication.allow_unit_sale = allow_unit_sale
+    medication.min_threshold *= factor
+    if medication.max_threshold is not None:
+        medication.max_threshold *= factor
+    medication.save()
+    record_audit(
+        user=actor,
+        action=AuditLog.Action.UPDATE,
+        obj=medication,
+        metadata={"split_packs": {"factor": factor, "from_unit": previous_unit, "to_unit": unit}},
+    )
+    _recompute_current_stock(medication)
+    return medication

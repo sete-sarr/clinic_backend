@@ -1,7 +1,7 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django_filters.rest_framework import DjangoFilterBackend
 from django.utils.translation import gettext as _
-from rest_framework import mixins, viewsets
+from rest_framework import mixins, serializers, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
@@ -13,10 +13,11 @@ from pharmacy.services import (
     archive_medication,
     create_medication,
     restore_medication,
+    split_medication_packs,
     update_medication,
 )
 
-from .serializers import MedicationSerializer, StockBatchSerializer, StockMovementSerializer
+from .serializers import MedicationSerializer, SplitPacksSerializer, StockBatchSerializer, StockMovementSerializer
 
 
 class MedicationViewSet(TenantScopedModelViewSet):
@@ -35,9 +36,23 @@ class MedicationViewSet(TenantScopedModelViewSet):
         )
 
     def perform_update(self, serializer):
-        serializer.instance = update_medication(
-            medication=serializer.instance, actor=self.request.user, **serializer.validated_data
-        )
+        try:
+            serializer.instance = update_medication(
+                medication=serializer.instance, actor=self.request.user, **serializer.validated_data
+            )
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"units_per_pack": exc.messages}) from exc
+
+    @action(detail=True, methods=["post"], url_path="split-packs")
+    def split_packs(self, request, pk=None):
+        medication = self.get_object()
+        serializer = SplitPacksSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            medication = split_medication_packs(medication=medication, actor=request.user, **serializer.validated_data)
+        except DjangoValidationError as exc:
+            return Response({"code": 400, "message": exc.messages[0], "field": None}, status=400)
+        return Response(MedicationSerializer(medication).data)
 
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):

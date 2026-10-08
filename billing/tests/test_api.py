@@ -214,7 +214,7 @@ class InvoiceMedicationLineTests(APITestCase):
             batch_number="LOT-1",
             expiry_date=date.today() + timedelta(days=365),
             received_date=date.today(),
-            quantity_received=5,
+            quantity=5,
         )
         self.client.force_authenticate(self.accountant)
 

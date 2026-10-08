@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.utils.translation import gettext as _
 
 from common.models import SequenceCounter
+from pharmacy.models import SaleUnit
 
 from ..models import DEFAULT_VAT_RATE, Invoice, InvoiceLine
 
@@ -16,6 +17,19 @@ def generate_invoice_number(*, clinic, year=None):
     year = year or timezone.now().year
     sequence = SequenceCounter.next_value(clinic=clinic, key="invoice_number", year=year)
     return f"INV-{year}-{sequence:05d}"
+
+
+def _stock_fields(*, medication, quantity, sale_unit):
+    """Unité de vente et quantité à retirer du stock (unités de base), figée sur la ligne."""
+    if medication is None:
+        return {"sale_unit": SaleUnit.UNIT, "stock_quantity": 0}
+    sale_unit = sale_unit or SaleUnit.UNIT
+    if sale_unit == SaleUnit.UNIT and medication.is_packaged and not medication.allow_unit_sale:
+        raise ValidationError(
+            _("%(name)s ne se vend pas au détail : facturez-le par %(pack)s.")
+            % {"name": medication.name, "pack": medication.pack_unit}
+        )
+    return {"sale_unit": sale_unit, "stock_quantity": medication.units_for(quantity, sale_unit)}
 
 
 def _compute_totals(*, lines, vat_rate, clinic):
@@ -31,9 +45,10 @@ def _compute_totals(*, lines, vat_rate, clinic):
             # Même logique volontairement générique que pour patient/doctor ci-dessus : pas
             # d'oracle d'existence inter-tenant (isolation multi-tenant, docs/security.md).
             raise ValidationError(_("Médicament invalide."))
+        stock = _stock_fields(medication=medication, quantity=quantity, sale_unit=line.get("sale_unit"))
         line_total = (Decimal(quantity) * Decimal(unit_price)).quantize(Decimal("0.01"))
         subtotal += line_total
-        computed_lines.append({**line, "line_total": line_total})
+        computed_lines.append({**line, **stock, "line_total": line_total})
 
     vat_amount = (subtotal * vat_rate).quantize(Decimal("0.01"))
     total_amount = subtotal + vat_amount

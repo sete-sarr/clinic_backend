@@ -8,8 +8,8 @@ from billing.services import create_invoice, update_invoice
 class InvoiceLineSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceLine
-        fields = ["id", "description", "quantity", "unit_price", "line_total", "medication"]
-        read_only_fields = ["id", "line_total"]
+        fields = ["id", "description", "quantity", "unit_price", "line_total", "medication", "sale_unit", "stock_quantity"]
+        read_only_fields = ["id", "line_total", "stock_quantity"]
 
 
 class InvoiceSerializer(serializers.ModelSerializer):

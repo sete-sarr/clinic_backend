@@ -116,7 +116,7 @@ class StockBatchApiTests(APITestCase):
             "batch_number": "LOT-001",
             "expiry_date": (date.today() + timedelta(days=365)).isoformat(),
             "received_date": date.today().isoformat(),
-            "quantity_received": 40,
+            "quantity": 40,
             "unit_cost": "1.20",
         }
         response = self.client.post(reverse("stock-batch-list"), payload, format="json")
@@ -131,7 +131,7 @@ class StockBatchApiTests(APITestCase):
             "batch_number": "LOT-002",
             "expiry_date": (date.today() + timedelta(days=365)).isoformat(),
             "received_date": date.today().isoformat(),
-            "quantity_received": 10,
+            "quantity": 10,
             "unit_cost": "-0.50",
         }
         response = self.client.post(reverse("stock-batch-list"), payload, format="json")
@@ -147,7 +147,7 @@ class StockBatchApiTests(APITestCase):
             "batch_number": "LOT-001",
             "expiry_date": (date.today() + timedelta(days=365)).isoformat(),
             "received_date": date.today().isoformat(),
-            "quantity_received": 40,
+            "quantity": 40,
         }
         response = self.client.post(reverse("stock-batch-list"), payload, format="json")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

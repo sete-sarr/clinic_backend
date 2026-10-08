@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
-from pharmacy.models import Medication, StockBatch, StockMovement
+from pharmacy.models import Medication, SaleUnit, StockBatch, StockMovement
 from pharmacy.services import receive_stock_batch
 
 
@@ -15,6 +15,10 @@ class MedicationSerializer(serializers.ModelSerializer):
             "name",
             "unit",
             "unit_price",
+            "pack_unit",
+            "units_per_pack",
+            "pack_price",
+            "allow_unit_sale",
             "current_stock",
             "min_threshold",
             "max_threshold",
@@ -59,11 +63,27 @@ class MedicationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 {"max_threshold": _("Le seuil maximal doit être supérieur ou égal au seuil minimal.")}
             )
+        units_per_pack = attrs.get("units_per_pack", getattr(self.instance, "units_per_pack", 1))
+        pack_unit = attrs.get("pack_unit", getattr(self.instance, "pack_unit", ""))
+        if units_per_pack > 1 and not (pack_unit or "").strip():
+            raise serializers.ValidationError({"pack_unit": _("Indiquez le nom du conditionnement (ex. boîte).")})
         return attrs
+
+
+class SplitPacksSerializer(serializers.Serializer):
+    """« Détailler le stock » (pharmacy/services.py::split_medication_packs)."""
+
+    units_per_pack = serializers.IntegerField(min_value=2)
+    unit = serializers.CharField(max_length=50)
+    unit_price = serializers.DecimalField(max_digits=12, decimal_places=2, min_value=0)
+    allow_unit_sale = serializers.BooleanField(default=True)
 
 
 class StockBatchSerializer(serializers.ModelSerializer):
     medication_display = serializers.CharField(source="medication.name", read_only=True)
+    # Saisie : quantité dans l'unité choisie (conditionnements ou unités), convertie en unités de
+    # base par receive_stock_batch ; quantity_received/quantity_remaining sont en unités de base.
+    quantity = serializers.IntegerField(write_only=True, min_value=1)
 
     class Meta:
         model = StockBatch
@@ -75,13 +95,16 @@ class StockBatchSerializer(serializers.ModelSerializer):
             "batch_number",
             "expiry_date",
             "received_date",
+            "quantity",
+            "received_in",
+            "units_per_pack",
             "quantity_received",
             "quantity_remaining",
             "unit_cost",
             "supplier",
             "created_at",
         ]
-        read_only_fields = ["id", "clinic", "quantity_remaining", "created_at"]
+        read_only_fields = ["id", "clinic", "units_per_pack", "quantity_received", "quantity_remaining", "created_at"]
 
     def create(self, validated_data):
         validated_data.pop("clinic", None)

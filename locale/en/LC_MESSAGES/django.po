@@ -17,6 +17,10 @@ msgstr "%(clinic)s: your lab results are available in your patient portal."
 msgid "%(department)s, chambre %(room)s, lit %(bed)s"
 msgstr "%(department)s, room %(room)s, bed %(bed)s"
 
+#: billing/services/__init__.py:29
+msgid "%(name)s ne se vend pas au détail : facturez-le par %(pack)s."
+msgstr "%(name)s cannot be sold by the unit: invoice it per %(pack)s."
+
 #: laboratory/notifications.py:35
 msgid "%(number)s — %(count)s examen(s) à prélever."
 msgstr "%(number)s — %(count)s test(s) to collect."
@@ -91,7 +95,7 @@ msgstr "Your appointment has been cancelled"
 msgid "Annulé"
 msgstr "Cancelled"
 
-#: billing/models.py:19
+#: billing/models.py:20
 #: prescriptions/models.py:11
 msgid "Annulée"
 msgstr "Cancelled"
@@ -152,7 +156,7 @@ msgstr "Other"
 msgid "Bonjour,"
 msgstr "Hello,"
 
-#: billing/models.py:15
+#: billing/models.py:16
 #: consultations/models.py:9
 #: prescriptions/models.py:9
 msgid "Brouillon"
@@ -210,6 +214,10 @@ msgstr "This is an automated message; please do not reply to it directly."
 msgid "Ce médecin ou ce patient a déjà un rendez-vous à cette date et à cette heure."
 msgstr "This doctor or patient already has an appointment at this date and time."
 
+#: pharmacy/services.py:41
+msgid "Ce médicament a déjà du stock compté par %(unit)s : utilisez « Détailler le stock » pour le convertir."
+msgstr "This medication already has stock counted per %(unit)s: use “Split stock into units” to convert it."
+
 #: accounts/api/serializers.py:139
 #: accounts/api/serializers.py:174
 #: doctors/api/serializers.py:32
@@ -236,7 +244,7 @@ msgstr "This room type already exists."
 msgid "Ce type est encore utilisé par des chambres actives."
 msgstr "This type is still used by active rooms."
 
-#: pharmacy/services.py:142
+#: pharmacy/services.py:170
 msgid "Cet ajustement rendrait négative la quantité restante du lot."
 msgstr "This adjustment would make the batch's remaining quantity negative."
 
@@ -265,7 +273,7 @@ msgstr "Unsupported role change."
 msgid "Chaque examen demandé doit avoir un résultat (valeur ou PDF) avant de terminer."
 msgstr "Every requested test must have a result (value or PDF) before completing."
 
-#: billing/services/__init__.py:28
+#: billing/services/__init__.py:42
 msgid "Chaque ligne de facture doit avoir une quantité et un prix unitaire."
 msgstr "Every invoice line needs a quantity and a unit price."
 
@@ -490,6 +498,10 @@ msgstr "An appointment cannot be scheduled in the past."
 msgid "Indiquez le forfait de nuitée pour le mode « forfait unique »."
 msgstr "Enter the nightly rate for the “flat rate” mode."
 
+#: pharmacy/api/serializers.py:69
+msgid "Indiquez le nom du conditionnement (ex. boîte)."
+msgstr "Enter the pack name (e.g. box)."
+
 #: visitors/services.py:27
 msgid "Indiquez une seule personne visitée."
 msgstr "Enter only one person being visited."
@@ -555,11 +567,11 @@ msgstr "The payment date cannot be earlier than the invoice date."
 msgid "La note de soins ne peut pas être vide."
 msgstr "The nursing note cannot be empty."
 
-#: pharmacy/api/views.py:79
+#: pharmacy/api/views.py:94
 msgid "La quantité d'ajustement doit être un nombre entier."
 msgstr "The adjustment quantity must be a whole number."
 
-#: pharmacy/services.py:139
+#: pharmacy/services.py:167
 msgid "La quantité d'ajustement ne peut pas être nulle."
 msgstr "The adjustment quantity cannot be zero."
 
@@ -672,7 +684,7 @@ msgstr "The stay summary is only available after discharge."
 msgid "Le rôle d'un médecin ne peut pas être modifié depuis cet écran."
 msgstr "A doctor's role cannot be changed from this screen."
 
-#: pharmacy/api/serializers.py:60
+#: pharmacy/api/serializers.py:64
 msgid "Le seuil maximal doit être supérieur ou égal au seuil minimal."
 msgstr "The maximum threshold must be greater than or equal to the minimum threshold."
 
@@ -683,6 +695,10 @@ msgstr "The stock of %(name)s is %(stock)s %(unit)s, above the maximum threshold
 #: pharmacy/notifications.py:56
 msgid "Le stock de %(name)s est de %(stock)s %(unit)s, en dessous du seuil minimal fixé à %(threshold)s %(unit)s. Nous vous recommandons de prévoir un réapprovisionnement."
 msgstr "The stock of %(name)s is %(stock)s %(unit)s, below the minimum threshold of %(threshold)s %(unit)s. We recommend planning a restock."
+
+#: pharmacy/services.py:305
+msgid "Le stock de ce médicament est déjà détaillé."
+msgstr "This medication's stock is already counted in units."
 
 #: hospitalization/api/serializers.py:50
 msgid "Le tarif de nuitée doit être strictement positif."
@@ -763,8 +779,8 @@ msgstr "Doctor"
 
 #: appointments/services.py:55
 #: appointments/services.py:89
-#: billing/services/__init__.py:50
-#: billing/services/__init__.py:83
+#: billing/services/__init__.py:65
+#: billing/services/__init__.py:98
 #: consultations/services.py:29
 #: consultations/services.py:48
 #: hospitalization/services.py:157
@@ -787,7 +803,7 @@ msgstr "Attending doctor"
 msgid "Médicament"
 msgstr "Medication"
 
-#: billing/services/__init__.py:33
+#: billing/services/__init__.py:47
 msgid "Médicament invalide."
 msgstr "Invalid medication."
 
@@ -876,7 +892,7 @@ msgstr "Confidential prescription"
 msgid "Page"
 msgstr "Page"
 
-#: billing/models.py:17
+#: billing/models.py:18
 msgid "Paiement partiel"
 msgstr "Partially paid"
 
@@ -902,8 +918,8 @@ msgstr "Patient arrived: %(patient)s"
 
 #: appointments/services.py:53
 #: appointments/services.py:87
-#: billing/services/__init__.py:48
-#: billing/services/__init__.py:81
+#: billing/services/__init__.py:63
+#: billing/services/__init__.py:96
 #: consultations/services.py:27
 #: consultations/services.py:46
 #: hospitalization/services.py:155
@@ -913,7 +929,7 @@ msgstr "Patient arrived: %(patient)s"
 msgid "Patient invalide."
 msgstr "Invalid patient."
 
-#: billing/models.py:18
+#: billing/models.py:19
 msgid "Payée"
 msgstr "Paid"
 
@@ -1148,7 +1164,7 @@ msgstr "Only a collected order can be started."
 msgid "Seule une demande terminée peut être validée."
 msgstr "Only a completed order can be validated."
 
-#: billing/services/__init__.py:119
+#: billing/services/__init__.py:134
 msgid "Seule une facture en brouillon peut être émise."
 msgstr "Only a draft invoice can be issued."
 
@@ -1208,7 +1224,7 @@ msgstr "Subtotal"
 msgid "Statut"
 msgstr "Status"
 
-#: pharmacy/services.py:187
+#: pharmacy/services.py:215
 msgid "Stock insuffisant pour %(name)s : il manque %(missing)s %(unit)s."
 msgstr "Insufficient stock for %(name)s: %(missing)s %(unit)s missing."
 
@@ -1258,6 +1274,10 @@ msgstr "Total due"
 msgid "Un code a déjà été envoyé récemment. Veuillez patienter avant d'en demander un nouveau."
 msgstr "A code was sent recently. Please wait before requesting a new one."
 
+#: pharmacy/services.py:307
+msgid "Un conditionnement doit contenir au moins 2 unités."
+msgstr "A pack must contain at least 2 units."
+
 #: departments/api/serializers.py:32
 msgid "Un département archivé est en lecture seule. Restaurez-le avant de le modifier."
 msgstr "An archived department is read-only. Restore it before editing."
@@ -1283,7 +1303,7 @@ msgstr "An occupied bed cannot be put out of service."
 msgid "Un médecin ne peut créer des rendez-vous qu'à son propre nom."
 msgstr "A doctor can only create appointments under their own name."
 
-#: pharmacy/api/serializers.py:51
+#: pharmacy/api/serializers.py:55
 msgid "Un médicament portant ce nom existe déjà dans cette clinique."
 msgstr "A medication with this name already exists in this clinic."
 
@@ -1335,16 +1355,16 @@ msgstr "A finalized consultation is read-only and can no longer be edited."
 msgid "Une demande doit contenir au moins un examen."
 msgstr "An order must contain at least one lab test."
 
-#: billing/services/__init__.py:52
-#: billing/services/__init__.py:92
+#: billing/services/__init__.py:67
+#: billing/services/__init__.py:107
 msgid "Une facture doit contenir au moins une ligne."
 msgstr "An invoice must contain at least one line."
 
-#: billing/services/__init__.py:132
+#: billing/services/__init__.py:147
 msgid "Une facture payée ne peut pas être annulée."
 msgstr "A paid invoice cannot be cancelled."
 
-#: billing/services/__init__.py:76
+#: billing/services/__init__.py:91
 msgid "Une facture payée ou annulée ne peut plus être modifiée."
 msgstr "A paid or cancelled invoice can no longer be edited."
 
@@ -1513,6 +1533,6 @@ msgstr "Your subscription is due in 1 day — %(clinic)s"
 msgid "Élément introuvable."
 msgstr "Item not found."
 
-#: billing/models.py:16
+#: billing/models.py:17
 msgid "Émise"
 msgstr "Issued"

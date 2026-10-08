@@ -46,7 +46,7 @@ class ReceiveStockBatchTests(TestCase):
             batch_number="LOT-001",
             expiry_date=date.today() + timedelta(days=365),
             received_date=date.today(),
-            quantity_received=50,
+            quantity=50,
             unit_cost=Decimal("2.50"),
         )
         self.medication.refresh_from_db()
@@ -79,7 +79,7 @@ class ThresholdAlertTests(TestCase):
                     batch_number="LOT-A",
                     expiry_date=date.today() + timedelta(days=180),
                     received_date=date.today(),
-                    quantity_received=5,
+                    quantity=5,
                 )
         mock_alert.assert_called_once_with(medication_id=self.medication.id)
         self.medication.refresh_from_db()
@@ -95,7 +95,7 @@ class ThresholdAlertTests(TestCase):
                     batch_number="LOT-B",
                     expiry_date=date.today() + timedelta(days=180),
                     received_date=date.today(),
-                    quantity_received=1,
+                    quantity=1,
                 )
         mock_alert.assert_not_called()
 
@@ -108,7 +108,7 @@ class ThresholdAlertTests(TestCase):
                     batch_number="LOT-C",
                     expiry_date=date.today() + timedelta(days=180),
                     received_date=date.today(),
-                    quantity_received=150,
+                    quantity=150,
                 )
         mock_alert.assert_called_once_with(medication_id=self.medication.id)
         self.medication.refresh_from_db()
@@ -121,7 +121,7 @@ class ThresholdAlertTests(TestCase):
             batch_number="LOT-D",
             expiry_date=date.today() + timedelta(days=180),
             received_date=date.today(),
-            quantity_received=20,
+            quantity=20,
         )
         with patch("pharmacy.notifications.send_low_stock_alert") as mock_alert:
             with self.captureOnCommitCallbacks(execute=True):
@@ -140,7 +140,7 @@ class AdjustStockTests(TestCase):
             batch_number="LOT-001",
             expiry_date=date.today() + timedelta(days=365),
             received_date=date.today(),
-            quantity_received=30,
+            quantity=30,
         )
 
     def test_negative_adjustment_decreases_stock(self):
@@ -170,7 +170,7 @@ class InvoiceStockIntegrationTests(TestCase):
             batch_number="EARLY",
             expiry_date=date.today() + timedelta(days=30),
             received_date=date.today(),
-            quantity_received=5,
+            quantity=5,
         )
         self.late_batch = receive_stock_batch(
             medication=self.medication,
@@ -178,7 +178,7 @@ class InvoiceStockIntegrationTests(TestCase):
             batch_number="LATE",
             expiry_date=date.today() + timedelta(days=365),
             received_date=date.today(),
-            quantity_received=20,
+            quantity=20,
         )
 
     def _create_draft_invoice(self, quantity):
