@@ -252,7 +252,7 @@ SIMPLE_JWT = {
 
 # Origines du frontend autorisées à appeler l'API (exemple_prod.md § 3) : réglables sur Render par la
 # variable CORS_ALLOWED_ORIGINS (liste séparée par des virgules). Par défaut : l'application
-# (app.procli.org), l'ancien frontend Vercel pendant la transition, le développement local et
+# (app.procli.org) et son adresse Render, le développement local et
 # l'application de bureau proCli (Tauri v2 sous Windows, interface servie depuis http://tauri.localhost ;
 # authentification par JWT en en-tête, donc aucun CSRF_TRUSTED_ORIGINS nécessaire pour elle).
 FRONTEND_ORIGINS = [
@@ -260,7 +260,6 @@ FRONTEND_ORIGINS = [
     # Adresse Render du site statique procli-app (frontend/render.yaml), utilisable avant et en
     # secours du domaine personnalisé.
     "https://procli-app.onrender.com",
-    "https://clinic-frontend-yrxm.vercel.app",
 ]
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
