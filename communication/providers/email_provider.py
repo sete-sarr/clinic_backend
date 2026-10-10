@@ -2,11 +2,16 @@ import logging
 
 import requests
 from django.conf import settings
-from django.core.mail import send_mail
+from django.core.mail import EmailMessage
 
 from .base import EmailProvider, ProviderResult
 
 logger = logging.getLogger(__name__)
+
+
+def _reply_to():
+    """settings.EMAIL_REPLY_TO sous forme de liste (vide si non configurée)."""
+    return [settings.EMAIL_REPLY_TO] if settings.EMAIL_REPLY_TO else []
 
 
 class DjangoEmailProvider(EmailProvider):
@@ -18,7 +23,7 @@ class DjangoEmailProvider(EmailProvider):
 
     def send(self, *, recipient: str, subject: str, body: str) -> ProviderResult:
         try:
-            send_mail(subject=subject, message=body, from_email=None, recipient_list=[recipient])
+            EmailMessage(subject=subject, body=body, to=[recipient], reply_to=_reply_to()).send()
             return ProviderResult(success=True, provider_name=self.name)
         except Exception as exc:  # noqa: BLE001 — provider boundary, must not raise past here
             return ProviderResult(success=False, provider_name=self.name, error_message=str(exc))
@@ -44,6 +49,7 @@ class ResendEmailProvider(EmailProvider):
                     "to": [recipient],
                     "subject": subject,
                     "text": body,
+                    **({"reply_to": _reply_to()} if _reply_to() else {}),
                 },
                 timeout=self.TIMEOUT_SECONDS,
             )

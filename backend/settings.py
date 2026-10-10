@@ -263,7 +263,16 @@ FRONTEND_ORIGINS = [
 ]
 CORS_ALLOWED_ORIGINS = env.list(
     "CORS_ALLOWED_ORIGINS",
-    default=[*FRONTEND_ORIGINS, "http://localhost:4200", "http://127.0.0.1:4200", "http://tauri.localhost"],
+    default=[
+        *FRONTEND_ORIGINS,
+        "http://localhost:4200",
+        "http://127.0.0.1:4200",
+        "http://tauri.localhost",
+        # Application mobile proCli (Capacitor, docs/mobile.md) : origine de la webview sur Android
+        # et sur iOS. Authentification par JWT en en-tête, comme pour Tauri.
+        "https://localhost",
+        "capacitor://localhost",
+    ],
 )
 
 CORS_ALLOW_HEADERS = [
@@ -327,6 +336,10 @@ DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="no-reply@clinic-manageme
 # DjangoEmailProvider.
 RESEND_API_KEY = env("RESEND_API_KEY", default="")
 RESEND_FROM_EMAIL = env("RESEND_FROM_EMAIL", default="onboarding@resend.dev")
+# Adresse de réponse des e-mails de la plateforme (« Répondre » d'un patient ou d'une clinique) : une
+# boîte lue par l'équipe, ex. support@procli.org — l'expéditeur, lui, est une adresse sans boîte
+# (no-reply@procli.org). Vide = pas d'en-tête Reply-To.
+EMAIL_REPLY_TO = env("EMAIL_REPLY_TO", default="")
 
 # --- SMS (httpsms.com) ----------------------------------------------------------
 
