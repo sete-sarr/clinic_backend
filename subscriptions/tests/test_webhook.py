@@ -1,3 +1,4 @@
+from django.test import override_settings
 from unittest.mock import patch
 
 from django.urls import reverse
@@ -54,6 +55,7 @@ class StripeWebhookViewTests(APITestCase):
         self.assertEqual(SubscriptionEvent.objects.filter(clinic=self.clinic).count(), 1)
 
 
+@override_settings(SUBSCRIPTION_PAYMENT_PROVIDER="stripe")
 class CheckoutSessionViewTests(APITestCase):
     def setUp(self):
         self.clinic = create_clinic()
@@ -78,6 +80,7 @@ class CheckoutSessionViewTests(APITestCase):
         self.assertEqual(response.data["checkout_url"], "https://checkout.stripe.com/xyz")
 
 
+@override_settings(SUBSCRIPTION_PAYMENT_PROVIDER="stripe")
 class BillingPortalViewTests(APITestCase):
     def setUp(self):
         self.clinic = create_clinic()
@@ -100,6 +103,7 @@ class BillingPortalViewTests(APITestCase):
         self.assertEqual(response.data["portal_url"], "https://billing.stripe.com/xyz")
 
 
+@override_settings(SUBSCRIPTION_PAYMENT_PROVIDER="stripe")
 class ChangePlanViewTests(APITestCase):
     """Une clinique déjà abonnée change de formule sans créer de second abonnement Stripe."""
 

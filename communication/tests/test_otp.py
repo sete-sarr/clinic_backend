@@ -2,7 +2,7 @@ import re
 from datetime import date, timedelta
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from common.testing import create_clinic
@@ -26,6 +26,8 @@ def _create_patient(clinic, **overrides):
     return Patient.objects.create(**defaults)
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class OtpServiceTests(TestCase):
     def setUp(self):
         self.clinic = create_clinic()

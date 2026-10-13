@@ -348,7 +348,8 @@ class Command(BaseCommand):
         clinic.address = "Sacré-Cœur 3, VDN, Dakar"
         clinic.currency = "XOF"
         clinic.inpatient_billing_mode = clinic.InpatientBillingMode.PER_ROOM_TYPE
-        clinic.save(update_fields=["address", "currency", "inpatient_billing_mode"])
+        clinic.is_demo = True  # jamais suspendue à la fin de l'essai
+        clinic.save(update_fields=["address", "currency", "inpatient_billing_mode", "is_demo"])
 
         self.departments = {
             key: Department.objects.create(clinic=clinic, name=name, code=code,

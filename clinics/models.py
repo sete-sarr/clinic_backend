@@ -80,7 +80,11 @@ class Clinic(TimeStampedModel):
     expiring_notified_30d_at = models.DateTimeField(null=True, blank=True)
     expiring_notified_15d_at = models.DateTimeField(null=True, blank=True)
     expiring_notified_7d_at = models.DateTimeField(null=True, blank=True)
+    expiring_notified_3d_at = models.DateTimeField(null=True, blank=True)
     expiring_notified_1d_at = models.DateTimeField(null=True, blank=True)
+    # Clinique de démonstration (commande seed_demo_clinic) : jamais suspendue à la fin de l'essai,
+    # pour rester présentable (décision du 2026-10-14). Réglable uniquement côté serveur.
+    is_demo = models.BooleanField(default=False)
 
     class Meta:
         ordering = ["name"]

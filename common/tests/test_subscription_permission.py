@@ -1,3 +1,4 @@
+from django.test import override_settings
 from datetime import date
 from unittest.mock import patch
 
@@ -167,6 +168,7 @@ class SubscriptionActivePermissionOnMedicalRecordsTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
 
+@override_settings(SUBSCRIPTION_PAYMENT_PROVIDER="stripe")
 class SubscriptionActivePermissionExemptsBillingEndpointsTests(APITestCase):
     """A suspended clinic must still be able to reactivate — checkout/billing-portal are plain
     APIViews outside TenantScopedMixin, unaffected by the gate by construction. These tests pin

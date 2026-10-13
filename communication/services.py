@@ -16,7 +16,11 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
     """Le seul point d'entrée que les autres apps doivent appeler pour envoyer quoi que ce soit
     (docs/communication-architecture.md : "aucun module ne peut communiquer directement avec les
     fournisseurs Email, SMS ou Push"). Persiste d'abord un NotificationLog (piste d'audit) puis
-    confie l'envoi effectif à une tâche Celery."""
+    envoie le message une fois la transaction validée : directement (pas de worker en production),
+    ou par une tâche Celery si NOTIFICATIONS_VIA_CELERY. Renvoie None pour un SMS tant que
+    SMS_ENABLED est faux (rien n'est préparé ni journalisé)."""
+    if channel == NotificationLog.Channel.SMS and not settings.SMS_ENABLED:
+        return None
     log = NotificationLog.objects.create(
         clinic=clinic,
         recipient_user=recipient_user,
@@ -26,9 +30,12 @@ def send_notification(*, clinic, recipient_user, channel, notification_type, rec
         subject=subject,
         body=body,
     )
-    from .tasks import deliver_notification
+    from .tasks import deliver_notification, deliver_now
 
-    transaction.on_commit(lambda: deliver_notification.delay(log.id))
+    if settings.NOTIFICATIONS_VIA_CELERY:
+        transaction.on_commit(lambda: deliver_notification.delay(log.id))
+    else:
+        transaction.on_commit(lambda: deliver_now(log.id))
     return log
 
 

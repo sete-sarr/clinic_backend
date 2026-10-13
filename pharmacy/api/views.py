@@ -9,6 +9,8 @@ from common.viewsets import TenantScopedMixin, TenantScopedModelViewSet
 from pharmacy.barcodes import parse_scanned_code
 from pharmacy.models import Medication, StockBatch, StockMovement
 from pharmacy.permissions import CanManageMedications, CanManageStock
+from subscriptions.catalog import PHARMACY
+from subscriptions.permissions import requires_plan_feature
 from pharmacy.services import (
     adjust_stock,
     archive_medication,
@@ -27,9 +29,13 @@ from .serializers import (
 )
 
 
+
+# Création et modification réservées à la formule Professional (et à l'essai) — subscriptions/catalog.py.
+PharmacyModule = requires_plan_feature(PHARMACY)
+
 class MedicationViewSet(TenantScopedModelViewSet):
     serializer_class = MedicationSerializer
-    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageMedications]
+    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageMedications, PharmacyModule]
     queryset = Medication.objects.select_related("clinic").all()
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["is_active", "low_stock_alerted", "overstock_alerted", "barcode"]
@@ -102,7 +108,7 @@ class StockBatchViewSet(
     pharmacy/services.py::adjust_stock), jamais par une modification libre de quantity_remaining."""
 
     serializer_class = StockBatchSerializer
-    permission_classes = TenantScopedMixin.permission_classes + [CanManageStock]
+    permission_classes = TenantScopedMixin.permission_classes + [CanManageStock, PharmacyModule]
     queryset = StockBatch.objects.select_related("clinic", "medication").all()
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ["medication"]

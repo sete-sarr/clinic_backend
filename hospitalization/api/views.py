@@ -16,6 +16,8 @@ from hospitalization import services
 from hospitalization.models import Admission, Bed, BedTransfer, Room, RoomType
 from hospitalization.pdf import render_stay_summary_pdf
 from hospitalization.permissions import CanAccessAdmissions, CanManageWardStructure
+from subscriptions.catalog import HOSPITALIZATION
+from subscriptions.permissions import requires_plan_feature
 from patients.access import ensure_patient_accessible
 
 from .serializers import (
@@ -39,11 +41,15 @@ def _service_call(func, **kwargs):
         raise serializers.ValidationError(detail) from exc
 
 
+
+# Création et modification réservées à la formule Professional (et à l'essai) — subscriptions/catalog.py.
+HospitalizationModule = requires_plan_feature(HOSPITALIZATION)
+
 class _AuditedStructureViewSet(TenantScopedModelViewSet):
     """Paramétrage des chambres et lits (administrateur) : création / modification auditées,
     archivage au lieu de la suppression."""
 
-    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageWardStructure]
+    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageWardStructure, HospitalizationModule]
     http_method_names = ["get", "post", "patch", "head", "options"]
     filter_backends = [filters.DjangoFilterBackend]
     filterset_fields = ["is_active"]
@@ -153,7 +159,7 @@ class AdmissionViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.Retrieve
     sortie (permissions-matrix.md) — mais chaque rôle n'en reçoit que les champs permis."""
 
     serializer_class = AdmissionSerializer
-    permission_classes = TenantScopedMixin.permission_classes + [CanAccessAdmissions]
+    permission_classes = TenantScopedMixin.permission_classes + [CanAccessAdmissions, HospitalizationModule]
     queryset = Admission.objects.select_related(
         "patient", "doctor__user", "department", "bed__room", "admitted_by", "discharged_by", "invoice"
     ).prefetch_related(

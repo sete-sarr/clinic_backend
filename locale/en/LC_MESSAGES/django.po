@@ -451,8 +451,8 @@ msgid "Factures"
 msgstr "Invoices"
 
 #: subscriptions/services.py:313
-msgid "Fin de votre mois d'essai gratuit — %(clinic)s"
-msgstr "Your free trial month has ended — %(clinic)s"
+msgid "Fin de votre période d'essai gratuite — %(clinic)s"
+msgstr "Your free trial has ended — %(clinic)s"
 
 #: visitors/models.py:16
 msgid "Fournisseur"
@@ -617,8 +617,8 @@ msgid "Le guide d'utilisation n'est pas disponible."
 msgstr "The user guide is not available."
 
 #: subscriptions/services.py:315
-msgid "Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la plateforme a répondu à vos attentes."
-msgstr "The free trial month for %(clinic)s has ended. We hope the platform has met your expectations."
+msgid "La période d'essai gratuite de %(clinic)s est arrivée à son terme. Nous espérons que la plateforme a répondu à vos attentes."
+msgstr "The free trial for %(clinic)s has ended. We hope the platform has met your expectations."
 
 #: payments/services/__init__.py:20
 msgid "Le montant du paiement doit être positif."
@@ -1629,3 +1629,39 @@ msgstr "Invalid barcode: the check digit does not match."
 #: pharmacy/barcodes.py
 msgid "Code-barres non reconnu : aucun code de médicament (GTIN) n'y figure."
 msgstr "Barcode not recognized: it contains no medication code (GTIN)."
+
+#: subscriptions/permissions.py
+msgid "Ce module fait partie de la formule Professional. Changez de formule depuis l'écran « Abonnement »."
+msgstr "This module is part of the Professional plan. Change your plan from the “Subscription” screen."
+
+#: subscriptions/prepaid.py
+msgid "Abonnement proCli %(plan)s (%(cycle)s) — %(clinic)s"
+msgstr "proCli %(plan)s subscription (%(cycle)s) — %(clinic)s"
+
+#: subscriptions/tasks.py
+msgid "L'abonnement de %(clinic)s arrive à échéance le %(date)s."
+msgstr "The %(clinic)s subscription is due on %(date)s."
+
+#: subscriptions/prepaid.py
+msgid "L'abonnement de %(clinic)s est actif jusqu'au %(end)s. Vous pourrez le prolonger à tout moment depuis l'écran « Abonnement »."
+msgstr "The %(clinic)s subscription is active until %(end)s. You can extend it at any time from the “Subscription” screen."
+
+#: subscriptions/prepaid.py
+msgid "Nous avons bien reçu votre paiement de %(amount)s pour la formule %(plan)s."
+msgstr "We have received your payment of %(amount)s for the %(plan)s plan."
+
+#: subscriptions/prepaid.py
+msgid "Paiement reçu — abonnement %(plan)s de %(clinic)s"
+msgstr "Payment received — %(plan)s subscription for %(clinic)s"
+
+#: subscriptions/tasks.py
+msgid "Pour éviter toute interruption, prolongez-le depuis l'écran « Abonnement » (Wave, Orange Money ou carte). Payer en avance ne vous fait rien perdre : la nouvelle période commence à la fin de la période en cours."
+msgstr "To avoid any interruption, extend it from the “Subscription” screen (Wave, Orange Money or card). Paying early costs you nothing: the new period starts when the current one ends."
+
+#: subscriptions/prepaid.py
+msgid "annuel"
+msgstr "annual"
+
+#: subscriptions/prepaid.py
+msgid "mensuel"
+msgstr "monthly"

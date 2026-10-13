@@ -3,7 +3,7 @@ la clinique, personnel dans la sienne — jamais celle de la requête qui décle
 
 from datetime import date, datetime
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone, translation
 
 from appointments.models import Appointment
@@ -41,6 +41,8 @@ def _appointment(clinic, patient, doctor_language=""):
     )
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class AppointmentNotificationLanguageTests(TestCase):
     def test_english_clinic_patient_receives_english_messages(self):
         clinic = _clinic("Sunrise Clinic", "en")
@@ -79,6 +81,8 @@ class AppointmentNotificationLanguageTests(TestCase):
         self.assertEqual(email.subject, "Confirmation de votre rendez-vous — Clinique du Parc")
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class OtpLanguageTests(TestCase):
     def test_patient_verification_code_follows_the_clinic_language(self):
         clinic = _clinic("Sunrise Clinic", "en")
@@ -136,5 +140,5 @@ class SubscriptionEmailLanguageTests(TestCase):
         create_user(clinic=clinic, role="clinic_admin", email="owner@example.com")
         _notify_license_expired(clinic=clinic, trial_ended=True)
         email = NotificationLog.objects.get(recipient_address="owner@example.com")
-        self.assertEqual(email.subject, "Fin de votre mois d'essai gratuit — Clinique du Parc")
+        self.assertEqual(email.subject, "Fin de votre période d'essai gratuite — Clinique du Parc")
         self.assertIn("Cordialement,\nL'équipe proCli", email.body)

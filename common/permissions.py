@@ -62,4 +62,8 @@ class SubscriptionActivePermission(BasePermission):
         clinic = getattr(user, "clinic", None)
         if not clinic:
             return True
-        return clinic.subscription_status not in self._BLOCKED_STATUSES
+        from subscriptions.catalog import writes_blocked
+
+        # Essai terminé ou abonnement prépayé échu : bloqué dès l'échéance (délai de grâce compris),
+        # même si la tâche quotidienne n'est pas encore passée.
+        return clinic.subscription_status not in self._BLOCKED_STATUSES and not writes_blocked(clinic)

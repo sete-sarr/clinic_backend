@@ -310,9 +310,9 @@ def _notify_license_expired(*, clinic: Clinic, trial_ended: bool = False) -> Non
     def build():
         values = {"clinic": clinic.name}
         if trial_ended:
-            subject = _("Fin de votre mois d'essai gratuit — %(clinic)s") % values
+            subject = _("Fin de votre période d'essai gratuite — %(clinic)s") % values
             paragraphs = [
-                _("Le mois d'essai gratuit de %(clinic)s est arrivé à son terme. Nous espérons que la "
+                _("La période d'essai gratuite de %(clinic)s est arrivée à son terme. Nous espérons que la "
                   "plateforme a répondu à vos attentes.") % values,
                 _("La création de nouveaux enregistrements est suspendue jusqu'à la souscription d'une "
                   "formule. Vos données restent intégralement conservées et consultables."),
@@ -351,7 +351,9 @@ def expire_trials(*, now=None) -> int:
     from django.utils import timezone
 
     now = now or timezone.now()
-    expired = Clinic.objects.filter(subscription_status=Clinic.SubscriptionStatus.TRIAL, trial_ends_at__lte=now)
+    expired = Clinic.objects.filter(
+        subscription_status=Clinic.SubscriptionStatus.TRIAL, trial_ends_at__lte=now, is_demo=False
+    )
     count = 0
     for clinic in expired:
         change_subscription_status(

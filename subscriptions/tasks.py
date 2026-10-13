@@ -14,11 +14,11 @@ from communication.services import (
     send_notification,
 )
 
-# business/notification-rules.md "SUBSCRIPTION EXPIRING" : 30/15/7/1 jours avant current_period_end.
+# business/notification-rules.md "SUBSCRIPTION EXPIRING" : 7, 3 et 1 jour(s) avant current_period_end
+# (décision du 2026-10-14 ; 30/15/7/1 auparavant, trop tôt pour une période d'un mois).
 _THRESHOLDS = [
-    (30, "expiring_notified_30d_at"),
-    (15, "expiring_notified_15d_at"),
     (7, "expiring_notified_7d_at"),
+    (3, "expiring_notified_3d_at"),
     (1, "expiring_notified_1d_at"),
 ]
 
@@ -56,14 +56,21 @@ def _notify_expiring(*, clinic, days_left):
             subject = _("Échéance de votre abonnement dans 1 jour — %(clinic)s") % values
         else:
             subject = _("Échéance de votre abonnement dans %(days)s jours — %(clinic)s") % values
-        body = compose_email(
-            paragraphs=[
+        if clinic.stripe_subscription_id:
+            paragraphs = [
                 _("L'abonnement de %(clinic)s arrive à échéance le %(date)s et sera renouvelé automatiquement.") % values,
                 _("Afin d'éviter toute interruption de service, nous vous invitons à vérifier que votre moyen "
                   "de paiement est à jour depuis l'écran « Abonnement »."),
-            ],
-            signature=PLATFORM_SIGNATURE,
-        )
+            ]
+        else:
+            # Abonnement prépayé (SasPay) : aucun prélèvement automatique.
+            paragraphs = [
+                _("L'abonnement de %(clinic)s arrive à échéance le %(date)s.") % values,
+                _("Pour éviter toute interruption, prolongez-le depuis l'écran « Abonnement » (Wave, Orange Money "
+                  "ou carte). Payer en avance ne vous fait rien perdre : la nouvelle période commence à la fin "
+                  "de la période en cours."),
+            ]
+        body = compose_email(paragraphs=paragraphs, signature=PLATFORM_SIGNATURE)
         return subject, body
 
     for admin_user in admins:
@@ -83,8 +90,8 @@ def _notify_expiring(*, clinic, days_left):
 
 @shared_task
 def expire_ended_trials():
-    """S'exécute quotidiennement : suspend les cliniques dont le mois d'essai gratuit est terminé
-    sans souscription (logique dans services.expire_trials)."""
+    """S'exécute quotidiennement : suspend les cliniques dont l'essai gratuit est terminé sans
+    souscription (logique dans services.expire_trials)."""
     from .services import expire_trials
 
     return expire_trials()

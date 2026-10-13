@@ -348,6 +348,20 @@ EMAIL_REPLY_TO = env("EMAIL_REPLY_TO", default="")
 # lieu d'envoyer.
 HTTPSMS_API_KEY = env("HTTPSMS_API_KEY", default="")
 HTTPSMS_FROM_NUMBER = env("HTTPSMS_FROM_NUMBER", default="")
+# Interrupteur des SMS (décision du 2026-10-14) : désactivés tant qu'aucun abonnement auprès d'un
+# fournisseur SMS n'est souscrit. Faux = aucun SMS n'est préparé ni envoyé (OTP, rendez-vous) et la
+# formule Professional ne les annonce plus ; passer SMS_ENABLED=True sur Render pour les rétablir.
+SMS_ENABLED = env.bool("SMS_ENABLED", default=False)
+
+# --- Tâches quotidiennes et envoi des messages (docs/scheduled-tasks.md) -----------------------
+
+# Pas de worker Celery en production : les e-mails/SMS partent pendant la requête, une fois la
+# transaction validée, et les tâches quotidiennes sont déclenchées par GitHub Actions via
+# POST /api/v1/internal/daily-tasks/ (en-tête Authorization: Bearer <CRON_SECRET>). Mettre
+# NOTIFICATIONS_VIA_CELERY=True le jour où un worker Celery tourne réellement.
+NOTIFICATIONS_VIA_CELERY = env.bool("NOTIFICATIONS_VIA_CELERY", default=False)
+# Vide = point d'entrée des tâches quotidiennes désactivé (404).
+CRON_SECRET = env("CRON_SECRET", default="")
 
 # --- Appointments ---------------------------------------------------------------
 
@@ -363,7 +377,12 @@ APPOINTMENT_CANCELLATION_DEADLINE_HOURS = env.int("APPOINTMENT_CANCELLATION_DEAD
 # entièrement distinct de backend/billing/ (facturation des patients). Valeurs par défaut vides
 # pour que manage.py/les tests ne plantent jamais faute de clé Stripe — même posture "architecture
 # prête, identifiants pas encore là" déjà établie pour le SMS.
-SUBSCRIPTION_PAYMENT_PROVIDER = env("SUBSCRIPTION_PAYMENT_PROVIDER", default="stripe")
+# saspay : abonnement prépayé par Mobile Money / carte (décision du 2026-10-14, subscriptions/prepaid.py) ;
+# stripe : abonnement à prélèvement automatique (mode test uniquement, pas de société éligible).
+SUBSCRIPTION_PAYMENT_PROVIDER = env("SUBSCRIPTION_PAYMENT_PROVIDER", default="saspay")
+SASPAY_API_URL = env("SASPAY_API_URL", default="https://api.saspay.me/api/v1")
+SASPAY_API_KEY = env("SASPAY_API_KEY", default="")
+SASPAY_WEBHOOK_SECRET = env("SASPAY_WEBHOOK_SECRET", default="")
 STRIPE_API_KEY = env("STRIPE_API_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 

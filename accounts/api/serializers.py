@@ -18,6 +18,9 @@ class UserSerializer(PhotoUrlMixin, serializers.ModelSerializer):
     # (estimation d'une nouvelle facture) — tous les rôles, alors que la fiche clinique est
     # réservée au clinic_admin.
     clinic_currency = serializers.CharField(source="clinic.currency", read_only=True, default=None)
+    # Modules hospitalisation / laboratoire / pharmacie affichés dans le menu selon la formule
+    # (subscriptions/catalog.py::visible_modules).
+    clinic_modules = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -25,7 +28,7 @@ class UserSerializer(PhotoUrlMixin, serializers.ModelSerializer):
         # connexion si elle est renseignée (docs/i18n.md §2).
         fields = [
             "id", "username", "email", "first_name", "last_name", "clinic", "roles", "doctor_id", "language",
-            "clinic_currency", "photo",
+            "clinic_currency", "clinic_modules", "photo",
         ]
         read_only_fields = ["language"]
 
@@ -38,6 +41,11 @@ class UserSerializer(PhotoUrlMixin, serializers.ModelSerializer):
         # dans une liste.
         doctor_profile = getattr(obj, "doctor_profile", None)
         return doctor_profile.id if doctor_profile else None
+
+    def get_clinic_modules(self, obj):
+        from subscriptions.catalog import visible_modules
+
+        return visible_modules(obj.clinic) if obj.clinic_id else []
 
 
 class MePreferencesSerializer(serializers.ModelSerializer):

@@ -195,13 +195,13 @@ class TrialAndPricingRulesTests(TestCase):
         clinic.trial_ends_at = self.now + self.timedelta(days=days)
         clinic.save(update_fields=["subscription_status", "trial_ends_at"])
 
-    def test_start_trial_gives_thirty_days(self):
+    def test_start_trial_gives_fourteen_days(self):
         from subscriptions.services import start_trial
 
         start_trial(clinic=self.clinic)
         self.clinic.refresh_from_db()
         remaining = self.clinic.trial_ends_at - self.now
-        self.assertEqual(round(remaining.total_seconds() / 86400), 30)
+        self.assertEqual(round(remaining.total_seconds() / 86400), 14)
 
     def test_expire_trials_suspends_only_ended_trials(self):
         from subscriptions.services import expire_trials

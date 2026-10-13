@@ -1,0 +1,39 @@
+# Tâches quotidiennes de proCli (docs/scheduled-tasks.md) : fin des essais gratuits, rappels de la
+# veille, avis d'expiration d'abonnement, nouvelle tentative des e-mails en échec, purges.
+# Aucun worker Celery en production : ce workflow appelle chaque matin le backend Render.
+#
+# À configurer une fois dans GitHub (Settings → Secrets and variables → Actions) :
+#   - secret CRON_SECRET : la même valeur que la variable CRON_SECRET du service Render.
+name: Tâches quotidiennes
+
+on:
+  schedule:
+    - cron: "0 7 * * *" # 07:00 UTC = 07:00 à Dakar
+  workflow_dispatch: # lancement manuel depuis l'onglet Actions
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Appeler le backend
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          API_URL: https://clinic-backend-p0km.onrender.com/api/v1/internal/daily-tasks/
+        run: |
+          # Jusqu'à 3 essais : le service peut redémarrer (déploiement en cours).
+          for attempt in 1 2 3; do
+            status=$(curl --silent --show-error --max-time 180 --output response.json --write-out "%{http_code}" \
+              -X POST -H "Authorization: Bearer ${CRON_SECRET}" "${API_URL}") || status=000
+            echo "Essai ${attempt} : HTTP ${status}"
+            cat response.json 2>/dev/null || true
+            echo
+            if [ "${status}" = "200" ]; then exit 0; fi
+            if [ "${status}" = "403" ] || [ "${status}" = "404" ]; then
+              echo "::error::Secret CRON_SECRET absent ou différent entre GitHub et Render."
+              exit 1
+            fi
+            sleep 60
+          done
+          echo "::error::Les tâches quotidiennes n'ont pas abouti (voir la réponse ci-dessus)."
+          exit 1

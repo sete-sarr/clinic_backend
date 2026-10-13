@@ -27,6 +27,7 @@ class NotificationLog(TimeStampedModel):
         APPOINTMENT_REMINDER = "appointment_reminder", "Appointment reminder"
         SUBSCRIPTION_EXPIRING = "subscription_expiring", "Subscription expiring"
         LICENSE_EXPIRED = "license_expired", "License expired"
+        SUBSCRIPTION_PAYMENT = "subscription_payment", "Subscription payment received"
         STOCK_LOW = "stock_low", "Low stock"
         STOCK_OVERSTOCK = "stock_overstock", "Overstock"
         LAB_RESULT_AVAILABLE = "lab_result_available", "Lab result available"

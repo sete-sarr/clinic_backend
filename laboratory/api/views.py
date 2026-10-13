@@ -19,6 +19,8 @@ from laboratory import services
 from laboratory.models import LabOrder, LabResult, LabResultFile, LabTest
 from laboratory.pdf import render_lab_results_pdf
 from laboratory.permissions import CanAccessLabOrders, CanManageLabTests
+from subscriptions.catalog import LABORATORY
+from subscriptions.permissions import requires_plan_feature
 from patients.access import ensure_patient_accessible
 
 from .serializers import (
@@ -38,9 +40,13 @@ def _service_call(func, **kwargs):
         raise serializers.ValidationError(exc.messages) from exc
 
 
+
+# Création et modification réservées à la formule Professional (et à l'essai) — subscriptions/catalog.py.
+LaboratoryModule = requires_plan_feature(LABORATORY)
+
 class LabTestViewSet(TenantScopedModelViewSet):
     serializer_class = LabTestSerializer
-    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageLabTests]
+    permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageLabTests, LaboratoryModule]
     queryset = LabTest.objects.all()
     filter_backends = [filters.DjangoFilterBackend, SearchFilter]
     filterset_fields = ["is_active"]
@@ -84,7 +90,7 @@ class LabOrderViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.RetrieveM
     demandes de la clinique ; médecin — ses demandes ; patient — ses demandes validées."""
 
     serializer_class = LabOrderSerializer
-    permission_classes = TenantScopedMixin.permission_classes + [CanAccessLabOrders]
+    permission_classes = TenantScopedMixin.permission_classes + [CanAccessLabOrders, LaboratoryModule]
     queryset = LabOrder.objects.select_related("patient", "doctor__user", "validated_by", "invoice").prefetch_related(
         "items",
         Prefetch(

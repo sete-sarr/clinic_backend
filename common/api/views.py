@@ -47,3 +47,32 @@ class AuditLogViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.RetrieveM
         "created_at": ["gte", "lte"],
     }
     search_fields = ["model_name", "object_id"]
+
+
+class DailyTasksView(APIView):
+    """POST /api/v1/internal/daily-tasks/ — tâches quotidiennes (common/daily_tasks.py), déclenchées
+    par GitHub Actions. Sans compte utilisateur : protégé par le secret partagé CRON_SECRET, envoyé
+    dans l'en-tête « Authorization: Bearer <secret> » et comparé en temps constant. Introuvable (404)
+    tant que CRON_SECRET n'est pas configuré."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = []
+    throttle_classes = []
+
+    def post(self, request):
+        import hmac
+
+        from django.conf import settings
+        from rest_framework.response import Response
+
+        from common.daily_tasks import run_daily_tasks
+
+        secret = settings.CRON_SECRET
+        if not secret:
+            raise Http404
+        supplied = request.META.get("HTTP_AUTHORIZATION", "").removeprefix("Bearer ").strip()
+        if not hmac.compare_digest(supplied.encode(), secret.encode()):
+            return Response({"detail": "Forbidden"}, status=403)
+        report = run_daily_tasks()
+        status = 200 if all(entry["ok"] for entry in report.values()) else 500
+        return Response(report, status=status)

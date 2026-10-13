@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
 from django.core.exceptions import ValidationError
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from appointments.models import Appointment
@@ -112,6 +112,8 @@ class CancelAppointmentByPatientTests(TestCase):
         self.assertEqual(appointment.status, Appointment.Status.CANCELLED)
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class AppointmentNotificationDispatchTests(TestCase):
     """Appels directs aux fonctions de construction des notifications, sur le même modèle que
     OtpServiceTests dans communication/tests/test_otp.py — pas de on_commit/Celery impliqué,
@@ -155,6 +157,8 @@ class AppointmentNotificationDispatchTests(TestCase):
         self.assertEqual(NotificationLog.objects.count(), 0)
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class SendDayBeforeRemindersTests(TestCase):
     def setUp(self):
         self.clinic = create_clinic()
@@ -307,6 +311,8 @@ class CheckInAppointmentTests(TestCase):
             check_in_appointment(appointment=appointment)
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class PlanRestrictedAppointmentNotificationsTests(TestCase):
     """Décision métier du 2026-09-28 : SMS de rendez-vous et rappel groupé de la veille réservés à
     la formule Professional (15 000 FCFA) et à l'essai ; Starter garde les e-mails individuels."""
@@ -367,6 +373,8 @@ class PlanRestrictedAppointmentNotificationsTests(TestCase):
         self.assertTrue(NotificationLog.objects.filter(channel=NotificationLog.Channel.SMS).exists())
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class AppointmentNotificationTextTests(TestCase):
     """Rédaction professionnelle : un message au patient, un autre au personnel (le médecin ne doit
     pas recevoir « votre rendez-vous avec le Dr [lui-même] »), SMS courts signés de la clinique."""

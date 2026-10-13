@@ -2,6 +2,7 @@ import re
 from datetime import date
 
 from django.core.cache import cache
+from django.test import override_settings
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
@@ -11,6 +12,8 @@ from communication.models import NotificationLog
 from patients.models import Patient
 
 
+# Le code SMS reste testé, même désactivé en production (settings.SMS_ENABLED).
+@override_settings(SMS_ENABLED=True)
 class PatientActivationTests(APITestCase):
     def setUp(self):
         cache.clear()  # ScopedRateThrottle utilise le cache par défaut (partagé entre process).

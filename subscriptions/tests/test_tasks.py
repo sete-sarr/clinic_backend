@@ -19,17 +19,17 @@ def _active_clinic_expiring_in(days):
 
 class SendSubscriptionExpiringNotificationsTests(TestCase):
     def test_sends_at_each_threshold(self):
-        for days in (30, 15, 7, 1):
+        for days in (7, 3, 1):
             clinic = _active_clinic_expiring_in(days)
             create_user(clinic=clinic, role="clinic_admin", email=f"admin{days}@example.com")
 
         send_subscription_expiring_notifications()
 
         logs = NotificationLog.objects.filter(notification_type=NotificationLog.NotificationType.SUBSCRIPTION_EXPIRING)
-        self.assertEqual(logs.count(), 4)
+        self.assertEqual(logs.count(), 3)
 
     def test_idempotent_same_day_rerun(self):
-        clinic = _active_clinic_expiring_in(30)
+        clinic = _active_clinic_expiring_in(7)
         create_user(clinic=clinic, role="clinic_admin", email="admin@example.com")
 
         send_subscription_expiring_notifications()
@@ -56,7 +56,7 @@ class SendSubscriptionExpiringNotificationsTests(TestCase):
         )
 
     def test_skips_clinic_admin_with_no_email(self):
-        clinic = _active_clinic_expiring_in(30)
+        clinic = _active_clinic_expiring_in(7)
         create_user(clinic=clinic, role="clinic_admin", email="")  # aucun e-mail renseigné
 
         send_subscription_expiring_notifications()  # ne doit pas lever d'exception
@@ -68,4 +68,4 @@ class SendSubscriptionExpiringNotificationsTests(TestCase):
             0,
         )
         clinic.refresh_from_db()
-        self.assertIsNotNone(clinic.expiring_notified_30d_at)  # toujours marqué comme notifié — une tentative a eu lieu
+        self.assertIsNotNone(clinic.expiring_notified_7d_at)  # toujours marqué comme notifié — une tentative a eu lieu
