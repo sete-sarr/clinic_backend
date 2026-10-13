@@ -6,6 +6,7 @@ from rest_framework.views import APIView
 from appointments.models import Appointment
 from common.permissions import in_role
 from doctors.models import Doctor
+from patients.access import scope_to_own_patients
 from patients.models import Patient
 
 MIN_QUERY_LENGTH = 2
@@ -60,6 +61,8 @@ class GlobalSearchView(APIView):
     def _search_patients(self, query, user, clinic_id):
         qs = Patient.objects.filter(is_active=True)
         qs = qs.all() if user.is_superuser else qs.filter(clinic_id=clinic_id)
+        # Médecin : ses seuls patients (patients/access.py) — sinon la recherche les révélerait.
+        qs = scope_to_own_patients(qs, user, field="id")
         qs = qs.filter(
             Q(first_name__icontains=query)
             | Q(last_name__icontains=query)

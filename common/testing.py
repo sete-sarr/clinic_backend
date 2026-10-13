@@ -25,3 +25,16 @@ def create_user(*, clinic, role=None, username=None, **extra):
         group, _ = Group.objects.get_or_create(name=role)
         user.groups.add(group)
     return user
+
+
+def link_doctor_to_patient(doctor, patient):
+    """Donne au médecin un rendez-vous avec le patient : sans ce lien de soin, un médecin ne voit pas
+    le patient et ne peut créer aucun acte pour lui (patients/access.py)."""
+    from datetime import date, time, timedelta
+
+    from appointments.models import Appointment
+
+    return Appointment.objects.create(
+        clinic=patient.clinic, patient=patient, doctor=doctor,
+        date=date.today() + timedelta(days=30), time=time(8, 0), reason="Suivi",
+    )

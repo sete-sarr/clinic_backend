@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from common.models import AuditLog
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from consultations.models import Consultation
 from doctors.models import Doctor
 from patients.models import Patient
@@ -79,6 +79,7 @@ class ConsultationAuditTests(APITestCase):
         self.clinic = create_clinic()
         self.doctor = _create_doctor(self.clinic)
         self.patient = _create_patient(self.clinic, "PAT-2026-00002")
+        link_doctor_to_patient(self.doctor, self.patient)
         self.client.force_authenticate(self.doctor.user)
 
     def test_create_and_update_record_audit_log(self):

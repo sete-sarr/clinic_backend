@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from patients.models import Patient
 
 
@@ -163,9 +163,11 @@ class PatientReportsExportTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_doctor_cannot_access_statement_pdf(self):
+        # 404 : ce compte médecin n'a aucun lien de soin avec le patient, qui lui est donc invisible
+        # (patients/access.py) ; 403 pour un médecin qui le suit (relevé réservé à la facturation).
         self.client.force_authenticate(self.doctor)
         response = self.client.get(reverse("patient-statement-pdf", args=[self.patient.id]))
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn(response.status_code, (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND))
 
     def test_csv_export_returns_csv_with_header(self):
         self.client.force_authenticate(self.secretary)

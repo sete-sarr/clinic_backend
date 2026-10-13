@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django.utils import timezone
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,6 +13,7 @@ from common.models import AuditLog
 from common.permissions import in_role
 from common.photos import owner_photo_url, remove_photo, set_photo
 from common.viewsets import TenantScopedModelViewSet
+from patients.access import grant_emergency_access, scope_to_own_patients
 from patients.models import Patient, PatientPhoto
 from patients.permissions import CanEditPatientPhoto, CanManagePatients
 from patients.services.pdf import render_patient_statement_pdf
@@ -44,7 +46,8 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
         if in_role(user, "patient") and not in_role(user, "doctor", "secretary", "accountant", "clinic_admin"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(id=patient_profile.id) if patient_profile else qs.none()
-        return qs
+        # Médecin : ses seuls patients (patients/access.py).
+        return scope_to_own_patients(qs, user, field="id")
 
     def perform_create(self, serializer):
         patient = serializer.save(clinic=self.request.user.clinic)
@@ -98,3 +101,19 @@ class PatientViewSet(CsvExportMixin, TenantScopedModelViewSet):
                 consent_recorded_by=request.user,
             )
         return Response({"photo": owner_photo_url(patient, request)})
+
+    @action(detail=False, methods=["post"], url_path="emergency-access", permission_classes=TenantScopedModelViewSet.permission_classes)
+    def emergency_access(self, request):
+        """Accès d'urgence d'un médecin au dossier d'un patient qui n'est pas le sien : numéro exact
+        du patient et motif (patients/access.py::grant_emergency_access)."""
+        try:
+            access = grant_emergency_access(
+                user=request.user,
+                patient_number=request.data.get("patient_number"),
+                reason=request.data.get("reason"),
+            )
+        except DjangoValidationError as exc:
+            return Response({"code": 400, "message": exc.messages[0], "field": None}, status=400)
+        data = self.get_serializer(access.patient).data
+        data["emergency_access_expires_at"] = access.expires_at
+        return Response(data, status=201)

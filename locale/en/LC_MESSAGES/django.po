@@ -1536,3 +1536,27 @@ msgstr "Item not found."
 #: billing/models.py:17
 msgid "Émise"
 msgstr "Issued"
+
+#: patients/access.py
+msgid "Ce patient ne fait pas partie de vos patients : l'accueil doit d'abord lui donner un rendez-vous avec vous."
+msgstr "This patient is not one of your patients: the front desk must first book them an appointment with you."
+
+#: patients/access.py
+msgid "L'accès d'urgence est réservé aux médecins."
+msgstr "Emergency access is reserved for doctors."
+
+#: patients/access.py
+msgid "Indiquez le motif de l'accès d'urgence (%(count)s caractères au moins)."
+msgstr "Give the reason for emergency access (at least %(count)s characters)."
+
+#: patients/access.py
+msgid "Aucun patient actif ne porte ce numéro dans votre clinique."
+msgstr "No active patient has this number in your clinic."
+
+#: patients/notifications.py
+msgid "Accès d'urgence à un dossier patient"
+msgstr "Emergency access to a patient record"
+
+#: patients/notifications.py
+msgid "%(doctor)s a ouvert un accès d'urgence de 24 h au dossier du patient %(number)s. Le motif figure dans le journal d'audit."
+msgstr "%(doctor)s opened 24-hour emergency access to the record of patient %(number)s. The reason is recorded in the audit log."

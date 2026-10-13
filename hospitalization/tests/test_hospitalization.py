@@ -11,7 +11,7 @@ from rest_framework.test import APITestCase
 
 from billing.models import Invoice
 from common.models import AuditLog
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from communication.models import InAppNotification
 from departments.models import Department
 from doctors.models import Doctor
@@ -48,6 +48,7 @@ class HospitalizationTests(APITestCase):
             clinic=self.clinic, patient_number="PAT-2026-00001", first_name="Grace", last_name="Hopper",
             phone="770000000", date_of_birth=date(1990, 1, 1), gender=Patient.Gender.FEMALE,
         )
+        link_doctor_to_patient(self.doctor, self.patient)
 
     def _as(self, user):
         self.client.force_authenticate(user)
@@ -107,6 +108,7 @@ class HospitalizationTests(APITestCase):
             clinic=self.clinic, patient_number="PAT-2026-00002", first_name="Ada", last_name="Lovelace",
             phone="770000001", date_of_birth=date(1990, 1, 1), gender=Patient.Gender.FEMALE,
         )
+        link_doctor_to_patient(self.doctor, other)
         busy_bed = self._post("admission-list", data={
             "patient": other.id, "department": self.department.id, "reason": "X", "bed": self.bed_1.id,
         })

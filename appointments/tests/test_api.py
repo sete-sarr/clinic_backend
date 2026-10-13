@@ -7,7 +7,7 @@ from rest_framework.test import APITestCase
 
 from appointments.models import Appointment
 from common.models import AuditLog
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from doctors.models import Doctor
 from patients.models import Patient
 
@@ -102,6 +102,7 @@ class AppointmentBusinessRuleTests(APITestCase):
         self.doctor = _create_doctor(self.clinic)
         self.patient = _create_patient(self.clinic, "PAT-2026-00003")
         self.client.force_authenticate(self.doctor.user)
+        link_doctor_to_patient(self.doctor, self.patient)
 
     def test_cannot_create_appointment_in_the_past(self):
         payload = {
@@ -125,6 +126,7 @@ class AppointmentBusinessRuleTests(APITestCase):
         self.assertEqual(first.status_code, status.HTTP_201_CREATED)
 
         other_patient = _create_patient(self.clinic, "PAT-2026-00004")
+        link_doctor_to_patient(self.doctor, other_patient)
         payload["patient"] = other_patient.id
         second = self.client.post(reverse("appointment-list"), payload)
         self.assertEqual(second.status_code, status.HTTP_400_BAD_REQUEST)
@@ -135,6 +137,7 @@ class AppointmentAuditTests(APITestCase):
         self.clinic = create_clinic()
         self.doctor = _create_doctor(self.clinic)
         self.patient = _create_patient(self.clinic, "PAT-2026-00005")
+        link_doctor_to_patient(self.doctor, self.patient)
         self.client.force_authenticate(self.doctor.user)
 
     def test_create_and_update_record_audit_log(self):

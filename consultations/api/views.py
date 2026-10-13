@@ -9,6 +9,7 @@ from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
 from consultations.models import Consultation
 from consultations.permissions import CanManageConsultations
+from patients.access import ensure_patient_accessible
 
 from .serializers import ConsultationSerializer
 
@@ -43,6 +44,8 @@ class ConsultationViewSet(TenantScopedModelViewSet):
             # champ doctor soumis par le client ici, on l'écrase simplement (business/access-policy.md :
             # moindre privilège).
             save_kwargs["doctor"] = doctor_profile
+            # Patient du médecin uniquement (patients/access.py).
+            ensure_patient_accessible(user, serializer.validated_data["patient"])
         consultation = serializer.save(**save_kwargs)
         record_audit(user=user, action=AuditLog.Action.CREATE, obj=consultation)
 

@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from clinics.models import Clinic
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from subscriptions.providers.base import BillingPortalResult, CheckoutSessionResult
 
 
@@ -145,6 +145,11 @@ class SubscriptionActivePermissionOnMedicalRecordsTests(APITestCase):
             phone="0622222222", date_of_birth=date(1990, 1, 1), gender="male",
         )
         self.record = self.patient.medical_record
+        # Le médecin ne voit que ses patients (patients/access.py) : profil médecin + rendez-vous.
+        from doctors.models import Doctor
+
+        doctor = Doctor.objects.create(user=self.doctor_user, clinic=self.clinic, professional_number="D-REC", specialty="General")
+        link_doctor_to_patient(doctor, self.patient)
         self.client.force_authenticate(self.doctor_user)
 
     def test_suspended_clinic_cannot_update_medical_record(self):

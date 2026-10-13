@@ -11,7 +11,7 @@ from rest_framework.test import APITestCase
 
 from billing.models import Invoice
 from common.models import AuditLog
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from communication.models import InAppNotification, NotificationLog
 from doctors.models import Doctor
 from laboratory.models import LabOrder, LabResult, LabTest
@@ -62,6 +62,7 @@ class LaboratoryWorkflowTests(APITestCase):
         self.crp = LabTest.objects.create(clinic=self.clinic, code="CRP", name="CRP", price=Decimal("7000"), unit="mg/L")
 
     # ------------------------------------------------------------- helpers
+        link_doctor_to_patient(self.doctor, self.patient)
 
     def _as(self, user):
         self.client.force_authenticate(user)

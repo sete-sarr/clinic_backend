@@ -70,3 +70,22 @@ class PatientPhoto(PhotoBase):
 
     def __str__(self):
         return f"photo:{self.patient_id}"
+
+
+class EmergencyAccess(TimeStampedModel):
+    """Accès d'urgence (« bris de glace ») d'un médecin au dossier d'un patient qui n'est pas le sien
+    (patients/access.py) : motif obligatoire, durée limitée, journalisé et signalé à l'administrateur.
+    Jamais supprimé : c'est une trace d'accès à des données de santé."""
+
+    clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="emergency_accesses")
+    doctor = models.ForeignKey("doctors.Doctor", on_delete=models.PROTECT, related_name="emergency_accesses")
+    patient = models.ForeignKey(Patient, on_delete=models.PROTECT, related_name="emergency_accesses")
+    reason = models.TextField()
+    expires_at = models.DateTimeField()
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [models.Index(fields=["doctor", "patient", "expires_at"])]
+
+    def __str__(self):
+        return f"{self.doctor_id} -> {self.patient_id} ({self.expires_at:%Y-%m-%d %H:%M})"

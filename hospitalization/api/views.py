@@ -16,6 +16,7 @@ from hospitalization import services
 from hospitalization.models import Admission, Bed, BedTransfer, Room, RoomType
 from hospitalization.pdf import render_stay_summary_pdf
 from hospitalization.permissions import CanAccessAdmissions, CanManageWardStructure
+from patients.access import ensure_patient_accessible
 
 from .serializers import (
     AdmissionCreateSerializer,
@@ -180,6 +181,7 @@ class AdmissionViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.Retrieve
         doctor = self._doctor_profile()
         payload = AdmissionCreateSerializer(data=request.data, context={"request": request})
         payload.is_valid(raise_exception=True)
+        ensure_patient_accessible(request.user, payload.validated_data["patient"])
         admission = _service_call(
             services.create_admission, clinic=request.user.clinic, doctor=doctor, actor=request.user,
             **payload.validated_data,

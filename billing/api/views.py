@@ -16,6 +16,7 @@ from common.exports import CsvExportMixin
 from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
+from patients.access import scope_to_own_patients
 
 from .serializers import InvoiceSerializer
 
@@ -48,7 +49,8 @@ class InvoiceViewSet(CsvExportMixin, TenantScopedModelViewSet):
         if in_role(user, "patient") and not in_role(user, "doctor", "secretary", "accountant", "clinic_admin"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()
-        return qs
+        # Médecin : factures de ses seuls patients (patients/access.py).
+        return scope_to_own_patients(qs, user)
 
     def perform_create(self, serializer):
         invoice = serializer.save(clinic=self.request.user.clinic)

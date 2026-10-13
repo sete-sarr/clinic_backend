@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from doctors.models import Doctor
 from medical_records.models import MedicalRecord
 from patients.models import Patient
@@ -43,6 +43,7 @@ class MedicalRecordAccessTests(APITestCase):
         self.other_record = MedicalRecord.objects.create(
             clinic=self.clinic, patient=self.other_patient, allergies="Peanuts"
         )
+        link_doctor_to_patient(self.doctor, self.patient)
 
     def test_patient_list_only_returns_own_record(self):
         """Security fix: CanAccessMedicalRecord grants patients SAFE_METHODS, so without queryset

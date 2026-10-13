@@ -11,6 +11,7 @@ from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
 from hospitalization.services import admitted_patient_ids, is_nurse_only
+from patients.access import ensure_patient_accessible
 from prescriptions.models import Prescription
 from prescriptions.permissions import CanManagePrescriptions
 from prescriptions.services.pdf import render_prescription_pdf
@@ -50,6 +51,8 @@ class PrescriptionViewSet(TenantScopedModelViewSet):
             # doctor soumis par le client, on le remplace simplement (business/access-policy.md :
             # moindre privilège).
             save_kwargs["doctor"] = doctor_profile
+            # Patient du médecin uniquement (patients/access.py).
+            ensure_patient_accessible(user, serializer.validated_data["patient"])
         prescription = serializer.save(**save_kwargs)
         record_audit(user=user, action=AuditLog.Action.CREATE, obj=prescription)
 

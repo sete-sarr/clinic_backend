@@ -17,6 +17,7 @@ from common.exports import CsvExportMixin
 from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
+from patients.access import ensure_patient_accessible
 
 from .serializers import AppointmentSerializer
 
@@ -63,6 +64,8 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
             requested_doctor = serializer.validated_data.get("doctor")
             if doctor_profile is None or requested_doctor is None or requested_doctor.id != doctor_profile.id:
                 raise PermissionDenied(_("Un médecin ne peut créer des rendez-vous qu'à son propre nom."))
+            if serializer.validated_data.get("patient") is not None:
+                ensure_patient_accessible(user, serializer.validated_data["patient"])
 
         save_kwargs = {"clinic": user.clinic}
         if in_role(user, "patient") and not in_role(user, "doctor", "secretary", "accountant", "clinic_admin"):

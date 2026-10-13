@@ -92,6 +92,8 @@ class AuditLog(models.Model):
         LOGIN = "login", "Login"
         LOGOUT = "logout", "Logout"
         PERMISSION_CHANGE = "permission_change", "Permission change"
+        # Accès d'urgence d'un médecin au dossier d'un patient qui n'est pas le sien (patients/access.py).
+        EMERGENCY_ACCESS = "emergency_access", "Emergency access"
 
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="audit_logs"

@@ -5,7 +5,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from common.testing import create_clinic, create_user
+from common.testing import create_clinic, create_user, link_doctor_to_patient
 from consultations.models import Consultation
 from doctors.models import Doctor
 from patients.models import Patient
@@ -57,6 +57,7 @@ class PrescriptionTests(APITestCase):
         # l'origine de la requête, en ignorant ce qui a été soumis -- donc doctor_b se retrouve
         # propriétaire de la prescription même si doctor_a.id a été envoyé, plutôt que d'être
         # rejeté avec un 403.
+        link_doctor_to_patient(self.doctor_b, self.patient)
         self.client.force_authenticate(self.doctor_b.user)
         payload = {
             "consultation": self.consultation.id,

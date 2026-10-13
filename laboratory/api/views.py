@@ -19,6 +19,7 @@ from laboratory import services
 from laboratory.models import LabOrder, LabResult, LabResultFile, LabTest
 from laboratory.pdf import render_lab_results_pdf
 from laboratory.permissions import CanAccessLabOrders, CanManageLabTests
+from patients.access import ensure_patient_accessible
 
 from .serializers import (
     AttachmentSerializer,
@@ -124,6 +125,7 @@ class LabOrderViewSet(TenantScopedMixin, mixins.ListModelMixin, mixins.RetrieveM
             raise PermissionDenied(_("Ce compte n'a pas de profil médecin dans cette clinique."))
         payload = LabOrderCreateSerializer(data=request.data)
         payload.is_valid(raise_exception=True)
+        ensure_patient_accessible(request.user, payload.validated_data["patient"])
         order = _service_call(
             services.create_lab_order, clinic=request.user.clinic, doctor=doctor_profile, actor=request.user,
             **payload.validated_data,

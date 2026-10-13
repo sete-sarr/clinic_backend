@@ -9,6 +9,7 @@ from common.permissions import IsSameClinic, SubscriptionActivePermission, in_ro
 from hospitalization.services import admitted_patient_ids, is_nurse_only
 from medical_records.models import MedicalRecord
 from medical_records.permissions import CanAccessMedicalRecord
+from patients.access import scope_to_own_patients
 
 from .serializers import MedicalRecordSerializer
 
@@ -48,7 +49,8 @@ class MedicalRecordViewSet(
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()
         if is_nurse_only(user):
             return qs.filter(patient_id__in=admitted_patient_ids(user.clinic_id))
-        return qs
+        # Médecin : dossiers de ses seuls patients (patients/access.py).
+        return scope_to_own_patients(qs, user)
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
