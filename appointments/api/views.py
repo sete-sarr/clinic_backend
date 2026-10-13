@@ -2,6 +2,7 @@ import django_filters
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.http import HttpResponse
 from django_filters.rest_framework import DjangoFilterBackend
+from django.utils import timezone
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 from rest_framework.decorators import action
@@ -38,6 +39,11 @@ class AppointmentFilterSet(django_filters.FilterSet):
     checked_in = django_filters.BooleanFilter(method="filter_checked_in")
     # assigned=false : rendez-vous de département encore sans médecin (« À attribuer »).
     assigned = django_filters.BooleanFilter(field_name="doctor", lookup_expr="isnull", exclude=True)
+    # period=upcoming : à partir d'aujourd'hui, le plus proche en premier ; period=past : avant
+    # aujourd'hui, le plus récent en premier (décision du 2026-10-14). Sans period : ordre du modèle.
+    period = django_filters.ChoiceFilter(
+        choices=[("upcoming", "upcoming"), ("past", "past")], method="filter_period"
+    )
 
     class Meta:
         model = Appointment
@@ -45,6 +51,12 @@ class AppointmentFilterSet(django_filters.FilterSet):
 
     def filter_checked_in(self, queryset, name, value):
         return queryset.filter(checked_in_at__isnull=not value)
+
+    def filter_period(self, queryset, name, value):
+        today = timezone.localdate()
+        if value == "past":
+            return queryset.filter(date__lt=today).order_by("-date", "-time")
+        return queryset.filter(date__gte=today).order_by("date", "time")
 
 
 class AppointmentAssignSerializer(serializers.Serializer):

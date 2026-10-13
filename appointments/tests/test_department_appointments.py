@@ -5,6 +5,7 @@ from datetime import date, time, timedelta
 
 from django.core.exceptions import ValidationError
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
@@ -49,7 +50,7 @@ class DepartmentAppointmentTests(APITestCase):
         self.doctor_p = _doctor(self.clinic, "Gamma", self.pedia)
         self.secretary = create_user(clinic=self.clinic, role="secretary")
         self.patient = _patient(self.clinic, "PAT-R1")
-        self.day = date.today() + timedelta(days=2)
+        self.day = timezone.localdate() + timedelta(days=2)
 
     def _create(self, **payload):
         self.client.force_authenticate(self.secretary)
@@ -152,7 +153,7 @@ class DepartmentAppointmentTests(APITestCase):
 
     def test_check_in_of_a_pending_appointment_alerts_the_department(self):
         appointment = self._pool_appointment()
-        appointment.date = date.today()
+        appointment.date = timezone.localdate()
         appointment.save()
         self.client.force_authenticate(self.secretary)
         with self.captureOnCommitCallbacks(execute=True):
@@ -168,3 +169,27 @@ class DepartmentAppointmentTests(APITestCase):
             doctor.save()
         with self.assertRaises(ValidationError):
             archive_department(department=self.cardio, actor=self.secretary)
+
+
+class AppointmentPeriodTests(APITestCase):
+    """Liste des rendez-vous : « À venir » (le plus proche en premier) et « Passés » (le plus récent en premier)."""
+
+    def setUp(self):
+        self.clinic = create_clinic("Clinique Période")
+        doctor = _doctor(self.clinic, "Epsilon")
+        patient = _patient(self.clinic, "PAT-P1")
+        today = timezone.localdate()
+        self.ids = {}
+        for key, offset in {"far": 20, "soon": 1, "today": 0, "yesterday": -1, "old": -30}.items():
+            self.ids[key] = Appointment.objects.create(
+                clinic=self.clinic, patient=patient, doctor=doctor, date=today + timedelta(days=offset), time=time(9, 0)
+            ).id
+        self.client.force_authenticate(create_user(clinic=self.clinic, role="secretary"))
+
+    def _ids(self, period):
+        response = self.client.get(reverse("appointment-list"), {"period": period})
+        return [item["id"] for item in response.data["results"]]
+
+    def test_upcoming_nearest_first_and_past_latest_first(self):
+        self.assertEqual(self._ids("upcoming"), [self.ids["today"], self.ids["soon"], self.ids["far"]])
+        self.assertEqual(self._ids("past"), [self.ids["yesterday"], self.ids["old"]])
