@@ -22,6 +22,13 @@ def archive_department(*, department, actor):
             _("Ce département a des médecins actifs et ne peut pas être archivé. "
             "Réaffectez-les ou désactivez-les d'abord.")
         )
+    from appointments.services import ACTIVE_STATUSES
+
+    if department.appointments.filter(doctor__isnull=True, status__in=ACTIVE_STATUSES).exists():
+        raise ValidationError(
+            _("Ce département a des rendez-vous à attribuer et ne peut pas être archivé. "
+            "Attribuez-les ou annulez-les d'abord.")
+        )
     department.status = Department.Status.ARCHIVED
     department.is_active = False
     department.archived_at = timezone.now()

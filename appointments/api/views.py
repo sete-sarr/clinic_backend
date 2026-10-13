@@ -11,12 +11,19 @@ from rest_framework.response import Response
 from appointments.models import Appointment
 from appointments.pdf import render_checkin_ticket_pdf
 from appointments.permissions import CanManageAppointments
-from appointments.services import cancel_appointment_by_patient, check_in_appointment
+from appointments.services import (
+    assign_appointment,
+    cancel_appointment_by_patient,
+    check_in_appointment,
+    doctor_appointments_q,
+    take_appointment,
+)
 from common.audit import record_audit
 from common.exports import CsvExportMixin
 from common.models import AuditLog
 from common.permissions import in_role
 from common.viewsets import TenantScopedModelViewSet
+from doctors.models import Doctor
 from patients.access import ensure_patient_accessible
 
 from .serializers import AppointmentSerializer
@@ -29,19 +36,26 @@ class AppointmentFilterSet(django_filters.FilterSet):
     # liste/le sélecteur de patients, pas ici).
     patient_number = django_filters.CharFilter(field_name="patient__patient_number", lookup_expr="icontains")
     checked_in = django_filters.BooleanFilter(method="filter_checked_in")
+    # assigned=false : rendez-vous de département encore sans médecin (« À attribuer »).
+    assigned = django_filters.BooleanFilter(field_name="doctor", lookup_expr="isnull", exclude=True)
 
     class Meta:
         model = Appointment
-        fields = ["status", "date", "doctor", "patient"]
+        fields = ["status", "date", "doctor", "department", "patient"]
 
     def filter_checked_in(self, queryset, name, value):
         return queryset.filter(checked_in_at__isnull=not value)
 
 
+class AppointmentAssignSerializer(serializers.Serializer):
+    # null : remet le rendez-vous à la disposition du département. Le tenant est vérifié par le service.
+    doctor = serializers.PrimaryKeyRelatedField(queryset=Doctor.objects.filter(is_active=True), allow_null=True)
+
+
 class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
     serializer_class = AppointmentSerializer
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageAppointments]
-    queryset = Appointment.objects.select_related("patient", "doctor__user", "doctor__department", "clinic").all()
+    queryset = Appointment.objects.select_related("patient", "doctor__user", "department", "clinic").all()
     filter_backends = [DjangoFilterBackend]
     filterset_class = AppointmentFilterSet
     export_fields = ["date", "time", "status", "patient_display", "doctor_display", "reason"]
@@ -51,7 +65,7 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
         user = self.request.user
         if in_role(user, "doctor") and not in_role(user, "clinic_admin", "secretary"):
             doctor_profile = getattr(user, "doctor_profile", None)
-            return qs.filter(doctor=doctor_profile) if doctor_profile else qs.none()
+            return qs.filter(doctor_appointments_q(doctor_profile)) if doctor_profile else qs.none()
         if in_role(user, "patient") and not in_role(user, "doctor", "secretary", "accountant", "clinic_admin"):
             patient_profile = getattr(user, "patient_profile", None)
             return qs.filter(patient=patient_profile) if patient_profile else qs.none()
@@ -91,6 +105,37 @@ class AppointmentViewSet(CsvExportMixin, TenantScopedModelViewSet):
         except DjangoValidationError as exc:
             raise serializers.ValidationError(exc.messages)
         record_audit(user=request.user, action=AuditLog.Action.CANCEL, obj=appointment)
+        return Response(self.get_serializer(appointment).data)
+
+    @action(detail=True, methods=["post"])
+    def take(self, request, pk=None):
+        """Un médecin du département prend en charge un rendez-vous encore à attribuer."""
+        appointment = self.get_object()
+        doctor_profile = getattr(request.user, "doctor_profile", None)
+        if doctor_profile is None:
+            raise PermissionDenied(_("Aucun profil médecin n'est associé à ce compte."))
+        try:
+            appointment = take_appointment(appointment=appointment, doctor=doctor_profile)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+        record_audit(user=request.user, action=AuditLog.Action.UPDATE, obj=appointment,
+                     metadata={"taken_by_doctor": doctor_profile.id})
+        return Response(self.get_serializer(appointment).data)
+
+    @action(detail=True, methods=["post"])
+    def assign(self, request, pk=None):
+        """L'accueil attribue, réattribue ou remet au département (doctor=null) un rendez-vous."""
+        appointment = self.get_object()
+        payload = AppointmentAssignSerializer(data=request.data)
+        payload.is_valid(raise_exception=True)
+        try:
+            appointment, previous_doctor_id = assign_appointment(
+                appointment=appointment, doctor=payload.validated_data["doctor"]
+            )
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages)
+        record_audit(user=request.user, action=AuditLog.Action.UPDATE, obj=appointment,
+                     metadata={"assigned_doctor": appointment.doctor_id, "previous_doctor": previous_doctor_id})
         return Response(self.get_serializer(appointment).data)
 
     @action(detail=True, methods=["post"], url_path="check-in")

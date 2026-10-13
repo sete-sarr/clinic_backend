@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import serializers
 
 from appointments.models import Appointment
-from appointments.services import create_appointment, update_appointment
+from appointments.services import appointment_doctor_display, create_appointment, update_appointment
 from patients.models import Patient
 
 
@@ -12,6 +12,7 @@ class AppointmentSerializer(serializers.ModelSerializer):
     # n'ajoutent aucune requête supplémentaire.
     patient_display = serializers.SerializerMethodField()
     doctor_display = serializers.SerializerMethodField()
+    department_display = serializers.SerializerMethodField()
     # Non requis au niveau du champ : un appelant avec le rôle patient l'omet et la vue le résout
     # côté serveur à partir de request.user.patient_profile (AppointmentViewSet.perform_create).
     # Les appelants staff/médecin doivent quand même le fournir — c'est vérifié dans
@@ -27,6 +28,8 @@ class AppointmentSerializer(serializers.ModelSerializer):
             "patient_display",
             "doctor",
             "doctor_display",
+            "department",
+            "department_display",
             "date",
             "time",
             "status",
@@ -51,7 +54,10 @@ class AppointmentSerializer(serializers.ModelSerializer):
         return f"{obj.patient.first_name} {obj.patient.last_name} ({obj.patient.patient_number})"
 
     def get_doctor_display(self, obj):
-        return obj.doctor.user.get_full_name() or obj.doctor.user.get_username()
+        return appointment_doctor_display(obj)
+
+    def get_department_display(self, obj):
+        return obj.department.name if obj.department else None
 
     def create(self, validated_data):
         clinic = validated_data.pop("clinic")

@@ -27,7 +27,7 @@ def render_clinic_activity_report_pdf(*, clinic, user, date_from, date_to):
 
     appointments = (
         Appointment.objects.filter(clinic=clinic, date__gte=date_from, date__lte=date_to)
-        .select_related("patient", "doctor__user")
+        .select_related("patient", "doctor__user", "department")
         .order_by("date", "time")
     )
     consultations = (

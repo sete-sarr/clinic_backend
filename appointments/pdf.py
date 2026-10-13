@@ -14,6 +14,14 @@ def can_access_checkin_ticket(*, user, appointment):
     doctor_profile = getattr(user, "doctor_profile", None)
     if doctor_profile and appointment.doctor_id == doctor_profile.id:
         return True
+    # Rendez-vous de département encore à attribuer : tout médecin du département.
+    if (
+        doctor_profile
+        and appointment.doctor_id is None
+        and appointment.department_id is not None
+        and appointment.department_id == doctor_profile.department_id
+    ):
+        return True
     patient_profile = getattr(user, "patient_profile", None)
     if patient_profile and appointment.patient_id == patient_profile.id:
         return True

@@ -48,7 +48,7 @@
       <td>{{ appointment.date }}</td>
       <td>{{ appointment.time }}</td>
       <td>{{ appointment.patient.first_name }} {{ appointment.patient.last_name }}</td>
-      <td>{% translate "Dr" %} {{ appointment.doctor.user.get_full_name }}</td>
+      <td>{% if appointment.doctor %}{% translate "Dr" %} {{ appointment.doctor.user.get_full_name }}{% else %}{% translate "À attribuer" %} — {{ appointment.department.name }}{% endif %}</td>
       <td>{{ appointment.get_status_display }}</td>
     </tr>
     {% endfor %}

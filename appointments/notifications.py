@@ -42,7 +42,7 @@ def _load(appointment_id):
     from .models import Appointment
 
     return (
-        Appointment.objects.select_related("patient", "doctor__user", "clinic")
+        Appointment.objects.select_related("patient", "doctor__user", "department", "clinic")
         .filter(pk=appointment_id)
         .first()
     )
@@ -57,8 +57,25 @@ def _when(appointment):
 
 
 def _doctor_name(appointment):
+    """« Dr Diallo », ou « service Cardiologie » pour un rendez-vous de département encore à
+    attribuer (« avec le service Cardiologie »)."""
+    if appointment.doctor is None:
+        return _("service %(name)s") % {"name": appointment.department.name}
     user = appointment.doctor.user
     return _("Dr %(name)s") % {"name": user.get_full_name() or user.get_username()}
+
+
+def _doctor_recipients(appointment, *, include_department):
+    """Le médecin du rendez-vous ; pour un rendez-vous encore à attribuer, les médecins actifs du
+    département (business/notification-rules.md § Rendez-vous de département) — ou personne quand
+    `include_department` est faux (rappel de la veille : « vous recevez… » ne vaut que pour un
+    médecin désigné)."""
+    if appointment.doctor is not None:
+        return [appointment.doctor.user]
+    if not include_department:
+        return []
+    doctors = appointment.department.doctors.filter(is_active=True, user__is_active=True).select_related("user")
+    return [doctor.user for doctor in doctors]
 
 
 def _patient_name(appointment):
@@ -129,7 +146,7 @@ def _dispatch(*, appointment, notification_type, build_patient, build_staff, inc
             _send(**common, user=patient_user, channel=NotificationLog.Channel.SMS, address=patient.phone,
                   message=patient_message, body=patient_message.sms_body)
 
-    staff = [appointment.doctor.user]
+    staff = _doctor_recipients(appointment, include_department=include_secretaries)
     if include_secretaries:
         staff += list(appointment.clinic.users.filter(groups__name="secretary"))
     staff_messages = {}
@@ -283,8 +300,9 @@ def send_appointment_reminder_notifications(*, appointment_id):
 
 
 def notify_doctor_of_check_in(*, appointment):
-    """Arrivée d'un patient à l'accueil → notification in-app au médecin du rendez-vous
-    (business/notification-rules.md § CANAL IN-APP), dans la langue du médecin."""
+    """Arrivée d'un patient à l'accueil → notification in-app au médecin du rendez-vous, ou aux
+    médecins du département s'il est encore à attribuer (business/notification-rules.md § CANAL
+    IN-APP), dans la langue de chacun."""
 
     def compose():
         return (
@@ -295,9 +313,32 @@ def notify_doctor_of_check_in(*, appointment):
 
     notify_in_app(
         clinic=appointment.clinic,
-        recipients=[appointment.doctor.user],
+        recipients=_doctor_recipients(appointment, include_department=True),
         category=InAppNotification.Category.APPOINTMENT,
         priority=InAppNotification.Priority.MEDIUM,
         compose=compose,
         link="/appointments?checkedIn=true",
+    )
+
+
+def notify_doctor_of_assignment(*, appointment_id):
+    """Rendez-vous attribué ou réattribué par l'accueil → notification in-app au médecin désigné
+    (business/notification-rules.md § Rendez-vous de département), dans sa langue."""
+    appointment = _load(appointment_id)
+    if not appointment or appointment.doctor is None:
+        return
+
+    def compose():
+        return (
+            _("Rendez-vous attribué : %(patient)s") % {"patient": _patient_name(appointment)},
+            _("Le rendez-vous %(when)s vous a été attribué.") % {"when": _when(appointment)},
+        )
+
+    notify_in_app(
+        clinic=appointment.clinic,
+        recipients=[appointment.doctor.user],
+        category=InAppNotification.Category.APPOINTMENT,
+        priority=InAppNotification.Priority.MEDIUM,
+        compose=compose,
+        link="/appointments",
     )

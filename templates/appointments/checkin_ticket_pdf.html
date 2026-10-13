@@ -73,12 +73,12 @@
     <div class="field">
       <div class="field-label">{% translate "Département" %}</div>
       <div class="field-value">
-        {% if appointment.doctor.department %}{{ appointment.doctor.department.name }}{% else %}&mdash;{% endif %}
+        {% if appointment.department %}{{ appointment.department.name }}{% else %}&mdash;{% endif %}
       </div>
     </div>
     <div class="field">
       <div class="field-label">{% translate "Médecin" %}</div>
-      <div class="field-value">{% translate "Dr" %} {{ appointment.doctor.user.get_full_name }}</div>
+      <div class="field-value">{% if appointment.doctor %}{% translate "Dr" %} {{ appointment.doctor.user.get_full_name }}{% else %}{% translate "À attribuer" %}{% endif %}</div>
     </div>
     <div class="field">
       <div class="field-label">{% translate "Date du rendez-vous" %}</div>

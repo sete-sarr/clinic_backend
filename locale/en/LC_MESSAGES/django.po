@@ -599,9 +599,6 @@ msgstr "The report is only available once the results have been validated."
 msgid "Le consentement du patient est obligatoire pour enregistrer sa photo."
 msgstr "The patient's consent is required to save their photo."
 
-#: appointments/services.py:62
-msgid "Le département de ce médecin n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
-msgstr "This doctor's department is not active and cannot accept new appointments."
 
 #: laboratory/services.py:208
 msgid "Le fichier ne doit pas dépasser 5 Mo."
@@ -1560,3 +1557,59 @@ msgstr "Emergency access to a patient record"
 #: patients/notifications.py
 msgid "%(doctor)s a ouvert un accès d'urgence de 24 h au dossier du patient %(number)s. Le motif figure dans le journal d'audit."
 msgstr "%(doctor)s opened 24-hour emergency access to the record of patient %(number)s. The reason is recorded in the audit log."
+
+#: appointments/api/views.py
+msgid "Aucun profil médecin n'est associé à ce compte."
+msgstr "No doctor profile is linked to this account."
+
+#: departments/services.py
+msgid "Ce département a des rendez-vous à attribuer et ne peut pas être archivé. Attribuez-les ou annulez-les d'abord."
+msgstr "This department has appointments awaiting a doctor and cannot be archived. Assign or cancel them first."
+
+#: appointments/services.py
+msgid "Ce département n'est pas actif et ne peut pas recevoir de nouveaux rendez-vous."
+msgstr "This department is not active and cannot receive new appointments."
+
+#: appointments/services.py
+msgid "Ce médecin n'appartient pas à ce département."
+msgstr "This doctor does not belong to this department."
+
+#: appointments/services.py
+msgid "Ce rendez-vous a déjà été pris en charge par un médecin."
+msgstr "This appointment has already been taken by a doctor."
+
+#: appointments/services.py
+msgid "Ce rendez-vous n'a pas de département : il doit garder un médecin."
+msgstr "This appointment has no department: it must keep a doctor."
+
+#: appointments/services.py
+msgid "Ce rendez-vous n'est pas destiné à votre département."
+msgstr "This appointment is not for your department."
+
+#: appointments/services.py
+msgid "Impossible d'attribuer ce rendez-vous : il est déjà %(status)s."
+msgstr "This appointment cannot be assigned: it is already %(status)s."
+
+#: appointments/services.py
+msgid "Indiquez un médecin ou un département."
+msgstr "Select a doctor or a department."
+
+#: appointments/notifications.py
+msgid "Le rendez-vous %(when)s vous a été attribué."
+msgstr "The appointment %(when)s has been assigned to you."
+
+#: appointments/notifications.py
+msgid "Rendez-vous attribué : %(patient)s"
+msgstr "Appointment assigned: %(patient)s"
+
+#: appointments/notifications.py
+msgid "service %(name)s"
+msgstr "the %(name)s department"
+
+#: templates/appointments/checkin_ticket_pdf.html
+msgid "À attribuer"
+msgstr "To be assigned"
+
+#: appointments/services.py
+msgid "À attribuer — %(department)s"
+msgstr "To be assigned — %(department)s"

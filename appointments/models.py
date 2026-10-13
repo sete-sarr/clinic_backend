@@ -14,7 +14,16 @@ class Appointment(TimeStampedModel):
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="appointments")
     patient = models.ForeignKey("patients.Patient", on_delete=models.PROTECT, related_name="appointments")
-    doctor = models.ForeignKey("doctors.Doctor", on_delete=models.PROTECT, related_name="appointments")
+    # Rendez-vous de département (rotation des médecins) : `doctor` reste vide tant qu'aucun médecin
+    # du département ne l'a pris en charge ou ne s'est vu attribuer le rendez-vous
+    # (appointments/services.py::take_appointment / assign_appointment). Un rendez-vous avec médecin
+    # porte aussi le département de ce médecin.
+    doctor = models.ForeignKey(
+        "doctors.Doctor", on_delete=models.PROTECT, related_name="appointments", null=True, blank=True
+    )
+    department = models.ForeignKey(
+        "departments.Department", on_delete=models.PROTECT, related_name="appointments", null=True, blank=True
+    )
     date = models.DateField()
     time = models.TimeField()
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.PENDING)
@@ -35,7 +44,14 @@ class Appointment(TimeStampedModel):
             models.Index(fields=["patient", "date"]),
             models.Index(fields=["status"]),
             models.Index(fields=["clinic", "checked_in_at"]),
+            models.Index(fields=["department", "date"]),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(doctor__isnull=False) | models.Q(department__isnull=False),
+                name="appointment_has_doctor_or_department",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.patient} with {self.doctor} on {self.date} {self.time}"
+        return f"{self.patient} with {self.doctor or self.department} on {self.date} {self.time}"

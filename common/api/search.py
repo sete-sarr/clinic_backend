@@ -4,6 +4,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from appointments.models import Appointment
+from appointments.services import appointment_doctor_display, doctor_appointments_q
 from common.permissions import in_role
 from doctors.models import Doctor
 from patients.access import scope_to_own_patients
@@ -107,11 +108,11 @@ class GlobalSearchView(APIView):
         ]
 
     def _search_appointments(self, query, user, clinic_id):
-        qs = Appointment.objects.select_related("patient", "doctor__user")
+        qs = Appointment.objects.select_related("patient", "doctor__user", "department")
         qs = qs.all() if user.is_superuser else qs.filter(clinic_id=clinic_id)
         if in_role(user, "doctor") and not in_role(user, "clinic_admin", "secretary"):
             doctor_profile = getattr(user, "doctor_profile", None)
-            qs = qs.filter(doctor=doctor_profile) if doctor_profile else qs.none()
+            qs = qs.filter(doctor_appointments_q(doctor_profile)) if doctor_profile else qs.none()
         qs = qs.filter(
             Q(patient__first_name__icontains=query)
             | Q(patient__last_name__icontains=query)
@@ -124,7 +125,7 @@ class GlobalSearchView(APIView):
             {
                 "id": appointment.id,
                 "title": f"{appointment.patient.first_name} {appointment.patient.last_name}",
-                "subtitle": f"{appointment.date} — {appointment.doctor.user.get_full_name()}",
+                "subtitle": f"{appointment.date} — {appointment_doctor_display(appointment)}",
                 "route": "/appointments",
                 "query_params": {"patient_number": appointment.patient.patient_number},
             }

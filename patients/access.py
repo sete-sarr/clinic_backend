@@ -1,7 +1,7 @@
 """Patients d'un médecin (business/access-policy.md « Médecin : ses propres patients »).
 
 Un médecin (sans rôle secrétaire, comptable ou administrateur) ne voit que les patients avec qui il a
-un lien de soin : rendez-vous, consultation, ordonnance, demande d'analyses, séjour dont il est le
+un lien de soin : rendez-vous (y compris un rendez-vous de son département encore à attribuer), consultation, ordonnance, demande d'analyses, séjour dont il est le
 médecin référent, ou accès d'urgence en cours. Ce périmètre s'applique aux patients, dossiers
 médicaux, factures et à la recherche globale ; il s'applique aussi à la CRÉATION (rendez-vous,
 consultation, ordonnance, analyses, admission) — sinon créer un acte pour un patient quelconque le
@@ -38,6 +38,7 @@ def restricts_to_own_patients(user):
 def doctor_patient_ids(doctor):
     """Sous-requête des identifiants des patients du médecin `doctor`."""
     from appointments.models import Appointment
+    from appointments.services import doctor_appointments_q
     from consultations.models import Consultation
     from hospitalization.models import Admission
     from laboratory.models import LabOrder
@@ -45,7 +46,7 @@ def doctor_patient_ids(doctor):
     from prescriptions.models import Prescription
 
     linked = (
-        Q(id__in=Appointment.objects.filter(doctor=doctor).values("patient_id"))
+        Q(id__in=Appointment.objects.filter(doctor_appointments_q(doctor)).values("patient_id"))
         | Q(id__in=Consultation.objects.filter(doctor=doctor).values("patient_id"))
         | Q(id__in=Prescription.objects.filter(doctor=doctor).values("patient_id"))
         | Q(id__in=LabOrder.objects.filter(doctor=doctor).values("patient_id"))

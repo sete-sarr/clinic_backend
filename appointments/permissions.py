@@ -14,6 +14,11 @@ class CanManageAppointments(BasePermission):
         # générique PUT/PATCH/DELETE (business/permissions-matrix.md ne liste Patient que sous Create).
         if request.method == "POST" and getattr(view, "action", None) in ("create", "cancel"):
             return in_role(user, "doctor", "secretary", "clinic_admin", "patient")
+        # Rendez-vous de département : un médecin le prend en charge, l'accueil l'attribue.
+        if getattr(view, "action", None) == "take":
+            return in_role(user, "doctor")
+        if getattr(view, "action", None) == "assign":
+            return in_role(user, "secretary", "clinic_admin")
         return in_role(user, "doctor", "secretary", "clinic_admin")
 
     def has_object_permission(self, request, view, obj):
@@ -22,7 +27,11 @@ class CanManageAppointments(BasePermission):
             return True
         if in_role(user, "doctor"):
             # business-rules.md : un médecin ne peut créer/modifier que ses propres rendez-vous.
-            return getattr(obj.doctor, "user_id", None) == user.id
+            if getattr(obj.doctor, "user_id", None) == user.id:
+                return True
+            # Rendez-vous de son département encore à attribuer : consultation et prise en charge
+            # uniquement (get_queryset ne lui montre que ceux-là).
+            return obj.doctor_id is None and (request.method in SAFE_METHODS or view.action == "take")
         if in_role(user, "patient"):
             if request.method in SAFE_METHODS or getattr(view, "action", None) == "cancel":
                 return getattr(obj.patient, "user_id", None) == user.id
