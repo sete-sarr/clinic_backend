@@ -2,6 +2,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from django.utils.translation import gettext as _
 from rest_framework import serializers
 
+from pharmacy.barcodes import normalize_gtin
 from pharmacy.models import Medication, SaleUnit, StockBatch, StockMovement
 from pharmacy.services import receive_stock_batch
 
@@ -13,6 +14,7 @@ class MedicationSerializer(serializers.ModelSerializer):
             "id",
             "clinic",
             "name",
+            "barcode",
             "unit",
             "unit_price",
             "pack_unit",
@@ -55,6 +57,24 @@ class MedicationSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(_("Un médicament portant ce nom existe déjà dans cette clinique."))
         return value
 
+    def validate_barcode(self, value):
+        if not (value or "").strip():
+            return ""
+        try:
+            gtin = normalize_gtin(value)
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError(exc.messages) from exc
+        request = self.context.get("request")
+        clinic_id = self.instance.clinic_id if self.instance else getattr(request.user, "clinic_id", None)
+        duplicates = Medication.objects.filter(clinic_id=clinic_id, barcode=gtin)
+        if self.instance is not None:
+            duplicates = duplicates.exclude(pk=self.instance.pk)
+        if duplicates.exists():
+            raise serializers.ValidationError(
+                _("Ce code-barres est déjà attribué à « %(name)s ».") % {"name": duplicates.first().name}
+            )
+        return gtin
+
     def validate(self, attrs):
         # PATCH partiel : comparer aux valeurs déjà enregistrées pour le champ non envoyé.
         min_threshold = attrs.get("min_threshold", getattr(self.instance, "min_threshold", 0))
@@ -68,6 +88,16 @@ class MedicationSerializer(serializers.ModelSerializer):
         if units_per_pack > 1 and not (pack_unit or "").strip():
             raise serializers.ValidationError({"pack_unit": _("Indiquez le nom du conditionnement (ex. boîte).")})
         return attrs
+
+
+class MedicationScanSerializer(serializers.Serializer):
+    """Résultat d'un scan : GTIN canonique, lot et péremption lus dans un DataMatrix, et le
+    médicament de la clinique qui porte ce code (null s'il n'existe pas encore)."""
+
+    gtin = serializers.CharField(read_only=True)
+    batch_number = serializers.CharField(read_only=True)
+    expiry_date = serializers.DateField(read_only=True, allow_null=True)
+    medication = MedicationSerializer(read_only=True, allow_null=True)
 
 
 class SplitPacksSerializer(serializers.Serializer):

@@ -6,6 +6,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from common.viewsets import TenantScopedMixin, TenantScopedModelViewSet
+from pharmacy.barcodes import parse_scanned_code
 from pharmacy.models import Medication, StockBatch, StockMovement
 from pharmacy.permissions import CanManageMedications, CanManageStock
 from pharmacy.services import (
@@ -17,7 +18,13 @@ from pharmacy.services import (
     update_medication,
 )
 
-from .serializers import MedicationSerializer, SplitPacksSerializer, StockBatchSerializer, StockMovementSerializer
+from .serializers import (
+    MedicationScanSerializer,
+    MedicationSerializer,
+    SplitPacksSerializer,
+    StockBatchSerializer,
+    StockMovementSerializer,
+)
 
 
 class MedicationViewSet(TenantScopedModelViewSet):
@@ -25,8 +32,25 @@ class MedicationViewSet(TenantScopedModelViewSet):
     permission_classes = TenantScopedModelViewSet.permission_classes + [CanManageMedications]
     queryset = Medication.objects.select_related("clinic").all()
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["is_active", "low_stock_alerted", "overstock_alerted"]
+    filterset_fields = ["is_active", "low_stock_alerted", "overstock_alerted", "barcode"]
     http_method_names = ["get", "post", "patch", "head", "options"]  # pas de PUT/DELETE — voir archive()
+
+    @action(detail=False, methods=["get"])
+    def scan(self, request):
+        """Texte lu par le scanner (?code=…) -> GTIN, lot, péremption et médicament correspondant
+        de la clinique (archivé compris : l'écran appelant décide). Lecture seule, mêmes droits que
+        la liste."""
+        try:
+            scanned = parse_scanned_code(request.query_params.get("code", ""))
+        except DjangoValidationError as exc:
+            return Response({"code": 400, "message": exc.messages[0], "field": "code"}, status=400)
+        medication = self.get_queryset().filter(barcode=scanned.gtin).first()
+        return Response(MedicationScanSerializer({
+            "gtin": scanned.gtin,
+            "batch_number": scanned.batch_number,
+            "expiry_date": scanned.expiry_date,
+            "medication": medication,
+        }).data)
 
     # Passe par pharmacy/services.py (audit + revérification des seuils à la modification) plutôt
     # que serializer.save() — docs/backend-guidelines.md : la logique métier vit dans les services.

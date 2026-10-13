@@ -1613,3 +1613,19 @@ msgstr "To be assigned"
 #: appointments/services.py
 msgid "À attribuer — %(department)s"
 msgstr "To be assigned — %(department)s"
+
+#: pharmacy/api/serializers.py
+msgid "Ce code-barres est déjà attribué à « %(name)s »."
+msgstr "This barcode is already assigned to “%(name)s”."
+
+#: pharmacy/barcodes.py
+msgid "Code-barres invalide : 8, 12, 13 ou 14 chiffres attendus."
+msgstr "Invalid barcode: 8, 12, 13 or 14 digits expected."
+
+#: pharmacy/barcodes.py
+msgid "Code-barres invalide : la clé de contrôle ne correspond pas."
+msgstr "Invalid barcode: the check digit does not match."
+
+#: pharmacy/barcodes.py
+msgid "Code-barres non reconnu : aucun code de médicament (GTIN) n'y figure."
+msgstr "Barcode not recognized: it contains no medication code (GTIN)."

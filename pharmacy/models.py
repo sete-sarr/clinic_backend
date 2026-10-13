@@ -30,6 +30,9 @@ class Medication(TimeStampedModel, SoftDeleteModel):
 
     clinic = models.ForeignKey("clinics.Clinic", on_delete=models.PROTECT, related_name="medications")
     name = models.CharField(max_length=200)
+    # Code-barres de la boîte (GTIN canonique, pharmacy/barcodes.py) ; vide = pas de code. Unique dans
+    # la clinique quand il est renseigné.
+    barcode = models.CharField(max_length=14, blank=True, default="")
     unit = models.CharField(max_length=50, help_text="Unité de base. Ex. comprimé, gélule, flacon.")
     # Prix de l'unité de base (vente au détail), saisi librement : il n'est pas forcément égal au
     # prix du conditionnement divisé par units_per_pack.
@@ -61,6 +64,11 @@ class Medication(TimeStampedModel, SoftDeleteModel):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(fields=["clinic", "name"], name="unique_medication_name_per_clinic"),
+            models.UniqueConstraint(
+                fields=["clinic", "barcode"],
+                condition=~models.Q(barcode=""),
+                name="unique_medication_barcode_per_clinic",
+            ),
             models.CheckConstraint(
                 condition=(
                     models.Q(max_threshold__isnull=True) | models.Q(max_threshold__gte=models.F("min_threshold"))
