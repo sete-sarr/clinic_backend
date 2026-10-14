@@ -49,6 +49,18 @@ class PrepaidCheckoutTests(APITestCase):
         self.assertEqual(create.call_args.kwargs["amount"], Decimal("135000"))
         self.assertIn(f"payment={payment.pk}", create.call_args.kwargs["return_url"])
 
+    @mock.patch("subscriptions.prepaid.saspay.create_checkout_session", return_value=SESSION)
+    def test_test_price_applies_only_to_the_designated_clinic(self, create):
+        with override_settings(SUBSCRIPTION_TEST_CLINIC_IDS=[self.clinic.pk], SUBSCRIPTION_TEST_PRICE_XOF=200):
+            response = self.client.post(reverse("subscriptions-checkout-session"),
+                                        {"plan_tier": "starter", "billing_cycle": "monthly"}, format="json")
+            self.assertEqual(SubscriptionPayment.objects.get(pk=response.data["payment_id"]).amount, Decimal("200"))
+            other = create_clinic("Autre clinique")
+            self.client.force_authenticate(create_user(clinic=other, role="clinic_admin", email="a@autre.example"))
+            response = self.client.post(reverse("subscriptions-checkout-session"),
+                                        {"plan_tier": "starter", "billing_cycle": "monthly"}, format="json")
+            self.assertEqual(SubscriptionPayment.objects.get(pk=response.data["payment_id"]).amount, Decimal("10000"))
+
     @mock.patch("subscriptions.prepaid.saspay.create_checkout_session", side_effect=saspay.SasPayError("down"))
     def test_unavailable_gateway_gives_a_clear_message(self, _create):
         response = self.client.post(reverse("subscriptions-checkout-session"),

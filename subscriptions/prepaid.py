@@ -56,7 +56,7 @@ def start_prepaid_checkout(*, clinic, plan_tier, billing_cycle, actor):
         raise ValidationError(_("Cycle de facturation invalide."))
     payment = SubscriptionPayment.objects.create(
         clinic=clinic, plan_tier=plan_tier, billing_cycle=billing_cycle, created_by=actor,
-        amount=Decimal(plan_price_xof(plan_tier, billing_cycle)), currency="XOF",
+        amount=Decimal(plan_price_xof(plan_tier, billing_cycle, clinic)), currency="XOF",
     )
     cycle = _("annuel") if billing_cycle == Clinic.BillingCycle.ANNUAL else _("mensuel")
     try:

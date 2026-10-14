@@ -52,8 +52,15 @@ PLAN_FEATURES = {
 TRIAL_FEATURES = _PROFESSIONAL_FEATURES
 
 
-def plan_price_xof(plan_tier: str, billing_cycle: str) -> int:
-    """Prix d'une période, hors frais de paiement (ajoutés par SasPay et payés par la clinique)."""
+def plan_price_xof(plan_tier: str, billing_cycle: str, clinic=None) -> int:
+    """Prix d'une période, hors frais de paiement (ajoutés par SasPay et payés par la clinique). Une
+    clinique désignée pour un essai réel (SUBSCRIPTION_TEST_CLINIC_IDS) paie le prix d'essai."""
+    if (
+        clinic is not None
+        and settings.SUBSCRIPTION_TEST_PRICE_XOF
+        and clinic.pk in settings.SUBSCRIPTION_TEST_CLINIC_IDS
+    ):
+        return settings.SUBSCRIPTION_TEST_PRICE_XOF
     monthly = PLAN_LIMITS[plan_tier]["monthly_price_xof"]
     return monthly * ANNUAL_MONTHS_BILLED if billing_cycle == Clinic.BillingCycle.ANNUAL else monthly
 

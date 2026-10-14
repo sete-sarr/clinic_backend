@@ -383,6 +383,10 @@ SUBSCRIPTION_PAYMENT_PROVIDER = env("SUBSCRIPTION_PAYMENT_PROVIDER", default="sa
 SASPAY_API_URL = env("SASPAY_API_URL", default="https://api.saspay.me/api/v1")
 SASPAY_API_KEY = env("SASPAY_API_KEY", default="")
 SASPAY_WEBHOOK_SECRET = env("SASPAY_WEBHOOK_SECRET", default="")
+# Essai réel en production (2026-10-15) : les cliniques listées paient SUBSCRIPTION_TEST_PRICE_XOF au lieu
+# du prix de la formule (période normale accordée). Les deux vides = désactivé. Toujours retirer après l'essai.
+SUBSCRIPTION_TEST_CLINIC_IDS = env.list("SUBSCRIPTION_TEST_CLINIC_IDS", cast=int, default=[])
+SUBSCRIPTION_TEST_PRICE_XOF = env.int("SUBSCRIPTION_TEST_PRICE_XOF", default=0)
 STRIPE_API_KEY = env("STRIPE_API_KEY", default="")
 STRIPE_WEBHOOK_SECRET = env("STRIPE_WEBHOOK_SECRET", default="")
 
