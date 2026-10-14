@@ -28,7 +28,7 @@ SESSION = saspay.CheckoutSession(id="sess-1", checkout_url="https://pay.saspay.m
 
 def _transaction(amount="10000.00", status_="SUCCESS", txn_id="txn-1"):
     return saspay.Transaction(id=txn_id, status=status_, requested_amount=amount, debited_amount="10225.00",
-                              currency="XOF", network="wave_sn", reference="TXN-1")
+                              currency="XOF", network="wave_sn", reference="TXN-1", checkout_session="sess-1")
 
 
 @override_settings(SUBSCRIPTION_PAYMENT_PROVIDER="saspay")
@@ -122,6 +122,9 @@ class PrepaidConfirmationTests(TestCase):
         self.assertEqual(payment.status, SubscriptionPayment.Status.FAILED)
         self.clinic.refresh_from_db()
         self.assertEqual(self.clinic.subscription_status, Clinic.SubscriptionStatus.TRIAL)
+        # « Réessayer » sur la page SasPay : le même paiement réussit finalement.
+        payment = self._pay(payment)
+        self.assertEqual(payment.status, SubscriptionPayment.Status.PAID)
 
     def test_add_months_keeps_the_end_of_month(self):
         moment = datetime(2027, 1, 31, 9, 0, tzinfo=dt_timezone.utc)
@@ -147,13 +150,13 @@ class SasPayWebhookTests(APITestCase):
                                 HTTP_X_WEBHOOK_SIGNATURE=signature, HTTP_X_WEBHOOK_TIMESTAMP=timestamp)
 
     def test_signed_success_event_activates_after_verification(self):
-        with mock.patch("subscriptions.prepaid.saspay.get_session_status",
-                        return_value=saspay.SessionStatus(status="PAID", transaction_id="txn-1")), \
-             mock.patch("subscriptions.prepaid.saspay.verify_transaction", return_value=_transaction()):
+        with mock.patch("subscriptions.prepaid.saspay.verify_transaction", return_value=_transaction()) as verify:
             response = self._post({"event": "transaction.success", "data": {"id": "txn-1"}})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        verify.assert_called_once_with("txn-1")  # jamais appliqué sur la seule foi du webhook
         self.payment.refresh_from_db()
         self.assertEqual(self.payment.status, SubscriptionPayment.Status.PAID)
+        self.assertEqual(self.payment.network, "Wave")
 
     def test_bad_signature_or_old_timestamp_is_refused(self):
         self.assertEqual(self._post({"event": "transaction.success", "data": {"id": "txn-1"}}, secret="x").status_code, 400)

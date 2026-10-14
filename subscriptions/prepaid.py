@@ -81,17 +81,23 @@ def start_prepaid_checkout(*, clinic, plan_tier, billing_cycle, actor):
     return payment
 
 
+# Un paiement échoué peut encore réussir : la page SasPay propose « Réessayer » sur la même session.
+_REFRESHABLE = (SubscriptionPayment.Status.PENDING, SubscriptionPayment.Status.FAILED)
+
+
 def refresh_payment(payment):
-    """Revérifie un paiement en attente auprès de SasPay et l'applique s'il est réglé. Renvoie le
-    paiement (statut à jour). Sans effet sur un paiement déjà traité."""
-    if payment.status != SubscriptionPayment.Status.PENDING or not payment.provider_session_id:
+    """Revérifie un paiement auprès de SasPay et applique son état (réglé ou échoué). Renvoie le
+    paiement à jour. Sans effet sur un paiement déjà réglé."""
+    if payment.status not in _REFRESHABLE or not payment.provider_session_id:
         return payment
     try:
         session = saspay.get_session_status(payment.provider_session_id)
-        if session.status == "PAID" and session.transaction_id:
-            return confirm_payment(payment, saspay.verify_transaction(session.transaction_id))
+        if session.transaction_id:
+            payment = confirm_payment(payment, saspay.verify_transaction(session.transaction_id))
     except saspay.SasPayError:
         return payment  # nouvelle tentative au prochain rafraîchissement ou par la tâche quotidienne
+    if payment.status != SubscriptionPayment.Status.PENDING:
+        return payment
     if payment.created_at < timezone.now() - PENDING_LIFETIME:
         SubscriptionPayment.objects.filter(pk=payment.pk, status=SubscriptionPayment.Status.PENDING).update(
             status=SubscriptionPayment.Status.EXPIRED, updated_at=timezone.now()
@@ -103,13 +109,14 @@ def refresh_payment(payment):
 @transaction.atomic
 def confirm_payment(payment, txn):
     """Applique une transaction SasPay revérifiée. Idempotent : un second appel ne prolonge rien."""
-    payment = SubscriptionPayment.objects.select_for_update().select_related("clinic").get(pk=payment.pk)
+    payment = SubscriptionPayment.objects.select_for_update(of=("self",)).select_related("clinic").get(pk=payment.pk)
     if payment.status == SubscriptionPayment.Status.PAID:
         return payment
     if txn.status == "FAILED":
         payment.status = SubscriptionPayment.Status.FAILED
         payment.provider_transaction_id = txn.id
-        payment.save(update_fields=["status", "provider_transaction_id", "updated_at"])
+        payment.network = saspay.network_label(txn.network)
+        payment.save(update_fields=["status", "provider_transaction_id", "network", "updated_at"])
         return payment
     if txn.status != "SUCCESS":
         return payment
@@ -127,7 +134,7 @@ def confirm_payment(payment, txn):
     payment.status = SubscriptionPayment.Status.PAID
     payment.provider_transaction_id = txn.id
     payment.provider_reference = txn.reference
-    payment.network = txn.network
+    payment.network = saspay.network_label(txn.network)
     payment.charged_amount = Decimal(txn.debited_amount)
     payment.paid_at = now
     payment.period_start, payment.period_end = start, end
@@ -169,33 +176,33 @@ def _period_start(clinic, payment, now):
 
 
 def handle_webhook(*, event, data):
-    """Webhook SasPay vérifié (signature et date) : transaction.success / transaction.failed. Le
-    paiement est retrouvé par sa transaction, sinon parmi les sessions en attente, puis toujours
-    revérifié auprès de SasPay avant d'être appliqué."""
+    """Webhook SasPay vérifié (signature et date) : transaction.success / transaction.failed. La
+    transaction est toujours revérifiée auprès de SasPay, qui indique sa session de paiement : le
+    paiement proCli correspondant est retrouvé directement par cette session."""
     if event not in ("transaction.success", "transaction.failed"):
         return
     transaction_id = str((data or {}).get("id") or "")
     if not transaction_id:
         return
-    payment = SubscriptionPayment.objects.filter(provider_transaction_id=transaction_id).first()
-    candidates = [payment] if payment else SubscriptionPayment.objects.filter(
-        status=SubscriptionPayment.Status.PENDING, created_at__gte=timezone.now() - PENDING_LIFETIME,
-    ).exclude(provider_session_id="")
-    for candidate in candidates:
-        try:
-            session = saspay.get_session_status(candidate.provider_session_id)
-            if session.transaction_id != transaction_id:
-                continue
-            confirm_payment(candidate, saspay.verify_transaction(transaction_id))
-        except saspay.SasPayError:
-            logger.warning("Webhook SasPay %s : vérification impossible, rattrapage par la tâche quotidienne",
-                           transaction_id)
+    try:
+        txn = saspay.verify_transaction(transaction_id)
+    except saspay.SasPayError:
+        logger.warning("Webhook SasPay %s : vérification impossible, rattrapage par la tâche quotidienne",
+                       transaction_id)
         return
+    payment = SubscriptionPayment.objects.filter(provider_transaction_id=transaction_id).first()
+    if payment is None and txn.checkout_session:
+        payment = SubscriptionPayment.objects.filter(provider_session_id=txn.checkout_session).first()
+    if payment is not None:
+        confirm_payment(payment, txn)
 
 
 def refresh_pending_payments():
-    """Tâche quotidienne : rattrape les paiements réglés dont le webhook aurait été perdu."""
-    pending = SubscriptionPayment.objects.filter(status=SubscriptionPayment.Status.PENDING)
+    """Tâche quotidienne : rattrape les paiements réglés (ou réussis après « Réessayer ») dont le webhook
+    aurait été perdu."""
+    pending = SubscriptionPayment.objects.filter(
+        status__in=_REFRESHABLE, created_at__gte=timezone.now() - PENDING_LIFETIME
+    ) | SubscriptionPayment.objects.filter(status=SubscriptionPayment.Status.PENDING)
     for payment in pending:
         refresh_payment(payment)
     return pending.count()

@@ -198,7 +198,9 @@ def _lock_active(appointment):
     """Relit le rendez-vous verrouillé (deux médecins ne peuvent pas prendre le même) et vérifie
     qu'il est encore à venir."""
     appointment = (
-        Appointment.objects.select_for_update()
+        # of=("self",) : seul le rendez-vous est verrouillé. PostgreSQL refuse FOR UPDATE sur le côté
+        # facultatif d'une jointure externe (department est nullable) — SQLite, lui, l'ignore.
+        Appointment.objects.select_for_update(of=("self",))
         .select_related("clinic", "patient", "department")
         .get(pk=appointment.pk)
     )

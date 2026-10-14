@@ -46,8 +46,19 @@ class Transaction:
     requested_amount: str
     debited_amount: str
     currency: str
-    network: str
+    network: str  # code du réseau (ex. wave_sn), confirmé par un vrai paiement du 2026-10-14
     reference: str
+    checkout_session: str = ""  # session de paiement d'origine : rattachement direct au paiement proCli
+
+
+# Codes réseau SasPay -> libellé affiché (préfixe du code, ex. wave_sn, orange_money_sn).
+_NETWORK_LABELS = (("wave", "Wave"), ("orange", "Orange Money"), ("om_", "Orange Money"), ("free", "YAS"),
+                   ("yas", "YAS"), ("wizall", "Wizall"), ("card", "Carte"), ("visa", "Carte"), ("master", "Carte"))
+
+
+def network_label(code):
+    code = (code or "").lower()
+    return next((label for prefix, label in _NETWORK_LABELS if code.startswith(prefix)), code)
 
 
 def _request(method, path, **kwargs):
@@ -98,8 +109,9 @@ def verify_transaction(transaction_id):
         requested_amount=str(data.get("requested_amount") or "0"),
         debited_amount=str(data.get("debited_amount") or "0"),
         currency=str(data.get("currency") or ""),
-        network=str(data.get("network") or ""),
+        network=str(data.get("network_code") or ""),
         reference=str(data.get("reference") or ""),
+        checkout_session=str(data.get("checkout_session") or ""),
     )
 
 
